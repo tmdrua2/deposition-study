@@ -5,13 +5,21 @@
 //   title   : 화면에 보일 제목
 //   path    : 사이트 맨 위 폴더 기준 파일 경로
 //   keywords: 검색에 걸리게 할 단어들 (영어/한글/약어 모두 적어두면 좋음)
+//   short   : (선택) 알약 버튼·장비 목록에 쓸 짧은 이름 (없으면 title 사용)
+//   desc    : (선택) 장비 목록에서 이름 아래 회색으로 보일 한글 설명
 // =============================================================
 
+// en  : 제목 위 작은 영문 라벨, 메인 카드의 영문 제목
+// desc: 메인 카드의 한글 설명
 const SECTIONS = [
-  { id: "basics",    title: "기초" },
-  { id: "equipment", title: "공정·장비" },
-  { id: "companies", title: "회사" },
-  { id: "lab",       title: "내 실습 기록" },
+  { id: "basics",    title: "기초",        en: "Fundamentals",
+    desc: "진공, 플라즈마, 박막이 자라는 원리" },
+  { id: "equipment", title: "공정·장비",   en: "Process & Equipment",
+    desc: "증착 방식별 원리, 장비 구성, 공정변수와 문제 해결" },
+  { id: "companies", title: "회사",        en: "Companies",
+    desc: "해외·국내 증착 장비사 정리" },
+  { id: "lab",       title: "내 실습 기록", en: "Lab Notes",
+    desc: "직접 해본 공정과 배운 점" },
 ];
 
 const PAGES = [
@@ -24,15 +32,15 @@ const PAGES = [
     keywords: "thin film growth 박막 성장 핵생성 nucleation 흡착 확산 step coverage" },
 
   // 공정·장비
-  { section: "equipment", title: "PVD (물리 기상 증착)", path: "equipment/pvd.html",
+  { section: "equipment", title: "PVD (물리 기상 증착)", short: "PVD", desc: "물리 기상 증착", path: "equipment/pvd.html",
     keywords: "pvd sputter sputtering 스퍼터 증발 evaporation target 타겟 물리기상증착" },
-  { section: "equipment", title: "CVD / PECVD (화학 기상 증착)", path: "equipment/cvd-pecvd.html",
+  { section: "equipment", title: "CVD / PECVD (화학 기상 증착)", short: "CVD / PECVD", desc: "화학 기상 증착", path: "equipment/cvd-pecvd.html",
     keywords: "cvd pecvd lpcvd 화학기상증착 precursor 전구체 plasma" },
-  { section: "equipment", title: "ALD (원자층 증착)", path: "equipment/ald.html",
+  { section: "equipment", title: "ALD (원자층 증착)", short: "ALD", desc: "원자층 증착", path: "equipment/ald.html",
     keywords: "ald atomic layer deposition 원자층 self-limiting 자기제한 purge 퍼지" },
-  { section: "equipment", title: "Epi (에피택시)", path: "equipment/epi.html",
+  { section: "equipment", title: "Epi (에피택시)", short: "Epi", desc: "에피택시", path: "equipment/epi.html",
     keywords: "epi epitaxy 에피택시 에피 단결정 sige" },
-  { section: "equipment", title: "전기도금 (ECD)", path: "equipment/ecd.html",
+  { section: "equipment", title: "전기도금 (ECD)", short: "ECD", desc: "전기도금", path: "equipment/ecd.html",
     keywords: "ecd electroplating 전기도금 구리 cu 도금 seed 시드 damascene" },
 
   // 회사
