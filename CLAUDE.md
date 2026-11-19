@@ -16,6 +16,7 @@
 ```
 index.html            메인: 전체 목차 + 검색창
 css/style.css         공통 스타일 (색상은 :root 변수에서만 바꾼다)
+fonts/                Pretendard 글꼴 파일(woff2) + 라이선스 — 외부 CDN 대신 직접 넣어 둠
 js/pages.js           ★ 전체 페이지 목록 — 목차·메뉴·검색이 모두 여기서 만들어짐
 js/main.js            공통 동작: 헤더 메뉴, 목차, 검색, 페이지 안 목차
 basics/               기초: 진공, 플라즈마, 박막 성장 원리
