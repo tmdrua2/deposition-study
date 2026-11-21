@@ -17,7 +17,7 @@ window.EQUIPMENT.pecvd = {
   site: {
     floors: [
       { id: "fab-floor", name: "Fab floor", ko: "팹 바닥", z: 0 },
-      { id: "sub-fab", name: "Sub-fab", ko: "서브팹 (아래층)", z: -5.5 }
+      { id: "sub-fab", name: "Sub-fab", ko: "서브팹 (아래층)", z: -6.5 }
     ]
   },
   parts: [
@@ -33,7 +33,8 @@ window.EQUIPMENT.pecvd = {
         { type: "window", face: "right", area: [0.38, 0.3, 0.62, 0.72] },
         { type: "label-plate", face: "back", area: [0.1, 0.62, 0.34, 0.8] }
       ],
-      label: { no: 5, abbr: "PM", anchor: "top" }
+      tag: "PM1",                 // 그림 위 작은 챔버 번호 (펌프의 tag와 짝)
+      label: { no: 5, abbr: "PM" }
     },
     {
       // 챔버 아래 캐비닛: 히터 전원·리프트 장치·배기 밸브 등이 들어가는 자리
@@ -72,9 +73,9 @@ window.EQUIPMENT.pecvd = {
       ]
     },
     // 나머지 공정 챔버 3개: 위 PM을 통째로(자식 포함) 복사해서 다른 면에 붙임
-    { id: "pm-2", copyOf: "pm", name: "공정 챔버 2", pos: [6.35, 16.67, 3.5], rotZ: -60 },
-    { id: "pm-3", copyOf: "pm", name: "공정 챔버 3", pos: [-6.35, 16.67, 3.5], rotZ: 60 },
-    { id: "pm-4", copyOf: "pm", name: "공정 챔버 4", pos: [-6.35, 9.34, 3.5], rotZ: 120 },
+    { id: "pm-2", copyOf: "pm", name: "공정 챔버 2", tag: "PM2", pos: [6.35, 16.67, 3.5], rotZ: -60 },
+    { id: "pm-3", copyOf: "pm", name: "공정 챔버 3", tag: "PM3", pos: [-6.35, 16.67, 3.5], rotZ: 60 },
+    { id: "pm-4", copyOf: "pm", name: "공정 챔버 4", tag: "PM4", pos: [-6.35, 9.34, 3.5], rotZ: 120 },
 
     // ── 가스 박스: 가스 밸브·MFC(유량 조절기)가 모인 캐비닛 ──
     {
@@ -93,13 +94,30 @@ window.EQUIPMENT.pecvd = {
       ],
       label: { no: 6, abbr: "GAS", anchor: "top" }
     },
+    // 가스 배관: 가스 박스 윗면 → 위로 → 장비 위쪽을 지나 → 각 공정 챔버 뚜껑으로 (챔버마다 1줄)
+    //   RF 매칭 박스보다 높게 지나고, 줄마다 높이를 조금씩 달리해 서로 겹치지 않게 함
     {
-      // 가스 배관: 가스 박스 → 공정 챔버 뚜껑 (path = 부품 위치 기준 꺾이는 점들)
-      id: "gas-line", name: "가스 배관", en: "Gas Line",
-      parent: null, level: 1,
-      shape: "pipe", size: [0.32],
-      pos: [0, 0, 0],
-      path: [[12.0, 12.8, 8.0], [12.0, 12.8, 8.6], [12.0, 8.85, 8.6], [5.4, 8.85, 8.6], [5.4, 8.85, 6.7]],
+      id: "gas-line-1", name: "가스 배관 (PM1)", en: "Gas Line to PM1",
+      parent: null, level: 1, shape: "pipe", size: [0.16], pos: [0, 0, 0],
+      path: [[11.7, 12.2, 8], [11.7, 12.2, 8.6], [5.5, 12.2, 8.6], [5.5, 8.67, 8.6], [5.5, 8.67, 6.7]],
+      material: "pipe"
+    },
+    {
+      id: "gas-line-2", name: "가스 배관 (PM2)", en: "Gas Line to PM2",
+      parent: null, level: 1, shape: "pipe", size: [0.16], pos: [0, 0, 0],
+      path: [[11.7, 13, 8], [11.7, 13, 8.85], [6.5, 13, 8.85], [6.5, 15.6, 8.85], [6.5, 15.6, 6.7]],
+      material: "pipe"
+    },
+    {
+      id: "gas-line-3", name: "가스 배관 (PM3)", en: "Gas Line to PM3",
+      parent: null, level: 1, shape: "pipe", size: [0.16], pos: [0, 0, 0],
+      path: [[11.7, 13.8, 8], [11.7, 13.8, 9.1], [-5.5, 13.8, 9.1], [-5.5, 17.34, 9.1], [-5.5, 17.34, 6.7]],
+      material: "pipe"
+    },
+    {
+      id: "gas-line-4", name: "가스 배관 (PM4)", en: "Gas Line to PM4",
+      parent: null, level: 1, shape: "pipe", size: [0.16], pos: [0, 0, 0],
+      path: [[11.7, 14.6, 8], [11.7, 14.6, 9.35], [-6.5, 14.6, 9.35], [-6.5, 10.41, 9.35], [-6.5, 10.41, 6.7]],
       material: "pipe"
     },
 
@@ -118,45 +136,76 @@ window.EQUIPMENT.pecvd = {
       ],
       label: { no: 7, abbr: "RF", anchor: "top" }
     },
+    // RF 케이블: 공중 아치 대신 낮은 케이블 트레이 위를 따라 1번 챔버의 RF 매칭 박스까지
+    //   트레이는 챔버 뚜껑 바로 위 높이, 2번 챔버와 가스 박스 사이 통로를 지나감
+    {
+      id: "cable-tray", name: "케이블 트레이", en: "Cable Tray",
+      parent: null, level: 1,
+      shape: "box", size: [0.6, 9.2, 0.12], pos: [10.6, 14.1, 6.8],
+      material: "metal"
+    },
+    {
+      id: "cable-tray-2", name: "케이블 트레이 (가로)", en: "Cable Tray",
+      parent: null, level: 1,
+      shape: "box", size: [2.6, 0.6, 0.12], pos: [9.6, 9.82, 6.8],
+      material: "metal"
+    },
+    { id: "tray-post", name: "트레이 지지대", en: "Tray Post", parent: null, level: 1,
+      shape: "box", size: [0.18, 0.18, 6.8], pos: [10.6, 18.3, 0], material: "dark" },
+    { id: "tray-post-2", copyOf: "tray-post", pos: [10.6, 10.4, 0] },
     {
       id: "rf-cable", name: "RF 케이블", en: "RF Cable",
       parent: null, level: 1,
-      shape: "pipe", size: [0.26],
+      shape: "pipe", size: [0.14],
       pos: [0, 0, 0],
-      path: [[11.4, 18.6, 5.5], [11.4, 18.6, 9.6], [11.4, 9.82, 9.6], [7.32, 9.82, 9.6], [7.32, 9.82, 8.0]],
+      path: [[11.2, 18.4, 5.5], [11.2, 18.4, 6.99], [10.6, 18.4, 6.99], [10.6, 9.82, 6.99], [8.2, 9.82, 6.99]],
       material: "cable"
     },
 
     // ── 드라이 펌프 + 배기 배관: 챔버별 독립 배기 ──
-    //    실제 팹처럼 펌프는 바닥 아래층(Sub-fab, z = -5.5)에 두고,
-    //    공정 챔버마다 펌프 1대씩 + 그 챔버 하부 캐비닛으로 올라가는 배기 배관 1줄.
-    //    펌프는 자기 챔버 바로 아래, 바깥쪽으로 조금 비켜 놓고(rotZ도 챔버와 같게)
-    //    배관은 펌프의 자식이라 copyOf로 펌프를 복사하면 배관도 같이 복사된다.
+    //    펌프는 바닥 아래층(Sub-fab, z = -6.5)의 오른쪽 앞 빈 곳에 한 줄로 놓는다.
+    //    (보는 방향이 오른쪽 앞 위라서, 챔버 바로 아래에 두면 뒤쪽 펌프가 위층 장비에 가려짐)
+    //    배기 배관: 각 챔버 하부 캐비닛 밑면 → 팹 바닥을 뚫고 수직으로 → 서브팹 천장 높이에서
+    //    수평으로 꺾여 → 자기 펌프 윗면으로. 펌프 1대 = 챔버 1개 (tag로 PM1~PM4 표시)
     {
       id: "pump", name: "드라이 펌프", en: "Dry Pump",
       parent: null, level: 1,
-      shape: "box", size: [2.4, 3.0, 2.2], pos: [7.39, 8.74, -5.5], rotZ: -120,
+      shape: "box", size: [2.4, 3.0, 2.2], pos: [13.5, 8.0, -6.5],
       material: "panel-warm",
       details: [
-        { type: "vent", face: "back", area: [0.12, 0.2, 0.88, 0.75] },
-        { type: "seam", face: "right", count: 2 },
-        { type: "vent", face: "right", area: [0.1, 0.2, 0.45, 0.7] },
-        { type: "warning-label", face: "right", at: [0.75, 0.75] }
+        { type: "vent", face: "right", area: [0.12, 0.2, 0.88, 0.75] },
+        { type: "seam", face: "front", count: 2 },
+        { type: "warning-label", face: "front", at: [0.78, 0.72] }
       ],
-      label: { no: 8, abbr: "PUMP", anchor: "right" }
+      tag: "PM1",
+      label: { no: 8, abbr: "PUMP" }
     },
+    { id: "pump-2", copyOf: "pump", name: "드라이 펌프 (PM2)", pos: [13.5, 15.0, -6.5], tag: "PM2" },
+    { id: "pump-3", copyOf: "pump", name: "드라이 펌프 (PM3)", pos: [13.5, 18.5, -6.5], tag: "PM3" },
+    { id: "pump-4", copyOf: "pump", name: "드라이 펌프 (PM4)", pos: [13.5, 4.5, -6.5], tag: "PM4" },
     {
-      // 배기 배관(포어라인): 펌프 윗면 → 위로 → 챔버 쪽으로 꺾어 → 바닥을 뚫고 하부 캐비닛 밑면까지
-      // path는 펌프 기준 좌표 (z = 5.5 가 팹 바닥 높이)
-      id: "foreline", name: "배기 배관", en: "Foreline / Exhaust",
-      parent: "pump", level: 1,
-      shape: "pipe", size: [0.5],
-      pos: [0, 0, 0],
-      path: [[0.4, -0.5, 2.2], [0.4, -0.5, 3.4], [0.4, -1.7, 3.4], [0.4, -1.7, 5.5]],
+      id: "foreline-1", name: "배기 배관 (PM1)", en: "Foreline to PM1 Pump",
+      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0],
+      path: [[6.52, 9.24, 0], [6.52, 9.24, -2.5], [6.52, 8, -2.5], [12.9, 8, -2.5], [12.9, 8, -4.3]],
       material: "pipe"
     },
-    { id: "pump-2", copyOf: "pump", name: "드라이 펌프 2", pos: [7.39, 17.27, -5.5], rotZ: -60 },
-    { id: "pump-3", copyOf: "pump", name: "드라이 펌프 3", pos: [-7.39, 17.27, -5.5], rotZ: 60 },
-    { id: "pump-4", copyOf: "pump", name: "드라이 펌프 4", pos: [-7.39, 8.74, -5.5], rotZ: 120 }
+    {
+      id: "foreline-2", name: "배기 배관 (PM2)", en: "Foreline to PM2 Pump",
+      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0],
+      path: [[6.52, 16.77, 0], [6.52, 16.77, -2.5], [6.52, 15, -2.5], [12.9, 15, -2.5], [12.9, 15, -4.3]],
+      material: "pipe"
+    },
+    {
+      id: "foreline-3", name: "배기 배관 (PM3)", en: "Foreline to PM3 Pump",
+      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0],
+      path: [[-6.52, 16.77, 0], [-6.52, 16.77, -2.5], [-6.52, 18.5, -2.5], [12.9, 18.5, -2.5], [12.9, 18.5, -4.3]],
+      material: "pipe"
+    },
+    {
+      id: "foreline-4", name: "배기 배관 (PM4)", en: "Foreline to PM4 Pump",
+      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0],
+      path: [[-6.52, 9.24, 0], [-6.52, 9.24, -2.5], [-6.52, 4.5, -2.5], [12.9, 4.5, -2.5], [12.9, 4.5, -4.3]],
+      material: "pipe"
+    }
   ]
 };

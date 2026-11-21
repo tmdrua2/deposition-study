@@ -10,6 +10,8 @@
 //             label-plate(빈 표시판) · handle(손잡이) · holes(구멍)
 //             warning-label(노란 경고 라벨) · button(빨간 버튼) · screen(조작 화면)
 //   · 층: data의 site.floors → 점선 바닥면 (Fab floor / Sub-fab)
+//   · 접촉 음영(AO): 다른 부품 위에 얹힌 부품 둘레 + 옆면 아랫단을 어둡게 → 맞닿은 틈의 입체감
+//   · 이름표 끝점 후보: 다른 부품에 가려지지 않은 점만 골라 callouts.js에 넘김
 //   · 색은 css/style.css 의 :root 변수(--mat-재질이름)에서 읽어 온다
 //   · 돌려주는 값: 이름표 자리(labels)·층 이름 자리(floors) → js/explode/callouts.js가 씀
 //
@@ -88,7 +90,7 @@
   // 면 방향(법선)에 따라 밝기를 정한다: 윗면 약간 밝게, 왼쪽(앞) 면 그대로, 오른쪽 면 어둡게
   function faceTone(base, n) {
     const lit = Math.max(0, dot(n, LIGHT));
-    return shade(base, -0.2 + 0.36 * lit);
+    return shade(base, -0.27 + 0.46 * lit);   // 대비: 어두운 면은 더 어둡게, 밝은 면은 더 밝게
   }
 
   // ---------- SVG 요소 만들기 ----------
@@ -128,6 +130,31 @@
     }
     upper.pop(); lower.pop();
     return lower.concat(upper);
+  }
+
+  // 밑면 꼭짓점을 가운데에서 바깥으로 grow(u)만큼 넓힌 다각형 — 받침 부품 범위 밖으로는 안 나가게 자름
+  function aoRing(pts, sup, grow) {
+    const c = mul(pts.reduce((a, b) => add(a, b), [0, 0, 0]), 1 / pts.length);
+    return pts.map((p) => {
+      const dir = normalize([p[0] - c[0], p[1] - c[1], 0]);
+      const q = add(p, mul(dir, grow));
+      return [Math.min(Math.max(q[0], sup.min[0]), sup.max[0]), Math.min(Math.max(q[1], sup.min[1]), sup.max[1]), p[2]];
+    });
+  }
+  // 점이 다각형(화면 좌표) 안에 있나
+  function inside(pt, poly) {
+    let hit = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[i], b = poly[j];
+      if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < ((b[0] - a[0]) * (pt[1] - a[1])) / (b[1] - a[1]) + a[0]) hit = !hit;
+    }
+    return hit;
+  }
+  // 점과 선분 사이 거리 (배관이 점을 가리는지 볼 때)
+  function segDist(p, a, b) {
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L));
+    return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
   }
 
   // =============================================================
@@ -488,6 +515,13 @@
   // =============================================================
   function drawSolid(g, d, mat) {
     const base = mat(d.part.material || "panel");
+    // 접촉 음영 1: 받침 부품 윗면에, 이 부품 밑면보다 조금 넓은 어두운 자국 (2단, 블러 없음)
+    if (d.support) {
+      const bottom = d.faces.find((f) => f.name === "bottom");
+      if (bottom) [[0.34, "iso-ao iso-ao-wide"], [0.12, "iso-ao"]].forEach((o) => {
+        poly(g, aoRing(bottom.pts, d.support, o[0]).map(project), { class: o[1] });
+      });
+    }
     const edge = css(shade(base, -0.32));
     const visible = d.faces.filter((f) => dot(f.n, VIEW) > 1e-6);
     const visibleNames = new Set(visible.map((f) => f.name));
@@ -507,6 +541,11 @@
       }, THIN));
       // 평평한 금속 옆면: 얇은 사선 반사선 2줄 (그라디언트 대신 선으로)
       if (metal && !f.smooth && f.name !== "top" && Math.abs(f.n[2]) < 0.5) sheen(g, f);
+      // 접촉 음영 2: 바닥이나 다른 부품에 닿은 옆면의 아랫단에 얇은 어두운 띠
+      if (d.grounded && Math.abs(f.n[2]) < 0.5) {
+        const lv = len(f.V), m = mapper(f), h = Math.min(0.24 / lv, 0.3);
+        poly(g, [m(0, 0), m(1, 0), m(1, h), m(0, h)], { class: "iso-ao-base" });
+      }
       // 이 면에 붙은 디테일 (이음선을 먼저 그리고 그 위에 나머지)
       const own = details.filter((x) => x.face === f.name);
       own.slice().sort((x, y) => (x.type === "seam" ? -1 : 0) - (y.type === "seam" ? -1 : 0))
@@ -622,6 +661,16 @@
     });
     ext[0] -= m; ext[1] -= m; ext[2] += m; ext[3] += m;
 
+    // 접촉 음영 준비: 각 물체가 바닥에 닿았나(grounded), 어떤 물체 위에 얹혔나(support)
+    const solids = drawables.filter((d) => d.kind === "solid");
+    solids.forEach((d) => {
+      d.grounded = floors.some((f) => Math.abs(d.min[2] - f.z) < 0.02);
+      if (d.grounded) return;
+      d.support = solids.find((s) => s !== d && Math.abs(s.max[2] - d.min[2]) < 0.02 &&
+        s.min[0] < d.max[0] && d.min[0] < s.max[0] && s.min[1] < d.max[1] && d.min[1] < s.max[1]) || null;
+      if (d.support) d.grounded = true;
+    });
+
     while (svg.firstChild) svg.removeChild(svg.firstChild);
     // 그리는 순서: [아래층 바닥 → 아래층 그림자 → 아래층 물체] → [위층 바닥 → ...]
     //   위층 바닥면은 반투명이라 아래층 물체가 바닥 "밑에" 있는 것처럼 살짝 흐려 보인다
@@ -635,7 +684,8 @@
         poly(layer, rect, Object.assign({ class: k === 0 ? "iso-floor iso-floor-low" : "iso-floor" }, THIN));
         // 층 이름 자리: 바닥면에서 화면 맨 아래 꼭짓점 (장비와 이름표 기둥에서 떨어진 빈 곳)
         const low = rect.reduce((a, b) => (b[1] > a[1] ? b : a));
-        floorInfo.push({ id: fl.id, name: fl.name || fl.id, ko: fl.ko || "", point: low });
+        // corners: 바닥면 네 꼭짓점 → callouts.js가 가장자리를 따라 빈 자리를 찾아 층 이름을 놓음
+        floorInfo.push({ id: fl.id, name: fl.name || fl.id, ko: fl.ko || "", point: low, corners: rect });
       }
       const shadowLayer = el("g", { class: "iso-shadows" }, layer);
       const partLayer = el("g", { class: "iso-parts" }, layer);
@@ -650,6 +700,41 @@
       });
     });
 
+    // 가림 판정용: 그리는 순서 번호 + 화면 윤곽
+    const orderIdx = new Map(ordered.map((d, i) => [d, i]));
+    drawables.forEach((d) => {
+      if (d.kind === "solid") {
+        const all = [];
+        d.faces.forEach((f) => all.push(...f.pts.map(project)));
+        d.hull = hull(all);
+      } else {
+        d.seg = d.pts3.map(project);
+        d.halfW = (((d.part.size && d.part.size[0]) || 0.3) * K) / 2 + 1;
+      }
+    });
+    // 화면 점 pt가 물체 d보다 나중에(=앞에) 그려지는 다른 물체에 가려지나
+    function hidden(pt, d) {
+      const k = orderIdx.get(d);
+      return ordered.some((e, i) => i > k && e !== d &&
+        (e.kind === "solid" ? inside(pt, e.hull) : segDist(pt, e.seg[0], e.seg[1]) < e.halfW));
+    }
+    // 부품의 보이는 면 위에 고르게 점을 찍고, 가려지지 않은 점만 이름표 끝점 후보로
+    function visiblePoints(list) {
+      const out = [];
+      list.forEach((d) => {
+        if (d.kind !== "solid") return;
+        d.faces.forEach((f) => {
+          if (dot(f.n, VIEW) <= 1e-6) return;
+          const m = mapper(f), fp = f.pts.map(project);
+          for (let i = 1; i <= 4; i++) for (let j = 1; j <= 4; j++) {
+            const pt = m(i / 5, j / 5);
+            if (inside(pt, fp) && !hidden(pt, d)) out.push(pt);
+          }
+        });
+      });
+      return out;
+    }
+
     // 이름표 자리: label.no가 있는 부품(복사본 제외)의 "자기 + 자식" 전체 범위에서 anchor 위치
     const labels = [];
     parts.forEach((p) => {
@@ -663,9 +748,33 @@
       const pt3 = anchor === "front" ? [c[0], lo[1], c[2]]
         : anchor === "right" ? [hi[0], c[1], c[2]]
         : [c[0], c[1], hi[2]];
-      labels.push({ id: p.id, no: p.label.no, abbr: p.label.abbr || "", name: p.name || p.id, point: project(pt3) });
+      labels.push({
+        id: p.id, no: p.label.no, abbr: p.label.abbr || "", name: p.name || p.id,
+        // 끝점 후보: 부품 자기 몸체를 먼저 (EFEM에 붙은 로드포트·FOUP 위에 EFEM 끝점이 찍히지 않게).
+        //   몸체가 거의 안 보일 때만(시그널 타워 기둥 등) 자식 부품까지 포함
+        point: project(pt3), candidates: (function () {
+          const own = visiblePoints(mine.filter((d) => d.part.id === p.id));
+          return own.length >= 3 ? own : visiblePoints(mine);
+        })()
+      });
     });
     labels.sort((a, b) => a.no - b.no);
+
+    // 작은 표시(tag, 예: PM1): 바닥에 놓인 물체는 화면 맨 아래 점 밑에, 나머지는 윗면 가운데
+    const tags = [];
+    parts.forEach((p) => {
+      if (!p.tag) return;
+      const d = drawables.find((x) => x.part.id === p.id && x.kind === "solid");
+      if (!d) return;
+      if (d.grounded && !d.support) {
+        const low = d.hull.reduce((a, b) => (b[1] > a[1] ? b : a));
+        tags.push({ id: p.id, text: p.tag, point: low, place: "below" });
+      } else {
+        const top = d.faces.find((f) => f.name === "top");
+        const c = mul(top.pts.reduce((a, b) => add(a, b), [0, 0, 0]), 1 / top.pts.length);
+        tags.push({ id: p.id, text: p.tag, point: project(c), place: "center" });
+      }
+    });
 
     // 그림 전체가 들어가도록 보이는 범위(viewBox)를 맞춤
     const pad = 24;
@@ -676,7 +785,17 @@
     const y1 = Math.max(...bounds.map((p) => p[1])) + pad;
     const viewBox = [x0, y0, x1 - x0, y1 - y0];
     svg.setAttribute("viewBox", viewBox.map((v) => v.toFixed(1)).join(" "));
-    return { drawables: drawables, order: ordered, labels: labels, floors: floorInfo, viewBox: viewBox };
+    // 장비 자체(바닥면 제외)의 화면 범위 → 이름표 기둥을 장비 윤곽 바로 바깥에 둘 때 씀
+    const equipBounds = [
+      Math.min(...drawables.map((d) => d.sMin[0])), Math.min(...drawables.map((d) => d.sMin[1])),
+      Math.max(...drawables.map((d) => d.sMax[0])), Math.max(...drawables.map((d) => d.sMax[1]))
+    ];
+    // 물체가 차지한 화면 영역 (글자를 놓을 빈 자리 찾기용)
+    const occupied = drawables.filter((d) => d.kind === "solid").map((d) => d.hull);
+    return {
+      drawables: drawables, order: ordered, labels: labels, tags: tags, occupied: occupied,
+      floors: floorInfo, viewBox: viewBox, equipBounds: equipBounds
+    };
   }
 
   window.IsoRender = { render: render, project: project, resolveParts: resolveParts };

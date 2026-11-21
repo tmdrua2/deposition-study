@@ -1,22 +1,42 @@
 // =============================================================
 // 도면식 이름표(콜아웃) — "01  EFEM  장비 전방 모듈" + 가는 지시선
 //
-// 렌더러(render-iso.js)가 돌려준 이름표 자리(labels)·층 이름 자리(floors)를 받아
-// 그림 위에 HTML 이름표를 겹쳐 놓는다. (SVG 글자는 휴대폰에서 너무 작아지므로 HTML로)
-//   · 넓은 화면: 그림 왼쪽·오른쪽 기둥에 이름표를 위아래로 정렬하고, 꺾인 지시선으로 연결
-//   · 좁은 화면: 그림 위에는 번호 점만, 그림 아래에 번호·약어·한글명 목록
-//   · 이름표에 마우스를 올리거나 키보드로 고르면 그 부품의 외곽선만 포인트 색(청록)으로 강조
+// 렌더러(render-iso.js)가 돌려준 값을 받아 그림 위에 HTML 이름표를 겹쳐 놓는다.
+//   labels[].candidates : 그 부품에서 다른 부품에 가려지지 않은 화면 점들 (지시선 끝점 후보)
+//   equipBounds         : 장비 윤곽의 화면 범위 → 이름표 기둥을 그 바로 바깥에 둔다
+//   floors / tags       : 층 이름(FAB FLOOR …), 작은 표시(PM1 …)
+//
+// 배치 규칙 (우선순위 순서)
+//   1) 지시선끼리 절대 교차하지 않는다  → 모든 선 쌍을 계산으로 검사하고 고친다
+//   2) 지시선은 짧게: 끝점 후보 중 기둥에 가장 가까운 점, 모양은 "짧은 사선 + 수평선"
+//   3) 이름표 위아래 순서는 부품의 화면 높이순, 교차가 안 생기는 범위에서만 번호순으로 맞춤
+//   · 넓은 화면: 기둥에 "번호 약어 한글명" / 좁은 화면: 기둥에 번호만 + 그림 아래 목록
+//   · 이름표에 마우스·키보드 초점 → 그 부품 외곽선만 포인트 색(청록)으로 강조
 //
 // 사용법: EquipCallouts.mount(그림을 감싼 요소, svg요소, IsoRender.render()의 결과)
-// 렌더러를 Three.js로 바꿔도 "화면 위 점 좌표"만 넘겨 주면 그대로 쓸 수 있다.
 // =============================================================
 (function () {
   "use strict";
 
   const SVGNS = "http://www.w3.org/2000/svg";
-  const WIDE_MIN = 900;   // 이 폭(px) 이상이면 양쪽 기둥 이름표, 미만이면 번호 점 + 목록
-  const GAP = 30;         // 이름표끼리 최소 세로 간격(px)
+  const WIDE_MIN = 900;   // 이 폭(px) 이상이면 "번호 약어 한글명", 미만이면 번호만
   const pad2 = (n) => String(n).padStart(2, "0");
+
+  // ---------- 선분 교차 검사 (끝점이 맞닿는 경우는 교차로 보지 않음) ----------
+  function crossZ(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
+  function segCross(p1, p2, q1, q2) {
+    const d1 = crossZ(q1, q2, p1), d2 = crossZ(q1, q2, p2), d3 = crossZ(p1, p2, q1), d4 = crossZ(p1, p2, q2);
+    return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+  }
+  // 두 지시선(각각 꺾인 선 = 선분 2개)이 교차하나
+  function leadersCross(A, B) {
+    for (let i = 0; i + 1 < A.length; i++) {
+      for (let j = 0; j + 1 < B.length; j++) {
+        if (segCross(A[i], A[i + 1], B[j], B[j + 1])) return true;
+      }
+    }
+    return false;
+  }
 
   function mount(figure, svg, info) {
     // ---------- 요소 만들기 ----------
@@ -57,6 +77,16 @@
       return { F: F, el: t };
     });
 
+    // 작은 표시 (PM1~PM4: 공정 챔버와 그 챔버의 펌프에 같은 글자)
+    const partTags = (info.tags || []).map((T) => {
+      const t = document.createElement("span");
+      t.className = "part-tag part-tag-" + T.place;
+      t.textContent = T.text;
+      t.setAttribute("aria-hidden", "true");
+      layer.appendChild(t);
+      return { T: T, el: t };
+    });
+
     // 좁은 화면용 목록 (그림 바로 아래)
     const legend = document.createElement("ol");
     legend.className = "callout-legend";
@@ -92,58 +122,197 @@
       lines.setAttribute("height", H.toFixed(0));
       while (lines.firstChild) lines.removeChild(lines.firstChild);
 
-      floorTags.forEach((t) => {
-        const p = map(t.F.point);
-        t.el.style.left = p[0].toFixed(1) + "px";
-        t.el.style.top = p[1].toFixed(1) + "px";
+      partTags.forEach((t) => place(t.el, map(t.T.point)));
+
+      // 이름표 기둥 위치: 장비 윤곽 바로 바깥 (단, 이름표가 그림틀 밖으로 나가지 않게)
+      items.forEach((it) => { it.el.style.width = ""; it.el.classList.remove("is-right"); });
+      const labelW = Math.max(...items.map((it) => it.el.offsetWidth)) + 6;
+      const eb = [map([info.equipBounds[0], info.equipBounds[1]]), map([info.equipBounds[2], info.equipBounds[3]])];
+      const off = wide ? 26 : 8;
+      const colL = Math.max(labelW, eb[0][0] - off);        // 왼쪽 기둥 이름표의 오른쪽 끝(지시선이 닿는 x)
+      const colR = Math.min(W - labelW, eb[1][0] + off);    // 오른쪽 기둥 이름표의 왼쪽 끝
+      const GAP = wide ? 30 : 24;                          // 이름표끼리 최소 세로 간격
+      const top = 14, bottom = H - 14;
+
+      // 1) 부품마다 왼쪽·오른쪽 끝점 후보와 지시선 길이(비용)
+      const all = items.map((it) => {
+        const c = (it.L.candidates && it.L.candidates.length ? it.L.candidates : [it.L.point]).map(map);
+        const left = c.reduce((a, b) => (b[0] < a[0] ? b : a));
+        const right = c.reduce((a, b) => (b[0] > a[0] ? b : a));
+        // 끝점: 기둥 쪽 가장자리에서 30% 이내의 후보 중, 부품의 보이는 부분 가운데에 가장 가까운 점
+        //   → 지시선은 짧게 유지하면서, 끝점이 옆 부품과 맞닿은 윤곽선에 붙어 헷갈리는 것을 막음
+        const cx = c.reduce((s, p) => s + p[0], 0) / c.length, cy = c.reduce((s, p) => s + p[1], 0) / c.length;
+        const pick = (edge) => {
+          const xs = c.map((p) => p[0]), span = Math.max(...xs) - Math.min(...xs);
+          const near = c.filter((p) => Math.abs(p[0] - edge[0]) <= span * 0.3 + 1);
+          return near.reduce((a, b) => (Math.hypot(b[0] - cx, b[1] - cy) < Math.hypot(a[0] - cx, a[1] - cy) ? b : a));
+        };
+        return {
+          it: it, no: it.L.no,
+          A: { left: pick(left), right: pick(right) },
+          cost: { left: left[0] - colL, right: colR - right[0] }
+        };
+      });
+      // 2) 기둥 정하기: 지시선이 짧은 쪽. 한쪽에 너무 몰리면 차이가 작은 것부터 옮김
+      all.forEach((o) => { o.side = o.cost.left <= o.cost.right ? "left" : "right"; });
+      const maxSide = Math.ceil(all.length * 0.65);
+      ["left", "right"].forEach((s) => {
+        const other = s === "left" ? "right" : "left";
+        const group = all.filter((o) => o.side === s).sort((a, b) =>
+          (a.cost[other] - a.cost[s]) - (b.cost[other] - b.cost[s]));
+        while (group.length > maxSide) group.shift().side = other;
       });
 
-      const pts = items.map((it) => map(it.L.point));
-      if (!wide) {
-        // 좁은 화면: 부품 위치에 번호 점만
-        items.forEach((it, i) => {
-          it.el.style.left = pts[i][0].toFixed(1) + "px";
-          it.el.style.top = pts[i][1].toFixed(1) + "px";
-          it.el.style.width = "";
+      // 3) 기둥 안 순서 = 끝점 화면 높이순 → 세로 위치 → 지시선 모양
+      const order = { left: [], right: [] };
+      function sortSides() {
+        ["left", "right"].forEach((s) => {
+          order[s] = all.filter((o) => o.side === s).sort((a, b) => a.A[s][1] - b.A[s][1] || a.no - b.no);
         });
-        return;
+      }
+      function build() {
+        ["left", "right"].forEach((s) => {
+          const g = order[s];
+          const ys = g.map((o) => Math.min(Math.max(o.A[s][1], top), bottom));
+          for (let i = 1; i < ys.length; i++) ys[i] = Math.max(ys[i], ys[i - 1] + GAP);
+          for (let i = ys.length - 2; i >= 0; i--) ys[i] = Math.min(ys[i], ys[i + 1] - GAP);
+          g.forEach((o, i) => {
+            const a = o.A[s], y = ys[i], dir = s === "left" ? -1 : 1;
+            const edge = s === "left" ? colL : colR;
+            // 짧은 사선(45°) + 수평선. 사선이 기둥을 넘어가지 않게 제한
+            const room = Math.abs(edge - a[0]) - 10;
+            const dx = Math.max(0, Math.min(Math.abs(y - a[1]), room));
+            o.y = y;
+            o.path = [a, [a[0] + dir * dx, y], [edge, y]];
+          });
+        });
+      }
+      const placed = () => order.left.concat(order.right);
+      function crossings() {
+        const P = placed(), out = [];
+        for (let i = 0; i < P.length; i++) {
+          for (let j = i + 1; j < P.length; j++) if (leadersCross(P[i].path, P[j].path)) out.push([P[i], P[j]]);
+        }
+        return out;
+      }
+      sortSides();
+      build();
+      // 4) 교차 고치기: 같은 기둥이면 두 이름표 순서를 바꾸고, 다른 기둥이면 한쪽을 반대 기둥으로
+      for (let iter = 0; iter < 80; iter++) {
+        const X = crossings();
+        if (!X.length) break;
+        const [a, b] = X[0];
+        if (a.side === b.side) {
+          const g = order[a.side], i = g.indexOf(a), j = g.indexOf(b);
+          g[i] = b; g[j] = a;
+        } else {
+          const mover = (a.cost[a.side === "left" ? "right" : "left"] - a.cost[a.side]) <
+            (b.cost[b.side === "left" ? "right" : "left"] - b.cost[b.side]) ? a : b;
+          mover.side = mover.side === "left" ? "right" : "left";
+          sortSides();
+        }
+        build();
+      }
+      // 5) 번호순 맞추기: 이웃한 두 이름표가 번호 역순이면 바꿔 보고, 교차가 생기면 되돌림
+      let changed = true;
+      for (let pass = 0; changed && pass < 12; pass++) {
+        changed = false;
+        ["left", "right"].forEach((s) => {
+          const g = order[s];
+          for (let i = 0; i + 1 < g.length; i++) {
+            if (g[i].no < g[i + 1].no) continue;
+            [g[i], g[i + 1]] = [g[i + 1], g[i]];
+            build();
+            if (crossings().length) { [g[i], g[i + 1]] = [g[i + 1], g[i]]; build(); }
+            else changed = true;
+          }
+        });
       }
 
-      // 넓은 화면: 그림 가운데보다 왼쪽에 있는 부품은 왼쪽 기둥, 오른쪽은 오른쪽 기둥
-      const col = sr.left - fr.left;                    // 기둥 폭 = 그림 왼쪽 여백
-      const mid = ox + (vb[2] * sc) / 2;
-      ["left", "right"].forEach((side) => {
-        const group = items.map((it, i) => ({ it: it, p: pts[i] }))
-          .filter((o) => (side === "left") === (o.p[0] < mid))
-          .sort((a, b) => a.p[1] - b.p[1]);
-        // 세로 위치: 부품 높이에 맞추되, 서로 GAP 이상 떨어지게 위→아래, 아래→위 두 번 밀기
-        const top = 16, bottom = H - 16;
-        const ys = group.map((o) => Math.min(Math.max(o.p[1], top), bottom));
-        for (let i = 1; i < ys.length; i++) ys[i] = Math.max(ys[i], ys[i - 1] + GAP);
-        for (let i = ys.length - 2; i >= 0; i--) ys[i] = Math.min(ys[i], ys[i + 1] - GAP);
-        group.forEach((o, i) => {
-          const y = ys[i], el = o.it.el;
-          el.classList.toggle("is-right", side === "right");
-          el.style.width = (col - 12).toFixed(0) + "px";
-          el.style.top = y.toFixed(1) + "px";
-          el.style.left = (side === "left" ? 0 : W - col + 12).toFixed(1) + "px";
-          // 지시선: 이름표 끝 → 짧은 수평선(선반) → 부품 위 점
-          const edge = side === "left" ? col - 4 : W - col + 4;
-          const shelf = side === "left" ? col + 14 : W - col - 14;
-          const pl = document.createElementNS(SVGNS, "polyline");
-          pl.setAttribute("points", [[edge, y], [shelf, y], o.p].map((q) => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" "));
-          pl.setAttribute("class", "callout-leader");
-          pl.dataset.for = o.it.L.id;
-          lines.appendChild(pl);
-          const dot = document.createElementNS(SVGNS, "circle");
-          dot.setAttribute("cx", o.p[0].toFixed(1));
-          dot.setAttribute("cy", o.p[1].toFixed(1));
-          dot.setAttribute("r", "2.6");
-          dot.setAttribute("class", "callout-dot");
-          dot.dataset.for = o.it.L.id;
-          lines.appendChild(dot);
-        });
+      // 6) 그리기
+      placed().forEach((o) => {
+        const el = o.it.el, right = o.side === "right";
+        el.classList.toggle("is-right", right);
+        el.style.top = o.y.toFixed(1) + "px";
+        el.style.left = (right ? colR + 4 : colL - 4 - el.offsetWidth).toFixed(1) + "px";
+        const pl = document.createElementNS(SVGNS, "polyline");
+        pl.setAttribute("points", o.path.map((q) => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" "));
+        pl.setAttribute("class", "callout-leader");
+        pl.dataset.for = o.it.L.id;
+        lines.appendChild(pl);
+        // 끝점: 작은 원 테두리
+        const dot = document.createElementNS(SVGNS, "circle");
+        dot.setAttribute("cx", o.path[0][0].toFixed(1));
+        dot.setAttribute("cy", o.path[0][1].toFixed(1));
+        dot.setAttribute("r", wide ? "3" : "2.5");
+        dot.setAttribute("class", "callout-dot");
+        dot.dataset.for = o.it.L.id;
+        lines.appendChild(dot);
       });
+      // 7) 층 이름표: 바닥면의 앞쪽 두 가장자리(왼쪽 꼭짓점→아래 꼭짓점→오른쪽 꼭짓점)를 따라
+      //    바닥 바깥쪽에 놓아 보고, 부품·이름표·PM 표시·다른 층 이름표와 안 겹치는 첫 자리를 고름
+      const rectOf = (el) => { const r = el.getBoundingClientRect(); return [r.left - fr.left, r.top - fr.top, r.right - fr.left, r.bottom - fr.top]; };
+      const blocks = items.map((it) => rectOf(it.el)).concat(partTags.map((t) => rectOf(t.el)));
+      const hulls = (info.occupied || []).map((h) => h.map(map));
+      const hitPoly = (R) => hulls.some((h) => {
+        const pts = [[R[0], R[1]], [R[2], R[1]], [R[2], R[3]], [R[0], R[3]], [(R[0] + R[2]) / 2, (R[1] + R[3]) / 2]];
+        return pts.some((p) => inPoly(p, h)) || h.some((p) => p[0] > R[0] && p[0] < R[2] && p[1] > R[1] && p[1] < R[3]);
+      });
+      const hitRect = (R) => blocks.some((B) => R[0] < B[2] && B[0] < R[2] && R[1] < B[3] && B[1] < R[3]) ||
+        placed().some((o) => o.path.some((p, i) => i > 0 && segRect(o.path[i - 1], p, R)));   // 지시선과도 안 겹치게
+      floorTags.forEach((t) => {
+        const c = (t.F.corners || [t.F.point]).map(map);
+        const w = t.el.offsetWidth, h = t.el.offsetHeight;
+        const L = c.reduce((a, b) => (b[0] < a[0] ? b : a)), B = c.reduce((a, b) => (b[1] > a[1] ? b : a));
+        const Rr = c.reduce((a, b) => (b[0] > a[0] ? b : a));
+        const T = c.reduce((a, b) => (b[1] < a[1] ? b : a));
+        const spots = [];
+        [0.5, 0.62, 0.38, 0.74, 0.26, 0.86, 0.14].forEach((k) => {
+          // 앞쪽 두 가장자리(먼저 시도): 왼쪽 아래 변은 점의 왼쪽 아래, 오른쪽 아래 변은 점의 오른쪽 아래 (바닥 바깥)
+          spots.push([L[0] + (B[0] - L[0]) * k - w, L[1] + (B[1] - L[1]) * k + 4]);
+          spots.push([B[0] + (Rr[0] - B[0]) * k, B[1] + (Rr[1] - B[1]) * k + 4]);
+        });
+        [0.3, 0.5, 0.7].forEach((k) => {
+          // 뒤쪽 두 가장자리(나중에 시도): 왼쪽 위 변은 점의 왼쪽 위, 오른쪽 위 변은 점의 오른쪽 위
+          spots.push([L[0] + (T[0] - L[0]) * k - w, L[1] + (T[1] - L[1]) * k - h - 4]);
+          spots.push([T[0] + (Rr[0] - T[0]) * k, T[1] + (Rr[1] - T[1]) * k - h - 4]);
+        });
+        // 겹침 점수: 화면 밖 > 이름표·지시선·PM 표시와 겹침 > 부품과 겹침. 0점인 첫 자리, 없으면 가장 낮은 자리
+        const score = (s) => {
+          const R = [s[0] - 2, s[1] - 2, s[0] + w + 2, s[1] + h + 2];
+          return (R[0] < 0 || R[2] > W || R[1] < 0 || R[3] > H ? 100 : 0) + (hitRect(R) ? 10 : 0) + (hitPoly(R) ? 1 : 0);
+        };
+        let spot = spots[0], best = Infinity;
+        for (const sp of spots) {
+          const v = score(sp);
+          if (v < best) { best = v; spot = sp; }
+          if (v === 0) break;
+        }
+        place(t.el, spot);
+        blocks.push([spot[0], spot[1], spot[0] + w, spot[1] + h]);
+      });
+
+      // 점검용: 남은 교차 수를 속성으로 남김 (0이어야 정상)
+      figure.dataset.crossings = String(crossings().length);
+    }
+    // 선분이 사각형을 지나가나 (사각형 테두리 4변과 교차하거나, 끝점이 안에 있으면)
+    function segRect(a, b, R) {
+      const inR = (p) => p[0] >= R[0] && p[0] <= R[2] && p[1] >= R[1] && p[1] <= R[3];
+      if (inR(a) || inR(b)) return true;
+      const c = [[R[0], R[1]], [R[2], R[1]], [R[2], R[3]], [R[0], R[3]]];
+      return c.some((p, i) => segCross(a, b, p, c[(i + 1) % 4]));
+    }
+    function inPoly(pt, poly) {
+      let hit = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const a = poly[i], b = poly[j];
+        if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < ((b[0] - a[0]) * (pt[1] - a[1])) / (b[1] - a[1]) + a[0]) hit = !hit;
+      }
+      return hit;
+    }
+    function place(el, p) {
+      el.style.left = p[0].toFixed(1) + "px";
+      el.style.top = p[1].toFixed(1) + "px";
     }
 
     layout();
