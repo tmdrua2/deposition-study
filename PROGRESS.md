@@ -11,18 +11,20 @@
 - Node.js 설치 + `find-skills` 스킬 설치 (Vercel Labs, 컴퓨터 전체 `~/.claude/skills/`에 설치)
 
 ## 진행 중
-- **사이트 방향 전환 예정: "공정 중심" → "장비 중심"** (2026-11-21 결정)
-  - 기존 "PVD 시제품" 계획(5~7단계: 모션, 스크롤 전환, 점검)은 **중단**. 5단계는 진행하지 않음.
-  - 장비 중심 설계안은 새로 만들 예정 (`redesign` 브랜치에서 계속)
-- 지금까지 만든 것 (`redesign` 브랜치에 커밋해 둠, 버리지 않음)
-  - 색 체계 개편 (종이색 본문 + 먹색 글자 + 공정별 포인트 색), CLAUDE.md 규칙 갱신
-  - GSAP 3.15.1 + ScrollTrigger (`vendor/gsap/`, 라이선스 원문 포함), GSAP 공식 스킬 3개 설치
-  - 공정 모션 공용 엔진 `js/sim/sim-core.js` (일시정지·단계 표시·정지 화면 대체)
-  - PVD 정지 단면도 `js/sim/pvd.js` (시스 가속, 2차 전자 가둠, 여러 각도 방출, 산란, 실드·벽 증착, A부 확대도)
-    → **나중에 장비 부품 상세(공정 챔버 원리 보기)에서 재사용**
+- **장비 중심 개편** (브랜치 `equipment-redesign`, `redesign`에서 만듦) — 설계서: `docs/equipment-redesign-plan.md`
+  - 0단계 완료 (2026-11-21): 브랜치 생성, 설계서 저장, CLAUDE.md 갱신(출처 규칙·장비 데이터 규칙·폴더 구조),
+    `gsap-performance` 스킬 설치 (GreenSock 공식, `~/.claude/skills/`)
+  - 방식: 2.5D 아이소메트릭 SVG + GSAP. 장비 데이터는 그리는 코드와 분리 (나중에 Three.js로 바꿔도 데이터 재사용)
+  - 다음: **1단계** — `js/explode/render-iso.js` + `data/platform.js`·`data/pecvd.js`(형태만)로
+    PECVD 장비 외관 정지 그림 (면 명암·얇은 외곽선·이음선·볼트·통풍구)
+- 이전 개편에서 가져온 것 (`redesign` 브랜치 커밋, 그대로 유지)
+  - 색 체계 (종이색 본문 + 먹색 글자 + 공정별 포인트 색)
+  - GSAP 3.15.1 + ScrollTrigger (`vendor/gsap/`, 라이선스 원문 포함), GSAP 공식 스킬 4개
+  - 공정 모션 엔진 `js/sim/sim-core.js`, PVD 정지 단면도 `js/sim/pvd.js`
+    → 장비 부품 패널의 "공정 챔버 원리 보기"에서 재사용 예정 (`ProcessSim.mount()` 추가 필요)
     - 남은 일: 전자 나선 표현·자석 극 배치 [검증 필요], 휴대폰에서 이름표·확대도 숨김 문제
 
-## 다음에 할 일 (이 순서대로, 한 번에 한 페이지)
+## 다음에 할 일 (내용 작성 — 장비 개편과 별도, 한 번에 한 페이지)
 1. 플라즈마 (`basics/plasma.html`)
 2. 박막 성장 원리 (`basics/thin-film-growth.html`)
 3. PVD (`equipment/pvd.html`)
