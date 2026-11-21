@@ -30,6 +30,12 @@
   const START_W = 0.83;        // 진입 순간 장비 몸체 폭 = 화면 폭 × 이 값 (목표)
   const START_H = 0.96;        //   단, 높이는 무대 높이 × 이 값을 넘지 않음 (가로로 긴 화면은 높이가 먼저 참)
   const ZOOM_MAX = 1.25;       // 시작 배율 ÷ 끝 배율의 최댓값 → 분해 중 축소는 최대 20% (1 ÷ 1.25 = 0.8)
+  // 끝: 분해가 끝나고 웨이퍼 경로가 그려진 뒤 → 배경이 남색에서 크림으로 (본문과 같은 색)
+  const CREAM_GAP = 0.3;       // 웨이퍼 경로를 다 그린 뒤 크림 전환이 시작되기까지
+  const CREAM_DUR = 1.0;       // 크림 전환 길이
+  const END_HOLD = 0.5;        // 크림 화면에서 잠깐 머문 뒤 고정이 풀림
+  // 무대 안 글자·선 색 이름 (CSS .equip-stage-pin의 --st-* / --st-*-light 짝)
+  const ST_VARS = ["ink", "muted", "faint", "rule", "rule-strong", "bg", "accent", "shadow", "floor", "floor-line"];
   // 웨이퍼가 지나가는 부품 순서 (FOUP는 가운데 로드포트의 것)
   const WAFER_PATH = ["loadport-2.foup", "efem", "loadlock", "tm", "pm"];
 
@@ -49,6 +55,15 @@
     const stack = figure.querySelector("[data-iso-view]");
     const hint = figure.querySelector(".iso-hint");
     const caption = figure.querySelector(".iso-caption");
+    // 3-A 비주얼: 배경 층·글씨 띠 (없어도 분해 연출은 동작)
+    const glow = pin.querySelector(".stage-glow");
+    const cream = pin.querySelector(".stage-cream");
+    const heroWord = pin.querySelector(".stage-word");
+    const heroText = pin.querySelector(".stage-word-text");
+    const heroMeta = pin.querySelector(".stage-hero-meta");
+    const capBox = pin.querySelector(".stage-captions");
+    const header = document.getElementById("site-header");
+    if (glow) gsap.set(glow, { xPercent: -50, yPercent: -50, x: 0, y: 0 });
 
     // ---------- 1) 그리기: 층 묶음(scene) 안에 모듈별 층을 만든다 ----------
     const scene = document.createElement("div");
@@ -153,12 +168,36 @@
 
     const legendItems = [...callouts.legend.children];
 
+    // ---------- 2-2) 분해 캡션: 분해 차례마다 하나 ("02 EFEM / 장비 전방 모듈") ----------
+    //   차례 안 모듈들의 대표 이름표(그 모듈에서 번호가 가장 작은 것)를 모아 만든다 → 데이터만 바꾸면 캡션도 바뀜
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const capGroups = [];
+    if (capBox) {
+      [...new Set(info.sequence.map((m) => m.order))].forEach((o) => {
+        const ms = info.sequence.filter((m) => m.order === o);
+        const labs = [...new Set(ms.map((m) => m.key))].map((k) =>
+          info.labels.filter((L) => L.key === k).sort((a, b) => a.no - b.no)[0]).filter(Boolean);
+        if (!labs.length) return;
+        const nos = labs.map((L) => L.no).sort((a, b) => a - b);
+        const el = document.createElement("div");
+        el.className = "stage-cap";
+        el.innerHTML =
+          '<p class="stage-cap-meta"><span class="stage-cap-no">' +
+          (nos.length > 1 ? pad2(nos[0]) + "–" + pad2(nos[nos.length - 1]) : pad2(nos[0])) +
+          '</span><span class="stage-cap-abbr">' + labs.map((L) => L.abbr).join(" · ") + "</span></p>" +
+          '<p class="stage-cap-name">' + labs.map((L) => L.name).join(" · ") + "</p>";
+        capBox.appendChild(el);
+        capGroups.push({ el: el, ids: ms.map((m) => m.id), meta: el.firstChild, name: el.lastChild, split: null });
+      });
+    }
+
     // ---------- 3) 크기 맞추기 ----------
     //   끝 화면(분해 완료): 벌어진 장비 몸체가 이름표 기둥 사이에 꽉 차게 = 배율 k1 (그림 묶음의 실제 크기)
     //   시작 화면(조립):   장비 몸체가 화면 폭의 START_W만큼 = 배율 k0, 단 k0 ≤ k1 × ZOOM_MAX
     //   바닥 점선판은 몸체보다 넓으므로 화면 가장자리 밖으로 잘려도 됨 (무대가 overflow: clip)
     let isStatic = false;
     const cam = { zoom: 1, x: 0, y: 0 };   // 시작 화면의 카메라 (scene에 거는 scale·이동 px)
+    const glowAt = { x0: 0, y0: 0, x1: 0, y1: 0, zoom: 1 };   // 코랄 빛의 시작·끝 위치 (무대 기준 px)
     const eb = info.equipBounds, ab = info.assembledBody;
     function fit() {
       const header = document.getElementById("site-header");
@@ -173,8 +212,10 @@
       // 휴대폰: 그림틀 높이를 내용에 맞추므로 높이 제한은 "무대 높이 − 아래 목록" 정도로 어림
       const pinH = pin.clientHeight;
       const legendH = (!wide && callouts.legend) ? callouts.legend.offsetHeight + 12 : 0;
+      const band = pin.querySelector(".stage-band");
+      const bandH = band ? band.offsetHeight : 0;   // 위쪽 글씨 띠 (큰 제목·캡션 자리)
       const availH = isStatic ? window.innerHeight * 0.78
-        : Math.max(1, (wide ? figure.clientHeight : pinH - legendH) - padT - padB);
+        : Math.max(1, (wide ? figure.clientHeight : pinH - bandH - legendH) - padT - padB);
       const expW = eb[2] - eb[0], expH = eb[3] - eb[1];
       const asmW = ab[2] - ab[0], asmH = ab[3] - ab[1];
       const k1 = Math.min(availW / expW, availH / expH);
@@ -200,6 +241,21 @@
       cam.zoom = zoom;
       cam.x = tx - W / 2 - zoom * (bx - W / 2);
       cam.y = ty - H / 2 - zoom * (by - H / 2);
+      // 코랄 빛 자리: 트랜스퍼 모듈 가운데(공정 챔버 4개에 둘러싸인 곳). 시작 = 카메라가 당겨 본 위치, 끝 = 분해 완료 위치
+      const tb = info.partBox("tm");
+      if (glow && tb) {
+        const p = IsoRender.project([(tb.min[0] + tb.max[0]) / 2, (tb.min[1] + tb.max[1]) / 2, (tb.min[2] + tb.max[2]) / 2]);
+        const sx = (p[0] - vb[0]) * k1, sy = (p[1] - vb[1]) * k1;
+        const ox = figure.offsetLeft + left, oy = figure.offsetTop + top;   // 무대(pin) 기준
+        glowAt.x1 = ox + sx; glowAt.y1 = oy + sy;
+        glowAt.x0 = ox + W / 2 + zoom * (sx - W / 2) + cam.x;
+        glowAt.y0 = oy + H / 2 + zoom * (sy - H / 2) + cam.y;
+        glowAt.zoom = zoom;
+        const gw = Math.max(420, expW * k1 * 0.95);
+        glow.style.setProperty("--glow-w", gw.toFixed(0) + "px");
+        glow.style.setProperty("--glow-h", (gw * 0.62).toFixed(0) + "px");
+        if (isStatic || !tl) gsap.set(glow, isStatic ? { x: glowAt.x1, y: glowAt.y1, scale: 1 } : { x: glowAt.x0, y: glowAt.y0, scale: zoom });
+      }
       // 그림 크기·위치가 바뀌었으니 이름표를 바로 다시 배치
       //   (ResizeObserver는 "위치만 바뀐 것"은 알려 주지 않아서 지시선이 어긋날 수 있음)
       callouts.layout();
@@ -236,6 +292,8 @@
     let kfNow = 0;
 
     let tl = null;
+    let baseDur = 1;   // buildTimeline()이 정함
+    let lightAt = Infinity;   // 이 시각부터 "크림 단계" → 부품 패널도 밝은 유리 (buildTimeline()이 정함)
     function apply(force) {
       const now = {};
       seq.forEach((m) => { now[m.id] = prog[m.id].p; });
@@ -269,6 +327,8 @@
       scene.classList.toggle("is-exploded", isStatic || (!!tl && time >= moveEnd));
       // 웨이퍼 경로를 다 그린 뒤에만 점선이 천천히 흐름
       wafer.classList.toggle("is-flowing", !!tl && time >= flowAt);
+      // 크림이 반쯤 차오른 뒤에는 부품 패널을 밝은 유리로 (값이 같으면 classList는 아무것도 안 바꿈)
+      document.body.classList.toggle("stage-light", !isStatic && !!tl && time >= lightAt);
     }
 
     // ---------- 5) 타임라인 ----------
@@ -285,6 +345,35 @@
       tl.fromTo(scene,
         { scale: () => cam.zoom, x: () => cam.x, y: () => cam.y },
         { scale: 1, x: 0, y: 0, duration: firstEnd - 0.15 }, 0.15);
+      // 코랄 빛도 카메라와 똑같이 움직여 늘 공정 챔버 묶음 뒤에 있음
+      //   (정지 화면에서는 아래 3-A 연출을 넣지 않음: 남색 무대 + 큰 제목 + 분해 그림 그대로)
+      if (glow && !isStatic) tl.fromTo(glow,
+        { x: () => glowAt.x0, y: () => glowAt.y0, scale: () => glowAt.zoom },
+        { x: () => glowAt.x1, y: () => glowAt.y1, scale: 1, duration: firstEnd - 0.15 }, 0.15);
+      // 큰 제목 "PECVD"와 설명: 첫 모듈이 출발할 때 위로 살짝 물러나며 흐려짐 → 같은 자리에 캡션이 들어옴
+      //   (제목 h1은 opacity만 → 화면 읽기 프로그램에는 계속 남음)
+      if (heroWord && !isStatic) tl.to(heroWord, { opacity: 0, y: -28, duration: 0.55, ease: "power1.in" }, 0.3);
+      if (heroMeta && !isStatic) tl.to(heroMeta, { autoAlpha: 0, y: -16, duration: 0.45, ease: "power1.in" }, 0.3);
+      // 분해 캡션: 그 차례의 첫 모듈이 도착할 즈음 글자가 아래에서 올라오고, 다음 캡션이 오기 직전 위로 빠짐
+      //   (TM은 제자리라 이름표가 로드락보다 먼저 나타남 → 캡션 시각은 앞 캡션보다 최소 0.6 뒤로 밀어 순서를 지킴)
+      const capAt = [];
+      capGroups.forEach((g, i) => {
+        const t = Math.min(...g.ids.map(endOf)) - 0.2;
+        capAt.push(i ? Math.max(t, capAt[i - 1] + 0.6) : t);
+      });
+      if (!isStatic) capGroups.forEach((g, i) => {
+        const chars = g.split ? g.split.chars : [g.name];
+        const at = capAt[i];
+        tl.fromTo(g.el, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.01, ease: "none" }, at)
+          .fromTo(g.meta, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "none" }, at)
+          .fromTo(chars, { yPercent: 115 }, { yPercent: 0, duration: 0.4, stagger: 0.025, ease: "power3.out" }, at);
+        if (i + 1 < capGroups.length) {
+          const out = capAt[i + 1] - 0.32;
+          tl.to(chars, { yPercent: -115, duration: 0.28, stagger: 0.012, ease: "power2.in" }, out)
+            .to(g.meta, { opacity: 0, duration: 0.2, ease: "none" }, out)
+            .set(g.el, { autoAlpha: 0 }, capAt[i + 1]);
+        }
+      });
       // 모듈 이동
       seq.forEach((m) => {
         if (moving(m.id)) tl.to(prog[m.id], { p: 1, duration: MOVE }, startOf[m.id]);
@@ -314,8 +403,36 @@
       // 웨이퍼 경로 점선 + 설명
       tl.fromTo(reveal, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1.2, ease: "none" }, wpAt);
       if (caption) tl.fromTo(caption, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, ease: "none" }, wpAt + 0.4);
-      // 다 분해된 모습에서 잠깐 머문 뒤 고정이 풀림
-      tl.to({}, { duration: 0.8 });
+      // 3-A 이전 구성의 길이(웨이퍼 경로 + 0.8 머묾) → 분해 부분의 스크롤 속도를 그대로 두는 기준
+      baseDur = flowAt + 0.8;
+      if (isStatic) { tl.to({}, { duration: 0.8 }); return tl; }
+      // 크림 전환: 크림 덮개가 덮이고, 무대 안 글자·선 색과 헤더 색이 남색 단계 → 크림 단계로
+      const creamAt = tl.duration() + CREAM_GAP;
+      lightAt = creamAt + CREAM_DUR * 0.5;
+      const cs = getComputedStyle(pin), bs = getComputedStyle(document.body);
+      const from = {}, to = {};
+      ST_VARS.forEach((n) => {
+        from["--st-" + n] = cs.getPropertyValue("--st-" + n).trim();
+        to["--st-" + n] = cs.getPropertyValue("--st-" + n + "-light").trim();
+      });
+      //   글자(이름표·지시선·캡션·목록)는 잠깐 숨겼다가 → 그동안 색을 바꾸고 → 먹색으로 다시 나타남
+      //   (반투명으로 섞으면 남색+크림 = 탁한 회색이 되므로 섞지 않고 덮음)
+      const overlays = [figure.querySelector(".callout-layer"), figure.querySelector(".callout-lines"),
+        callouts.legend, capBox, caption].filter(Boolean);
+      tl.to(overlays, { opacity: 0, duration: 0.25, ease: "none" }, creamAt);
+      if (cream) tl.fromTo(cream, { yPercent: 100, y: 0 }, { yPercent: 0, duration: CREAM_DUR, ease: "power2.inOut" }, creamAt);
+      tl.fromTo(pin, from, Object.assign({ duration: CREAM_DUR * 0.6, ease: "power1.inOut" }, to), creamAt + 0.25);
+      if (header && document.body.classList.contains("page-stage")) {
+        // 헤더는 크림이 화면 위쪽까지 차오를 즈음 바뀜
+        const v = (n) => bs.getPropertyValue(n).trim();
+        tl.fromTo(header,
+          { "--hdr-bg": v("--hdr-dark-bg"), "--hdr-ink": v("--hdr-dark-ink"), "--hdr-line": v("--hdr-dark-line") },
+          { "--hdr-bg": v("--bg"), "--hdr-ink": v("--ink"), "--hdr-line": v("--line"), duration: CREAM_DUR * 0.4, ease: "power1.inOut" },
+          creamAt + CREAM_DUR * 0.6);
+      }
+      tl.to(overlays, { opacity: 1, duration: 0.3, ease: "none" }, creamAt + CREAM_DUR - 0.15);
+      // 크림 화면에서 잠깐 머문 뒤 고정이 풀림
+      tl.to({}, { duration: END_HOLD });
       return tl;
     }
 
@@ -327,6 +444,12 @@
       stageEl.classList.toggle("is-static", isStatic);
       fit();
       callouts.layout();
+      // 캡션 한글명을 글자 단위로 쪼갬 (단어마다 가리개 → 글자가 아래에서 올라오는 연출). 정지 화면에서는 캡션을 안 씀
+      //   matchMedia 안에서 만들었으므로 설정이 바뀌면 GSAP이 원래 글자로 되돌림
+      if (!isStatic && window.SplitText) {
+        gsap.registerPlugin(SplitText);
+        capGroups.forEach((g) => { g.split = SplitText.create(g.name, { type: "words,chars", mask: "words", tag: "span" }); });
+      }
       buildTimeline();
       if (isStatic) {
         // 움직임 줄이기: 분해가 끝난 정지 화면 + 이름표 (흐르는 점선도 없음)
@@ -336,11 +459,19 @@
         return;
       }
       apply(true);
+      // 처음 열 때 한 번만: "PECVD" 글자가 아래에서 차례로 올라옴 + 설명·빛이 서서히 (스크롤과 무관한 유일한 움직임)
+      if (heroText && window.SplitText) {
+        const hs = SplitText.create(heroText, { type: "chars", mask: "chars", tag: "span" });
+        gsap.from(hs.chars, { yPercent: 108, duration: 1.1, stagger: 0.07, ease: "power4.out", delay: 0.1 });
+      }
+      if (heroMeta) gsap.from(heroMeta.children, { opacity: 0, y: 10, duration: 0.8, stagger: 0.08, ease: "power2.out", delay: 0.5 });
+      if (glow) gsap.from(glow, { opacity: 0, duration: 1.4, ease: "power1.out" });
       ScrollTrigger.create({
         trigger: pin,
         pin: true,
         start: () => "top " + (document.getElementById("site-header") || { offsetHeight: 0 }).offsetHeight + "px",
-        end: () => "+=" + Math.round(window.innerHeight * SCROLL_SCREENS),
+        // 크림 전환이 붙은 만큼만 길어짐 → 분해 부분의 "스크롤 1px당 진행"은 이전과 같음
+        end: () => "+=" + Math.round(window.innerHeight * SCROLL_SCREENS * (tl.duration() / baseDur)),
         scrub: SCRUB,
         animation: tl,
         anticipatePin: 1,
