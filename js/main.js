@@ -402,8 +402,14 @@ function setupToTop() {
   btn.addEventListener("click", () =>
     window.scrollTo({ top: 0, behavior: REDUCE_MOTION ? "auto" : "smooth" })
   );
-  // 조금 스크롤했을 때만 보이기
-  const update = () => btn.classList.toggle("is-shown", window.scrollY > 400);
+  // 조금 스크롤했을 때만 보이기. 단, 장비 분해 무대가 화면을 꽉 채우고 있을 때는 숨김
+  //   (화면 오른쪽 아래 이름표를 가리지 않게)
+  const pins = document.querySelectorAll(".equip-stage-pin");
+  const stageFills = () => [...pins].some((p) => {
+    const r = p.getBoundingClientRect();
+    return r.top < window.innerHeight * 0.5 && r.bottom > window.innerHeight - 4;
+  });
+  const update = () => btn.classList.toggle("is-shown", window.scrollY > 400 && !stageFills());
   window.addEventListener("scroll", update, { passive: true });
   update();
 }

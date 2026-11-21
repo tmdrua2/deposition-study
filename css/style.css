@@ -829,6 +829,9 @@ footer a:hover { color: var(--ink); }
     animation: none !important;
   }
   .cat-card:hover .card-bg { transform: none; }
+  /* 장비 그림틀: 위 0.01ms 전환이 여백(padding)에도 걸리면, 넓은 화면 여백으로 바뀌는 순간
+     stage.js가 바뀌기 전 값을 읽어 그림이 이름표 자리까지 커짐 → 전환 자체를 끔 */
+  .iso-figure { transition: none !important; }
 }
 
 /* =============================================================
