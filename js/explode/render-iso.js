@@ -13,9 +13,11 @@
 //   · 접촉 음영(AO): 다른 부품 위에 얹힌 부품 둘레 + 옆면 아랫단을 어둡게 → 맞닿은 틈의 입체감
 //   · 이름표 끝점 후보: 다른 부품에 가려지지 않은 점만 골라 callouts.js에 넘김
 //   · 색은 css/style.css 의 :root 변수(--mat-재질이름)에서 읽어 온다
-//   · 돌려주는 값: 이름표 자리(labels)·층 이름 자리(floors) → js/explode/callouts.js가 씀
+//   · 모듈(explodeOrder가 있는 부품 덩어리)마다 따로 된 SVG 층 → stage.js가 transform으로 옮김
+//   · 돌려주는 값: 층 목록·분해 순서·층 앞뒤 순서 계산 함수 + 분해 완료 상태의
+//     이름표 자리(labels)·층 이름 자리(floors) → js/explode/stage.js, callouts.js가 씀
 //
-// 사용법:  IsoRender.render(svg요소, window.EQUIPMENT.pecvd, window.EQUIPMENT_PLATFORMS)
+// 사용법:  IsoRender.render(층을 담을 div, window.EQUIPMENT.pecvd, window.EQUIPMENT_PLATFORMS)
 // 나중에 Three.js로 바꾸면 이 파일만 render-3d.js로 바꾸고 데이터는 그대로 쓴다.
 // =============================================================
 (function () {
@@ -190,7 +192,7 @@
   }
 
   // 2) 각 부품의 실제 위치(월드 좌표)와 회전 계산 — 부모 위치·회전을 따라간다
-  //    offsets: { 부품id: [dx,dy,dz] } — 분해 연출 때 stage.js가 넘겨 줌 (지금은 비어 있음)
+  //    offsets: { 부품id: [dx,dy,dz] } — 분해 상태를 계산할 때 render()가 넘겨 줌
   function computeWorld(parts, offsets) {
     const byId = new Map(parts.map((p) => [p.id, p]));
     const world = new Map();
@@ -613,17 +615,21 @@
 
   // =============================================================
   // 7) 전체 그리기 (외부에서 부르는 함수)
-  //    options.level: 이 단계 이하의 부품만 그림 (기본 1 = 모듈 외관)
-  //    options.offsets: 부품별 이동량 (분해 연출용, 2단계에서 사용)
+  //
+  //   분해 연출을 휴대폰에서도 부드럽게 하려고, 모듈(explodeOrder가 있는 부품 덩어리)마다
+  //   "따로 된 작은 SVG 층"에 그린다. stage.js는 층을 CSS transform으로 옮기기만 한다
+  //   → 브라우저가 그림을 다시 그리지 않고 이미 그린 층을 밀어 옮김 (gsap-performance 지침)
+  //
+  //   층 종류: 바닥 층(점선 바닥면 + 그림자) · 모듈 층 · 배관 층(움직이지 않고 희미해짐)
+  //   options.level: 이 단계 이하의 부품만 그림 (기본 1 = 모듈 외관)
   // =============================================================
-  // 부품마다 조상 id 목록 (자기 자신 포함) → SVG 그룹의 data-tree 속성
-  //   이름표에 마우스를 올리면 그 부품과 자식 부품만 골라 강조할 때 씀
-  function ancestry(parts) {
+  // 부품마다 조상 id 목록 (자기 자신 포함)
+  function ancestry(parts, useSource) {
     const byId = new Map(parts.map((p) => [p.id, p]));
     const out = new Map();
     parts.forEach((p) => {
       const chain = [];
-      for (let q = p; q; q = q.parent ? byId.get(q.parent) : null) chain.push(q.id);
+      for (let q = p; q; q = q.parent ? byId.get(q.parent) : null) chain.push(useSource ? q.copyOfId || q.id : q.id);
       out.set(p.id, chain);
     });
     return out;
@@ -633,35 +639,18 @@
   function floorRect(z, ext) {
     return [[ext[0], ext[1], z], [ext[2], ext[1], z], [ext[2], ext[3], z], [ext[0], ext[3], z]];
   }
-
-  function render(svg, equipment, platforms, options) {
-    const opt = Object.assign({ level: 1, offsets: null }, options || {});
-    const mat = readMaterials();
-    const parts = resolveParts(equipment, platforms).filter((p) => (p.level || 1) <= opt.level);
-    const world = computeWorld(parts, opt.offsets);
-    const tree = ancestry(parts);
-    const drawables = [];
-    parts.forEach((p) => drawables.push(...buildDrawables(p, world.get(p.id))));
-    const ordered = sortDrawables(drawables);
-
-    // 층 정보 (없으면 바닥 하나, z = 0)
-    const floors = ((equipment.site && equipment.site.floors) || [{ id: "floor", z: 0 }])
-      .slice().sort((a, b) => a.z - b.z);              // 아래층부터
-    // 물체가 어느 층에 속하나: 물체 가운데 높이보다 낮은 층 중 가장 높은 층
-    const floorOf = (d) => {
-      let k = 0;
-      floors.forEach((f, i) => { if (d.center[2] >= f.z - 0.01) k = i; });
-      return k;
-    };
-    // 바닥면 범위: 모든 물체의 x·y 범위 + 여유
-    const m = 1.6, ext = [Infinity, Infinity, -Infinity, -Infinity];
-    drawables.forEach((d) => {
-      ext[0] = Math.min(ext[0], d.min[0]); ext[1] = Math.min(ext[1], d.min[1]);
-      ext[2] = Math.max(ext[2], d.max[0]); ext[3] = Math.max(ext[3], d.max[1]);
+  const FLOOR_MARGIN = 1.6;   // 바닥면을 장비보다 이만큼(u) 넓게
+  function extOf(boxes) {
+    const e = [Infinity, Infinity, -Infinity, -Infinity];
+    boxes.forEach((b) => {
+      e[0] = Math.min(e[0], b.min[0]); e[1] = Math.min(e[1], b.min[1]);
+      e[2] = Math.max(e[2], b.max[0]); e[3] = Math.max(e[3], b.max[1]);
     });
-    ext[0] -= m; ext[1] -= m; ext[2] += m; ext[3] += m;
+    return [e[0] - FLOOR_MARGIN, e[1] - FLOOR_MARGIN, e[2] + FLOOR_MARGIN, e[3] + FLOOR_MARGIN];
+  }
 
-    // 접촉 음영 준비: 각 물체가 바닥에 닿았나(grounded), 어떤 물체 위에 얹혔나(support)
+  // 접촉 음영 준비: 각 물체가 바닥에 닿았나(grounded), 어떤 물체 위에 얹혔나(support)
+  function contact(drawables, floors) {
     const solids = drawables.filter((d) => d.kind === "solid");
     solids.forEach((d) => {
       d.grounded = floors.some((f) => Math.abs(d.min[2] - f.z) < 0.02);
@@ -670,39 +659,12 @@
         s.min[0] < d.max[0] && d.min[0] < s.max[0] && s.min[1] < d.max[1] && d.min[1] < s.max[1]) || null;
       if (d.support) d.grounded = true;
     });
+  }
 
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-    // 그리는 순서: [아래층 바닥 → 아래층 그림자 → 아래층 물체] → [위층 바닥 → ...]
-    //   위층 바닥면은 반투명이라 아래층 물체가 바닥 "밑에" 있는 것처럼 살짝 흐려 보인다
-    const floorInfo = [];
-    const bounds = [];
-    floors.forEach((fl, k) => {
-      const layer = el("g", { class: "iso-level", "data-floor": fl.id }, svg);
-      if (floors.length > 1) {
-        const rect = floorRect(fl.z, ext).map(project);
-        bounds.push(...rect);
-        poly(layer, rect, Object.assign({ class: k === 0 ? "iso-floor iso-floor-low" : "iso-floor" }, THIN));
-        // 층 이름 자리: 바닥면에서 화면 맨 아래 꼭짓점 (장비와 이름표 기둥에서 떨어진 빈 곳)
-        const low = rect.reduce((a, b) => (b[1] > a[1] ? b : a));
-        // corners: 바닥면 네 꼭짓점 → callouts.js가 가장자리를 따라 빈 자리를 찾아 층 이름을 놓음
-        floorInfo.push({ id: fl.id, name: fl.name || fl.id, ko: fl.ko || "", point: low, corners: rect });
-      }
-      const shadowLayer = el("g", { class: "iso-shadows" }, layer);
-      const partLayer = el("g", { class: "iso-parts" }, layer);
-      drawables.forEach((d) => { if (floorOf(d) === k) drawShadow(shadowLayer, d, fl.z); });
-      ordered.forEach((d) => {
-        if (floorOf(d) !== k) return;
-        // 부품마다 그룹 하나 → 나중에 분해 연출 때 그룹째로 움직인다
-        const g = el("g", {
-          "data-part": d.part.id, "data-group": d.root, "data-tree": tree.get(d.part.id).join(" ")
-        }, partLayer);
-        if (d.kind === "pipe") drawPipe(g, d, mat); else drawSolid(g, d, mat);
-      });
-    });
-
-    // 가림 판정용: 그리는 순서 번호 + 화면 윤곽
-    const orderIdx = new Map(ordered.map((d, i) => [d, i]));
-    drawables.forEach((d) => {
+  // 화면 윤곽(가림 판정용)
+  function addHulls(A) {
+    A.orderIdx = new Map(A.ordered.map((d, i) => [d, i]));
+    A.drawables.forEach((d) => {
       if (d.kind === "solid") {
         const all = [];
         d.faces.forEach((f) => all.push(...f.pts.map(project)));
@@ -712,89 +674,329 @@
         d.halfW = (((d.part.size && d.part.size[0]) || 0.3) * K) / 2 + 1;
       }
     });
-    // 화면 점 pt가 물체 d보다 나중에(=앞에) 그려지는 다른 물체에 가려지나
-    function hidden(pt, d) {
-      const k = orderIdx.get(d);
-      return ordered.some((e, i) => i > k && e !== d &&
-        (e.kind === "solid" ? inside(pt, e.hull) : segDist(pt, e.seg[0], e.seg[1]) < e.halfW));
-    }
-    // 부품의 보이는 면 위에 고르게 점을 찍고, 가려지지 않은 점만 이름표 끝점 후보로
-    function visiblePoints(list) {
-      const out = [];
-      list.forEach((d) => {
-        if (d.kind !== "solid") return;
-        d.faces.forEach((f) => {
-          if (dot(f.n, VIEW) <= 1e-6) return;
-          const m = mapper(f), fp = f.pts.map(project);
-          for (let i = 1; i <= 4; i++) for (let j = 1; j <= 4; j++) {
-            const pt = m(i / 5, j / 5);
-            if (inside(pt, fp) && !hidden(pt, d)) out.push(pt);
-          }
-        });
+  }
+  // 화면 점 pt가 물체 d보다 나중에(=앞에) 그려지는 다른 물체에 가려지나
+  function hidden(A, pt, d, skip) {
+    const k = A.orderIdx.get(d);
+    return A.ordered.some((e, i) => i > k && e !== d && !(skip && skip(e)) &&
+      (e.kind === "solid" ? inside(pt, e.hull) : segDist(pt, e.seg[0], e.seg[1]) < e.halfW));
+  }
+  // 부품의 보이는 면 위에 고르게 점을 찍고, 가려지지 않은 점만 이름표 끝점 후보로
+  //   faceName이 있으면 그 면 위의 점만 (front·right는 회전한 부품도 맞도록 면 방향으로 판단)
+  const FACE_DIR = { top: [0, 0, 1], front: [0, -1, 0], right: [1, 0, 0] };
+  function visiblePoints(A, list, skip, faceName) {
+    const out = [];
+    list.forEach((d) => {
+      if (d.kind !== "solid") return;
+      d.faces.forEach((f) => {
+        if (dot(f.n, VIEW) <= 1e-6) return;
+        if (faceName && FACE_DIR[faceName] && dot(f.n, FACE_DIR[faceName]) < 0.7) return;
+        const m = mapper(f), fp = f.pts.map(project);
+        for (let i = 1; i <= 4; i++) for (let j = 1; j <= 4; j++) {
+          const pt = m(i / 5, j / 5);
+          if (inside(pt, fp) && !hidden(A, pt, d, skip)) out.push(pt);
+        }
       });
-      return out;
-    }
+    });
+    return out;
+  }
 
-    // 이름표 자리: label.no가 있는 부품(복사본 제외)의 "자기 + 자식" 전체 범위에서 anchor 위치
+  function render(container, equipment, platforms, options) {
+    const opt = Object.assign({ level: 1 }, options || {});
+    const mat = readMaterials();
+    const parts = resolveParts(equipment, platforms).filter((p) => (p.level || 1) <= opt.level);
+    const byId = new Map(parts.map((p) => [p.id, p]));
+    const tree = ancestry(parts, false);
+    const srcTree = ancestry(parts, true);   // 복사본 id → 원본 id (이름표 강조 때 PM2~4도 함께)
+    const world0 = computeWorld(parts, null);
+
+    // ---------- 모듈: explodeOrder가 있는 부품. 부품은 가장 가까운 "모듈 조상(자기 포함)"에 속함 ----------
+    const moduleOf = new Map();
+    parts.forEach((p) => {
+      let q = p;
+      while (q && q.explodeOrder == null) q = q.parent ? byId.get(q.parent) : null;
+      moduleOf.set(p.id, q ? q.id : null);
+    });
+    const modules = parts.filter((p) => p.explodeOrder != null).map((p, i) => ({
+      id: p.id, idx: i, order: p.explodeOrder,
+      key: p.copyOfId || p.id,                                   // 복사본끼리 같은 key (예: pm, pm-2 → pm)
+      disp3: rotZ(p.explode || [0, 0, 0], world0.get(p.id).rot), // 자기 좌표 → 장비 좌표
+      parent: p.parent ? moduleOf.get(p.parent) : null
+    }));
+    const modById = new Map(modules.map((m) => [m.id, m]));
+    modules.forEach((m) => { m.disp = project(m.disp3); });     // 화면에서 옮겨 갈 거리 (viewBox 단위)
+    // 분해 순서: 차례 → 데이터 목록 순서
+    const sequence = modules.slice().sort((a, b) => a.order - b.order || a.idx - b.idx);
+
+    // prog = { 모듈id: 0~1 } → computeWorld에 넘길 이동량
+    //   부모 모듈의 이동분을 빼 준다 → explode는 "장비 기준 최종 이동량"이 됨 (FOUP는 EFEM이 나중에 움직여도 제자리)
+    function offsetsFor(prog) {
+      const off = {};
+      modules.forEach((m) => {
+        let v = mul(m.disp3, prog[m.id] || 0);
+        if (m.parent) v = sub(v, mul(modById.get(m.parent).disp3, prog[m.parent] || 0));
+        off[m.id] = v;
+      });
+      return off;
+    }
+    const ALL = {};
+    modules.forEach((m) => { ALL[m.id] = 1; });
+
+    // 층 정보 (없으면 바닥 하나, z = 0) — 아래층부터
+    const floors = ((equipment.site && equipment.site.floors) || [{ id: "floor", z: 0 }]).slice().sort((a, b) => a.z - b.z);
+    const floorIdxOfZ = (z) => { let k = 0; floors.forEach((f, i) => { if (z >= f.z - 0.01) k = i; }); return k; };
+
+    // 한 상태(이동량)에서 그릴 것 목록 + 그리는 순서
+    function analyze(offsets) {
+      const world = computeWorld(parts, offsets);
+      const list = [];
+      parts.forEach((p) => list.push(...buildDrawables(p, world.get(p.id))));
+      return { drawables: list, ordered: sortDrawables(list) };
+    }
+    const A0 = analyze(null);               // 조립 상태 → 그리기 기준
+    const A1 = analyze(offsetsFor(ALL));    // 분해 완료 상태 → 이름표·화면 범위 기준
+    contact(A0.drawables, floors);
+    addHulls(A0);
+    addHulls(A1);
+
+    // ---------- 층(SVG) 나누기 ----------
+    //   모듈 부품 → 그 모듈 층 / 모듈 밖 배관 → "pipes@층" / 그 밖 → "static@층"
+    const layerOfPart = new Map();
+    parts.forEach((p) => {
+      const mid = moduleOf.get(p.id);
+      if (mid) { layerOfPart.set(p.id, mid); return; }
+      const d = A0.drawables.find((x) => x.part === p);
+      const fl = floors[d ? floorIdxOfZ(d.center[2]) : 0].id;
+      layerOfPart.set(p.id, (p.shape === "pipe" ? "pipes" : "static") + "@" + fl);
+    });
+    const layerKey = (d) => layerOfPart.get(d.part.id);
+    const layers = new Map();
+    A0.drawables.forEach((d) => {
+      const key = layerKey(d);
+      if (!layers.has(key)) {
+        const m = modById.get(key) || null;
+        const fIdx = m ? floorIdxOfZ(A0.drawables.find((x) => x.part.id === key).center[2])
+          : floors.findIndex((f) => key.endsWith("@" + f.id));
+        layers.set(key, {
+          id: key, floor: fIdx, module: m, connects: [],
+          kind: m ? "module" : key.startsWith("pipes") ? "pipes" : "static", list: []
+        });
+      }
+      const L = layers.get(key);
+      L.list.push(d);
+      if (d.part.connects) d.part.connects.forEach((c) => { if (!L.connects.includes(c)) L.connects.push(c); });
+    });
+    layers.forEach((L) => {   // 층의 3D 범위 (조립 상태) → 분해 중 바닥면 크기 계산용
+      L.min = [0, 1, 2].map((i) => Math.min(...L.list.map((d) => d.min[i])));
+      L.max = [0, 1, 2].map((i) => Math.max(...L.list.map((d) => d.max[i])));
+    });
+
+    // 분해 정도(prog)에 맞는 바닥면 범위: 모든 층의 범위를 그만큼 옮겨서 합침
+    function extAt(prog) {
+      const boxes = [];
+      layers.forEach((L) => {
+        const v = L.module ? mul(L.module.disp3, prog[L.module.id] || 0) : [0, 0, 0];
+        boxes.push({ min: add(L.min, v), max: add(L.max, v) });
+      });
+      return extOf(boxes);
+    }
+    const ext0 = extAt({}), ext1 = extAt(ALL);
+
+    // ---------- 층끼리 앞뒤 순서: 물체 단위 그리는 순서에서 "층 대 층" 다수결 ----------
+    function layerRanks(A) {
+      const ord = A.ordered, votes = new Map(), mean = new Map(), cnt = new Map();
+      ord.forEach((d, i) => {
+        const k = layerKey(d);
+        mean.set(k, (mean.get(k) || 0) + i); cnt.set(k, (cnt.get(k) || 0) + 1);
+      });
+      mean.forEach((v, k) => mean.set(k, v / cnt.get(k)));
+      // 화면에서 겹치는 두 물체마다 실제 앞뒤(behind)로 투표 — 정렬 결과가 아니라 관계 자체로 세야
+      //   물체 단위 순서에 순환이 있어도 층 순서가 뒤집히지 않음
+      for (let i = 0; i < ord.length; i++) {
+        for (let j = i + 1; j < ord.length; j++) {
+          const ka = layerKey(ord[i]), kb = layerKey(ord[j]);
+          if (ka === kb || !screenOverlap(ord[i], ord[j])) continue;
+          const key = behind(ord[i], ord[j]) ? ka + "|" + kb : kb + "|" + ka;   // 앞쪽 층이 먼저(뒤에) 그려짐
+          votes.set(key, (votes.get(key) || 0) + 1);
+        }
+      }
+      const rank = {};
+      floors.forEach((f, fi) => {
+        const ks = [...layers.keys()].filter((k) => layers.get(k).floor === fi);
+        const before = new Map(ks.map((k) => [k, []]));
+        ks.forEach((a) => ks.forEach((b) => {
+          if (a >= b) return;
+          const ab = votes.get(a + "|" + b) || 0, ba = votes.get(b + "|" + a) || 0;
+          if (ab > ba) before.get(b).push(a); else if (ba > ab) before.get(a).push(b);
+        }));
+        const done = new Set();
+        let r = 1;
+        while (done.size < ks.length) {
+          let cand = ks.filter((k) => !done.has(k) && before.get(k).every((x) => done.has(x)));
+          if (!cand.length) cand = ks.filter((k) => !done.has(k));  // 순환: 평균 순서가 가장 앞선 것부터
+          cand.sort((a, b) => mean.get(a) - mean.get(b));
+          done.add(cand[0]);
+          rank[cand[0]] = fi * 100 + r++;          // z-index: 층마다 100씩 (바닥 층 svg = fi*100)
+        }
+      });
+      return rank;
+    }
+    function ranksFor(prog) { return layerRanks(analyze(offsetsFor(prog))); }
+
+    // ---------- 보이는 범위(viewBox): 조립 + 분해 상태가 모두 들어가게 ----------
+    const pad = 24;
+    const rangeOf = (pts) => [
+      Math.min(...pts.map((p) => p[0])) - pad, Math.min(...pts.map((p) => p[1])) - pad,
+      Math.max(...pts.map((p) => p[0])) + pad, Math.max(...pts.map((p) => p[1])) + pad
+    ];
+    const floorPts = (ext) => floors.length > 1 ? floors.flatMap((f) => floorRect(f.z, ext).map(project)) : [];
+    const allPts = [];
+    A0.drawables.concat(A1.drawables).forEach((d) => allPts.push(d.sMin, d.sMax));
+    const R = rangeOf(allPts.concat(floorPts(ext1)));
+    const viewBox = [R[0], R[1], R[2] - R[0], R[3] - R[1]];
+    // 조립 상태만의 범위 → stage.js가 처음에 이만큼 확대해서 보여 줌 (외관을 크게)
+    const asmPts = [];
+    A0.drawables.forEach((d) => asmPts.push(d.sMin, d.sMax));
+    const assembledBounds = rangeOf(asmPts.concat(floorPts(ext0)));
+
+    // ---------- DOM 만들기 ----------
+    while (container.firstChild) container.removeChild(container.firstChild);
+    const vbAttr = viewBox.map((v) => v.toFixed(1)).join(" ");
+    const pct = (v, total) => ((v / total) * 100).toFixed(4) + "%";
+    const floorPolys = [];
+    const shadowOf = new Map();
+    // 바닥 층: 점선 바닥면 + 그 층 모듈들의 바닥 그림자 (모듈마다 g 하나 → 함께 움직임)
+    floors.forEach((fl, k) => {
+      const div = document.createElement("div");
+      div.className = "iso-layer iso-layer-floor";
+      div.style.zIndex = String(k * 100);
+      const svg = el("svg", { viewBox: vbAttr, "aria-hidden": "true", focusable: "false" });
+      div.appendChild(svg);
+      container.appendChild(div);
+      if (floors.length > 1) {
+        const poly0 = poly(svg, floorRect(fl.z, ext0).map(project),
+          Object.assign({ class: k === 0 ? "iso-floor iso-floor-low" : "iso-floor" }, THIN));
+        floorPolys.push({ el: poly0, z: fl.z });
+      }
+      const shadows = el("g", { class: "iso-shadows" }, svg);
+      layers.forEach((L) => {
+        if (L.floor !== k) return;
+        const g = el("g", { "data-layer": L.id }, shadows);
+        L.list.forEach((d) => drawShadow(g, d, fl.z));
+        if (g.childNodes.length) shadowOf.set(L.id, g); else shadows.removeChild(g);
+      });
+    });
+    // 모듈 층·배관 층: 자기 화면 범위만 한 작은 svg (휴대폰 메모리 절약)
+    const ranks0 = layerRanks(A0);
+    const layerOut = [];
+    layers.forEach((L) => {
+      const sMin = [Math.min(...L.list.map((d) => d.sMin[0])), Math.min(...L.list.map((d) => d.sMin[1]))];
+      const sMax = [Math.max(...L.list.map((d) => d.sMax[0])), Math.max(...L.list.map((d) => d.sMax[1]))];
+      const P = 16;   // 외곽선·배관 굵기·접촉 음영이 잘리지 않을 여유
+      const box = [sMin[0] - P, sMin[1] - P, sMax[0] - sMin[0] + 2 * P, sMax[1] - sMin[1] + 2 * P];
+      const div = document.createElement("div");
+      div.className = "iso-layer iso-layer-" + L.kind;
+      div.dataset.layer = L.id;
+      div.style.left = pct(box[0] - viewBox[0], viewBox[2]);
+      div.style.top = pct(box[1] - viewBox[1], viewBox[3]);
+      div.style.width = pct(box[2], viewBox[2]);
+      div.style.height = pct(box[3], viewBox[3]);
+      div.style.zIndex = String(ranks0[L.id]);
+      const svg = el("svg", { viewBox: box.map((v) => v.toFixed(1)).join(" "), "aria-hidden": "true", focusable: "false" });
+      div.appendChild(svg);
+      container.appendChild(div);
+      const partsG = el("g", { class: "iso-parts" }, svg);
+      A0.ordered.forEach((d) => {
+        if (layerKey(d) !== L.id) return;
+        const g = el("g", {
+          "data-part": d.part.id, "data-tree": tree.get(d.part.id).join(" "),
+          "data-src-tree": srcTree.get(d.part.id).join(" ")
+        }, partsG);
+        if (d.kind === "pipe") drawPipe(g, d, mat); else drawSolid(g, d, mat);
+      });
+      layerOut.push({
+        id: L.id, kind: L.kind, floor: L.floor, el: div, svg: svg, box: box,
+        module: L.module ? { id: L.module.id, key: L.module.key, order: L.module.order, disp: L.module.disp } : null,
+        shadow: shadowOf.get(L.id) || null, connects: L.connects
+      });
+    });
+
+    // ---------- 이름표 자리: 분해 완료 상태(A1) 기준 ----------
     const labels = [];
     parts.forEach((p) => {
       if (!p.label || p.label.no == null || p.copyOfId) return;
-      const mine = drawables.filter((d) => tree.get(d.part.id).includes(p.id));
+      const mine = A1.drawables.filter((d) => tree.get(d.part.id).includes(p.id));
       if (!mine.length) return;
       const lo = [0, 1, 2].map((i) => Math.min(...mine.map((d) => d.min[i])));
       const hi = [0, 1, 2].map((i) => Math.max(...mine.map((d) => d.max[i])));
       const c = mul(add(lo, hi), 0.5);
       const anchor = p.label.anchor || "top";
-      const pt3 = anchor === "front" ? [c[0], lo[1], c[2]]
-        : anchor === "right" ? [hi[0], c[1], c[2]]
-        : [c[0], c[1], hi[2]];
+      const pt3 = anchor === "front" ? [c[0], lo[1], c[2]] : anchor === "right" ? [hi[0], c[1], c[2]] : [c[0], c[1], hi[2]];
+      // 끝점 후보: 부품 자기 몸체를 먼저. 배관은 분해 때 사라지므로 가림 판정에서 뺌
+      const skipPipe = (e) => e.kind === "pipe";
+      const body = mine.filter((d) => d.part.id === p.id);
+      const onFace = p.label.anchor ? visiblePoints(A1, body, skipPipe, p.label.anchor) : [];
+      const own = onFace.length >= 3 ? onFace : visiblePoints(A1, body, skipPipe);
+      const mid = moduleOf.get(p.id);
       labels.push({
         id: p.id, no: p.label.no, abbr: p.label.abbr || "", name: p.name || p.id,
-        // 끝점 후보: 부품 자기 몸체를 먼저 (EFEM에 붙은 로드포트·FOUP 위에 EFEM 끝점이 찍히지 않게).
-        //   몸체가 거의 안 보일 때만(시그널 타워 기둥 등) 자식 부품까지 포함
-        point: project(pt3), candidates: (function () {
-          const own = visiblePoints(mine.filter((d) => d.part.id === p.id));
-          return own.length >= 3 ? own : visiblePoints(mine);
-        })()
+        layer: mid, key: mid ? modById.get(mid).key : null,
+        point: project(pt3), candidates: own.length >= 3 ? own : visiblePoints(A1, mine, skipPipe),
+        centered: onFace.length >= 3      // anchor 면을 썼으면 그 면의 보이는 부분 한가운데에 끝점
       });
     });
     labels.sort((a, b) => a.no - b.no);
 
-    // 작은 표시(tag, 예: PM1): 바닥에 놓인 물체는 화면 맨 아래 점 밑에, 나머지는 윗면 가운데
+    // ---------- 작은 표시(tag, 예: PM1): 조립 상태 기준 위치 + 어느 층에 붙어 움직이나 ----------
     const tags = [];
     parts.forEach((p) => {
       if (!p.tag) return;
-      const d = drawables.find((x) => x.part.id === p.id && x.kind === "solid");
+      const d = A0.drawables.find((x) => x.part.id === p.id && x.kind === "solid");
       if (!d) return;
+      const layer = layerOfPart.get(p.id);
       if (d.grounded && !d.support) {
         const low = d.hull.reduce((a, b) => (b[1] > a[1] ? b : a));
-        tags.push({ id: p.id, text: p.tag, point: low, place: "below" });
+        tags.push({ id: p.id, text: p.tag, point: low, place: "below", layer: layer });
       } else {
         const top = d.faces.find((f) => f.name === "top");
         const c = mul(top.pts.reduce((a, b) => add(a, b), [0, 0, 0]), 1 / top.pts.length);
-        tags.push({ id: p.id, text: p.tag, point: project(c), place: "center" });
+        tags.push({ id: p.id, text: p.tag, point: project(c), place: "center", layer: layer });
       }
     });
 
-    // 그림 전체가 들어가도록 보이는 범위(viewBox)를 맞춤
-    const pad = 24;
-    drawables.forEach((d) => bounds.push(d.sMin, d.sMax));
-    const x0 = Math.min(...bounds.map((p) => p[0])) - pad;
-    const y0 = Math.min(...bounds.map((p) => p[1])) - pad;
-    const x1 = Math.max(...bounds.map((p) => p[0])) + pad;
-    const y1 = Math.max(...bounds.map((p) => p[1])) + pad;
-    const viewBox = [x0, y0, x1 - x0, y1 - y0];
-    svg.setAttribute("viewBox", viewBox.map((v) => v.toFixed(1)).join(" "));
-    // 장비 자체(바닥면 제외)의 화면 범위 → 이름표 기둥을 장비 윤곽 바로 바깥에 둘 때 씀
+    // 층 이름 자리: 분해 완료 상태의 바닥면 네 꼭짓점
+    const floorInfo = floors.length > 1 ? floors.map((fl) => {
+      const rect = floorRect(fl.z, ext1).map(project);
+      return { id: fl.id, name: fl.name || fl.id, ko: fl.ko || "", point: rect.reduce((a, b) => (b[1] > a[1] ? b : a)), corners: rect };
+    }) : [];
+
+    // 분해 완료 상태: 장비 화면 범위(이름표 기둥 위치) + 물체가 차지한 영역(글자 빈 자리 찾기)
     const equipBounds = [
-      Math.min(...drawables.map((d) => d.sMin[0])), Math.min(...drawables.map((d) => d.sMin[1])),
-      Math.max(...drawables.map((d) => d.sMax[0])), Math.max(...drawables.map((d) => d.sMax[1]))
+      Math.min(...A1.drawables.map((d) => d.sMin[0])), Math.min(...A1.drawables.map((d) => d.sMin[1])),
+      Math.max(...A1.drawables.map((d) => d.sMax[0])), Math.max(...A1.drawables.map((d) => d.sMax[1]))
     ];
-    // 물체가 차지한 화면 영역 (글자를 놓을 빈 자리 찾기용)
-    const occupied = drawables.filter((d) => d.kind === "solid").map((d) => d.hull);
+    const occupied = A1.drawables.filter((d) => d.kind === "solid").map((d) => d.hull);
+    // 분해 완료 상태에서 부품 하나의 3D 범위 (웨이퍼 경로 점 계산용)
+    function partBox(id) {
+      const mine = A1.drawables.filter((d) => d.part.id === id);
+      if (!mine.length) return null;
+      return {
+        min: [0, 1, 2].map((i) => Math.min(...mine.map((d) => d.min[i]))),
+        max: [0, 1, 2].map((i) => Math.max(...mine.map((d) => d.max[i])))
+      };
+    }
+    // 분해 정도에 맞춘 바닥면 꼭짓점 (stage.js가 매 프레임 바닥면을 넓힘)
+    function floorPointsAt(prog) {
+      const e = extAt(prog);
+      return floorPolys.map((f) => ptsAttr(floorRect(f.z, e).map(project)));
+    }
+
     return {
-      drawables: drawables, order: ordered, labels: labels, tags: tags, occupied: occupied,
-      floors: floorInfo, viewBox: viewBox, equipBounds: equipBounds
+      viewBox: viewBox, assembledBounds: assembledBounds,
+      layers: layerOut, floorPolys: floorPolys, floorPointsAt: floorPointsAt,
+      sequence: sequence.map((m) => ({ id: m.id, key: m.key, order: m.order })),
+      ranksFor: ranksFor, partBox: partBox,
+      labels: labels, tags: tags, occupied: occupied, floors: floorInfo, equipBounds: equipBounds
     };
   }
 

@@ -34,7 +34,9 @@ window.EQUIPMENT.pecvd = {
         { type: "label-plate", face: "back", area: [0.1, 0.62, 0.34, 0.8] }
       ],
       tag: "PM1",                 // 그림 위 작은 챔버 번호 (펌프의 tag와 짝)
-      label: { no: 5, abbr: "PM" }
+      label: { no: 5, abbr: "PM" },
+      // 자기 좌표의 back(+y) = 트랜스퍼 모듈 반대쪽 → 복사본 4개 모두 TM에서 바깥쪽으로 빠짐
+      explode: [0, 3.2, 0], explodeOrder: 5
     },
     {
       // 챔버 아래 캐비닛: 히터 전원·리프트 장치·배기 밸브 등이 들어가는 자리
@@ -92,31 +94,36 @@ window.EQUIPMENT.pecvd = {
         { type: "label-plate", face: "right", area: [0.6, 0.78, 0.88, 0.86] },
         { type: "warning-label", face: "front", at: [0.5, 0.42] }
       ],
-      label: { no: 6, abbr: "GAS", anchor: "top" }
+      label: { no: 6, abbr: "GAS", anchor: "top" },
+      explode: [4.5, 0, 0], explodeOrder: 6        // 오른쪽 옆으로
     },
     // 가스 배관: 가스 박스 윗면 → 위로 → 장비 위쪽을 지나 → 각 공정 챔버 뚜껑으로 (챔버마다 1줄)
     //   RF 매칭 박스보다 높게 지나고, 줄마다 높이를 조금씩 달리해 서로 겹치지 않게 함
     {
       id: "gas-line-1", name: "가스 배관 (PM1)", en: "Gas Line to PM1",
       parent: null, level: 1, shape: "pipe", size: [0.16], pos: [0, 0, 0],
+      connects: ["gas-box", "pm"],
       path: [[11.7, 12.2, 8], [11.7, 12.2, 8.6], [5.5, 12.2, 8.6], [5.5, 8.67, 8.6], [5.5, 8.67, 6.7]],
       material: "pipe"
     },
     {
       id: "gas-line-2", name: "가스 배관 (PM2)", en: "Gas Line to PM2",
       parent: null, level: 1, shape: "pipe", size: [0.16], pos: [0, 0, 0],
+      connects: ["gas-box", "pm-2"],
       path: [[11.7, 13, 8], [11.7, 13, 8.85], [6.5, 13, 8.85], [6.5, 15.6, 8.85], [6.5, 15.6, 6.7]],
       material: "pipe"
     },
     {
       id: "gas-line-3", name: "가스 배관 (PM3)", en: "Gas Line to PM3",
       parent: null, level: 1, shape: "pipe", size: [0.16], pos: [0, 0, 0],
+      connects: ["gas-box", "pm-3"],
       path: [[11.7, 13.8, 8], [11.7, 13.8, 9.1], [-5.5, 13.8, 9.1], [-5.5, 17.34, 9.1], [-5.5, 17.34, 6.7]],
       material: "pipe"
     },
     {
       id: "gas-line-4", name: "가스 배관 (PM4)", en: "Gas Line to PM4",
       parent: null, level: 1, shape: "pipe", size: [0.16], pos: [0, 0, 0],
+      connects: ["gas-box", "pm-4"],
       path: [[11.7, 14.6, 8], [11.7, 14.6, 9.35], [-6.5, 14.6, 9.35], [-6.5, 10.41, 9.35], [-6.5, 10.41, 6.7]],
       material: "pipe"
     },
@@ -134,30 +141,34 @@ window.EQUIPMENT.pecvd = {
         { type: "label-plate", face: "right", area: [0.12, 0.12, 0.45, 0.22] },
         { type: "warning-label", face: "right", at: [0.78, 0.17] }
       ],
-      label: { no: 7, abbr: "RF", anchor: "top" }
+      label: { no: 7, abbr: "RF", anchor: "top" },
+      explode: [4.5, 0, 0], explodeOrder: 6
     },
+    // connects = 이 배관이 잇는 모듈 → 분해 때 그 모듈이 움직이기 시작하면 배관은 희미해지며 사라짐
     // RF 케이블: 공중 아치 대신 낮은 케이블 트레이 위를 따라 1번 챔버의 RF 매칭 박스까지
     //   트레이는 챔버 뚜껑 바로 위 높이, 2번 챔버와 가스 박스 사이 통로를 지나감
     {
       id: "cable-tray", name: "케이블 트레이", en: "Cable Tray",
       parent: null, level: 1,
       shape: "box", size: [0.6, 9.2, 0.12], pos: [10.6, 14.1, 6.8],
-      material: "metal"
+      material: "metal",
+      explode: [4.5, 0, 0], explodeOrder: 6        // 가스 박스·RF와 함께 옆으로
     },
+    // 가로 트레이·지지대는 세로 트레이의 자식 (pos는 세로 트레이 기준) → 같이 움직인다
     {
       id: "cable-tray-2", name: "케이블 트레이 (가로)", en: "Cable Tray",
-      parent: null, level: 1,
-      shape: "box", size: [2.6, 0.6, 0.12], pos: [9.6, 9.82, 6.8],
+      parent: "cable-tray", level: 1,
+      shape: "box", size: [2.6, 0.6, 0.12], pos: [-1, -4.28, 0],
       material: "metal"
     },
-    { id: "tray-post", name: "트레이 지지대", en: "Tray Post", parent: null, level: 1,
-      shape: "box", size: [0.18, 0.18, 6.8], pos: [10.6, 18.3, 0], material: "dark" },
-    { id: "tray-post-2", copyOf: "tray-post", pos: [10.6, 10.4, 0] },
+    { id: "tray-post", name: "트레이 지지대", en: "Tray Post", parent: "cable-tray", level: 1,
+      shape: "box", size: [0.18, 0.18, 6.8], pos: [0, 4.2, -6.8], material: "dark" },
+    { id: "tray-post-2", copyOf: "tray-post", pos: [0, -3.7, -6.8] },
     {
       id: "rf-cable", name: "RF 케이블", en: "RF Cable",
       parent: null, level: 1,
       shape: "pipe", size: [0.14],
-      pos: [0, 0, 0],
+      pos: [0, 0, 0], connects: ["rf-generator", "pm"],
       path: [[11.2, 18.4, 5.5], [11.2, 18.4, 6.99], [10.6, 18.4, 6.99], [10.6, 9.82, 6.99], [8.2, 9.82, 6.99]],
       material: "cable"
     },
@@ -178,32 +189,33 @@ window.EQUIPMENT.pecvd = {
         { type: "warning-label", face: "front", at: [0.78, 0.72] }
       ],
       tag: "PM1",
-      label: { no: 8, abbr: "PUMP" }
+      label: { no: 8, abbr: "PUMP" },
+      explode: [3, -3, 0], explodeOrder: 7         // 마지막: 서브팹 바닥 위에서 앞·오른쪽으로 (가려진 펌프가 드러남)
     },
     { id: "pump-2", copyOf: "pump", name: "드라이 펌프 (PM2)", pos: [13.5, 15.0, -6.5], tag: "PM2" },
     { id: "pump-3", copyOf: "pump", name: "드라이 펌프 (PM3)", pos: [13.5, 18.5, -6.5], tag: "PM3" },
     { id: "pump-4", copyOf: "pump", name: "드라이 펌프 (PM4)", pos: [13.5, 4.5, -6.5], tag: "PM4" },
     {
       id: "foreline-1", name: "배기 배관 (PM1)", en: "Foreline to PM1 Pump",
-      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0],
+      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0], connects: ["pm", "pump"],
       path: [[6.52, 9.24, 0], [6.52, 9.24, -2.5], [6.52, 8, -2.5], [12.9, 8, -2.5], [12.9, 8, -4.3]],
       material: "pipe"
     },
     {
       id: "foreline-2", name: "배기 배관 (PM2)", en: "Foreline to PM2 Pump",
-      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0],
+      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0], connects: ["pm-2", "pump-2"],
       path: [[6.52, 16.77, 0], [6.52, 16.77, -2.5], [6.52, 15, -2.5], [12.9, 15, -2.5], [12.9, 15, -4.3]],
       material: "pipe"
     },
     {
       id: "foreline-3", name: "배기 배관 (PM3)", en: "Foreline to PM3 Pump",
-      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0],
+      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0], connects: ["pm-3", "pump-3"],
       path: [[-6.52, 16.77, 0], [-6.52, 16.77, -2.5], [-6.52, 18.5, -2.5], [12.9, 18.5, -2.5], [12.9, 18.5, -4.3]],
       material: "pipe"
     },
     {
       id: "foreline-4", name: "배기 배관 (PM4)", en: "Foreline to PM4 Pump",
-      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0],
+      parent: null, level: 1, shape: "pipe", size: [0.5], pos: [0, 0, 0], connects: ["pm-4", "pump-4"],
       path: [[-6.52, 9.24, 0], [-6.52, 9.24, -2.5], [-6.52, 4.5, -2.5], [12.9, 4.5, -2.5], [12.9, 4.5, -4.3]],
       material: "pipe"
     }

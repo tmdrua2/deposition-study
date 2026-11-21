@@ -11,9 +11,15 @@
 //   2) 지시선은 짧게: 끝점 후보 중 기둥에 가장 가까운 점, 모양은 "짧은 사선 + 수평선"
 //   3) 이름표 위아래 순서는 부품의 화면 높이순, 교차가 안 생기는 범위에서만 번호순으로 맞춤
 //   · 넓은 화면: 기둥에 "번호 약어 한글명" / 좁은 화면: 기둥에 번호만 + 그림 아래 목록
-//   · 이름표에 마우스·키보드 초점 → 그 부품 외곽선만 포인트 색(청록)으로 강조
+//   · 이름표에 마우스·키보드 초점 → 그 부품 외곽선만 포인트 색(청록)으로 강조 (+ opts.onFocus로 알림)
+//   · 지시선·끝점·이름표는 처음에 한 번만 만들고, 배치할 때는 위치만 고친다
+//     → stage.js가 걸어 둔 "나타나기" 애니메이션 상태가 화면 크기가 바뀌어도 유지됨
 //
-// 사용법: EquipCallouts.mount(그림을 감싼 요소, svg요소, IsoRender.render()의 결과)
+// 사용법: EquipCallouts.mount(그림틀, 그림 요소(svg 또는 층 묶음), IsoRender.render()의 결과, opts)
+//   opts.legendAfter : 좁은 화면 목록을 이 요소 뒤에 넣음 (기본: 그림틀 뒤)
+//   opts.onFocus(id) : 이름표에 마우스/초점이 들어오면 부품 id, 나가면 null
+//   opts.tagBlocks   : 작은 표시(PM1 …)를 다른 곳에서 그릴 때, 층 이름표가 피해야 할 그 표시들의 자리
+//                      [{ point(viewBox 좌표), text, place: "below"|"center" }]
 // =============================================================
 (function () {
   "use strict";
@@ -38,7 +44,8 @@
     return false;
   }
 
-  function mount(figure, svg, info) {
+  function mount(figure, svg, info, opts) {
+    opts = opts || {};
     // ---------- 요소 만들기 ----------
     const lines = document.createElementNS(SVGNS, "svg");
     lines.setAttribute("class", "callout-lines");
@@ -59,12 +66,21 @@
         '<span class="callout-abbr">' + L.abbr + "</span>" +
         '<span class="callout-name">' + L.name + "</span>";
       layer.appendChild(b);
+      // 지시선(꺾인 선)과 끝점(작은 원): pathLength=1 → stage.js가 선을 "그려 나가듯" 나타낼 수 있음
+      const leader = document.createElementNS(SVGNS, "polyline");
+      leader.setAttribute("class", "callout-leader");
+      leader.setAttribute("pathLength", "1");
+      leader.dataset.for = L.id;
+      const dot = document.createElementNS(SVGNS, "circle");
+      dot.setAttribute("class", "callout-dot");
+      dot.dataset.for = L.id;
+      lines.append(leader, dot);
       const on = () => highlight(L.id, true), off = () => highlight(L.id, false);
       b.addEventListener("pointerenter", on);
       b.addEventListener("pointerleave", off);
       b.addEventListener("focus", on);
       b.addEventListener("blur", off);
-      return { L: L, el: b };
+      return { L: L, el: b, leader: leader, dot: dot };
     });
 
     // 층 이름표 (FAB FLOOR / SUB-FAB)
@@ -93,13 +109,15 @@
     legend.innerHTML = info.labels.map((L) =>
       '<li><span class="callout-no">' + pad2(L.no) + '</span><span class="callout-abbr">' + L.abbr +
       '</span><span class="callout-name">' + L.name + "</span></li>").join("");
-    figure.after(legend);
+    (opts.legendAfter || figure).after(legend);   // 기본: 그림틀 바로 뒤 (분해 무대에서는 고정 화면 안)
 
     // ---------- 강조: data-tree에 이 부품 id가 들어 있는 그룹(자기 + 자식)만 ----------
     function highlight(id, on) {
-      svg.querySelectorAll('[data-tree~="' + id + '"]').forEach((g) => g.classList.toggle("is-hl", on));
+      // data-src-tree: 복사본도 원본 id를 가짐 → PM 이름표에 올리면 PM1~PM4가 모두 강조
+      svg.querySelectorAll('[data-src-tree~="' + id + '"]').forEach((g) => g.classList.toggle("is-hl", on));
       items.forEach((it) => { if (it.L.id === id) it.el.classList.toggle("is-hl", on); });
       lines.querySelectorAll('[data-for="' + id + '"]').forEach((n) => n.classList.toggle("is-hl", on));
+      if (opts.onFocus) opts.onFocus(on ? id : null);
     }
 
     // ---------- 배치: 그림 크기가 바뀔 때마다 다시 계산 ----------
@@ -120,7 +138,6 @@
       lines.setAttribute("viewBox", "0 0 " + W.toFixed(0) + " " + H.toFixed(0));
       lines.setAttribute("width", W.toFixed(0));
       lines.setAttribute("height", H.toFixed(0));
-      while (lines.firstChild) lines.removeChild(lines.firstChild);
 
       partTags.forEach((t) => place(t.el, map(t.T.point)));
 
@@ -144,7 +161,8 @@
         const cx = c.reduce((s, p) => s + p[0], 0) / c.length, cy = c.reduce((s, p) => s + p[1], 0) / c.length;
         const pick = (edge) => {
           const xs = c.map((p) => p[0]), span = Math.max(...xs) - Math.min(...xs);
-          const near = c.filter((p) => Math.abs(p[0] - edge[0]) <= span * 0.3 + 1);
+          // anchor 면을 지정한 부품(centered)은 가장자리 제한 없이 한가운데 점 → 옆 부품과 헷갈리지 않음
+          const near = it.L.centered ? c : c.filter((p) => Math.abs(p[0] - edge[0]) <= span * 0.3 + 1);
           return near.reduce((a, b) => (Math.hypot(b[0] - cx, b[1] - cy) < Math.hypot(a[0] - cx, a[1] - cy) ? b : a));
         };
         return {
@@ -235,24 +253,23 @@
         el.classList.toggle("is-right", right);
         el.style.top = o.y.toFixed(1) + "px";
         el.style.left = (right ? colR + 4 : colL - 4 - el.offsetWidth).toFixed(1) + "px";
-        const pl = document.createElementNS(SVGNS, "polyline");
-        pl.setAttribute("points", o.path.map((q) => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" "));
-        pl.setAttribute("class", "callout-leader");
-        pl.dataset.for = o.it.L.id;
-        lines.appendChild(pl);
+        // 지시선은 끝점(부품) → 이름표 방향으로 그려짐
+        o.it.leader.setAttribute("points", o.path.map((q) => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" "));
         // 끝점: 작은 원 테두리
-        const dot = document.createElementNS(SVGNS, "circle");
-        dot.setAttribute("cx", o.path[0][0].toFixed(1));
-        dot.setAttribute("cy", o.path[0][1].toFixed(1));
-        dot.setAttribute("r", wide ? "3" : "2.5");
-        dot.setAttribute("class", "callout-dot");
-        dot.dataset.for = o.it.L.id;
-        lines.appendChild(dot);
+        o.it.dot.setAttribute("cx", o.path[0][0].toFixed(1));
+        o.it.dot.setAttribute("cy", o.path[0][1].toFixed(1));
+        o.it.dot.setAttribute("r", wide ? "3" : "2.5");
       });
       // 7) 층 이름표: 바닥면의 앞쪽 두 가장자리(왼쪽 꼭짓점→아래 꼭짓점→오른쪽 꼭짓점)를 따라
       //    바닥 바깥쪽에 놓아 보고, 부품·이름표·PM 표시·다른 층 이름표와 안 겹치는 첫 자리를 고름
       const rectOf = (el) => { const r = el.getBoundingClientRect(); return [r.left - fr.left, r.top - fr.top, r.right - fr.left, r.bottom - fr.top]; };
       const blocks = items.map((it) => rectOf(it.el)).concat(partTags.map((t) => rectOf(t.el)));
+      // 다른 곳에서 그리는 PM 표시: 글자 수로 크기를 어림 (CSS .part-tag 크기와 비슷하게)
+      (opts.tagBlocks || []).forEach((T) => {
+        const p = map(T.point), w = T.text.length * (wide ? 6.2 : 5) + (wide ? 10 : 8), h = wide ? 15 : 12;
+        const y0 = T.place === "below" ? p[1] + 6 : p[1] - h / 2;
+        blocks.push([p[0] - w / 2, y0, p[0] + w / 2, y0 + h]);
+      });
       const hulls = (info.occupied || []).map((h) => h.map(map));
       const hitPoly = (R) => hulls.some((h) => {
         const pts = [[R[0], R[1]], [R[2], R[1]], [R[2], R[3]], [R[0], R[3]], [(R[0] + R[2]) / 2, (R[1] + R[3]) / 2]];
@@ -316,11 +333,15 @@
     }
 
     layout();
-    if ("ResizeObserver" in window) new ResizeObserver(() => layout()).observe(figure);
+    if ("ResizeObserver" in window) {
+      const ro = new ResizeObserver(() => layout());
+      ro.observe(figure);
+      if (svg !== figure) ro.observe(svg);   // 그림 크기만 바뀌어도 다시 배치
+    }
     else window.addEventListener("resize", layout);
     // 글꼴이 늦게 들어오면 글자 폭이 바뀌므로 한 번 더
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
-    return { layout: layout, highlight: highlight };
+    return { layout: layout, highlight: highlight, items: items, floorTags: floorTags, legend: legend };
   }
 
   window.EquipCallouts = { mount: mount };

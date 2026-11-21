@@ -821,9 +821,20 @@ footer a:hover { color: var(--ink); }
 .equip-stage {
   background: var(--stage-bg);
   border-bottom: 1px solid var(--line);
-  padding: clamp(36px, 7vh, 72px) var(--gutter) 28px;
+  padding: 0 var(--gutter) 28px;
 }
-.equip-stage-copy { max-width: var(--max); margin: 0 auto; }
+/* 고정(pin)되는 부분: 헤더 아래 화면 높이를 꽉 채우고, 제목 아래 남는 높이를 그림틀이 차지 */
+.equip-stage-pin {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--header-h, 72px));
+  height: calc(100svh - var(--header-h, 72px));
+  padding-top: clamp(20px, 5vh, 56px);
+  padding-bottom: 8px;
+}
+/* 움직임 줄이기: 고정하지 않음 → 높이는 내용만큼 */
+.equip-stage.is-static .equip-stage-pin { height: auto; }
+.equip-stage-copy { width: 100%; max-width: var(--max); margin: 0 auto; }
 
 /* 제목 영역 위계: 작은 영문 라벨 → 큰 제목 → 한 줄 설명 */
 .equip-kicker {
@@ -866,19 +877,72 @@ footer a:hover { color: var(--ink); }
 .iso-figure {
   --callout-col: 0px;
   position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
   max-width: 1400px;
   margin: 8px auto 0;
-  padding: 0 var(--callout-col);
+  padding: 0 var(--callout-col) 26px;  /* 아래 26px: 안내 문구·웨이퍼 경로 설명 자리 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .iso-figure { --callout-col: 30px; }          /* 좁은 화면: 양옆에 번호 기둥 자리 */
 .iso-figure.is-wide { --callout-col: 230px; }
-.iso-view {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 78vh;
-  margin: 0 auto;
+/* 그림 묶음: 크기는 stage.js가 그림 비율에 맞춰 정함. z-index 0 → 이름표 층이 항상 위 */
+.iso-stack { position: relative; z-index: 0; flex: none; }
+.iso-scene { position: absolute; inset: 0; transform-origin: 50% 50%; }
+/* 층: 바닥 층은 전체, 모듈·배관 층은 자기 범위만 (위치·크기는 render-iso.js가 % 로 넣음) */
+.iso-layer { position: absolute; transition: opacity 0.2s; }
+.iso-layer-floor { inset: 0; }
+.iso-layer svg, .iso-layer-floor svg { display: block; width: 100%; height: 100%; overflow: visible; }
+/* 움직이는 층만 미리 별도 층으로 (gsap-performance: 실제로 움직이는 것에만 will-change) */
+.equip-stage:not(.is-static) .iso-layer-module,
+.equip-stage:not(.is-static) .iso-tag-carrier { will-change: transform; }
+.iso-tag-carrier { position: absolute; z-index: 950; pointer-events: none; transition: opacity 0.2s; }
+/* 이름표에 마우스를 올리면: 그 모듈만 또렷하게, 나머지 모듈·배관은 흐리게 */
+.iso-scene.is-focus .iso-layer-module:not(.is-focus-on),
+.iso-scene.is-focus .iso-layer-pipes,
+.iso-scene.is-focus .iso-layer-static,
+.iso-scene.is-focus .iso-tag-carrier:not(.is-focus-on) { opacity: 0.22; }
+
+/* 웨이퍼 경로 점선 (분해가 끝난 뒤 그려짐). 공정 색은 선·점에만 */
+.wafer-path { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 900; overflow: visible; pointer-events: none; }
+.wp-reveal { fill: none; stroke: #fff; stroke-width: 40; stroke-dasharray: 1; stroke-linecap: round; stroke-linejoin: round; }
+.wp-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 7 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
+.wp-node { fill: var(--stage-bg); stroke: var(--accent); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.wp-node-end { fill: var(--accent); }
+.wafer-path.is-flowing .wp-line { animation: wp-flow 1.4s linear infinite; }
+@keyframes wp-flow { to { stroke-dashoffset: -26; } }
+
+/* 안내 문구(처음)와 웨이퍼 경로 설명(끝): 그림틀 맨 아래 같은 자리 */
+.iso-hint, .iso-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+.iso-caption { visibility: hidden; }
+.iso-caption-line { width: 26px; border-top: 2px dashed var(--accent); }
+.equip-stage.is-static .iso-hint { display: none; }
 .iso-shadow { fill: var(--iso-shadow); }
 .iso-ao { fill: var(--iso-ao-core); }
 .iso-ao.iso-ao-wide { fill: var(--iso-ao); }
@@ -899,6 +963,7 @@ footer a:hover { color: var(--ink); }
 .callout-lines { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
 .callout-leader {
   fill: none;
+  stroke-dasharray: 1;   /* pathLength=1과 짝: stage.js가 dashoffset 1→0으로 선을 그려 나감 */
   stroke: var(--ink);
   stroke-width: 0.75;
   opacity: 0.55;
@@ -1007,7 +1072,22 @@ footer a:hover { color: var(--ink); }
 /* 좁은 화면: 층 이름표는 영문 한 줄만 (두 층 이름표끼리 겹치지 않게), 목록은 조금 띄움 */
 .iso-figure:not(.is-wide) .floor-tag-ko { display: none; }
 .iso-figure:not(.is-wide) .floor-tag-en { font-size: 0.625rem; }
-.iso-figure:not(.is-wide) + .callout-legend { margin-top: 36px; }
+/* 좁은 화면 + 스크롤 연출: 그림과 목록을 한 덩어리로 남는 높이의 가운데에 */
+.equip-stage:not(.is-static) .iso-figure:not(.is-wide) { margin-top: auto; }
+.equip-stage:not(.is-static) .iso-figure:not(.is-wide) + .callout-legend { margin-bottom: auto; }
+/* 좁은 화면: 목록은 고정 화면 안, 그림 바로 아래에 2열로 (분해되며 항목이 차례로 또렷해짐) */
+.iso-figure:not(.is-wide) + .callout-legend {
+  flex: none;
+  width: 100%;
+  margin-top: 6px;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 14px;
+}
+.iso-figure:not(.is-wide) + .callout-legend li { gap: 8px; padding: 5px 0; font-size: 0.75rem; }
+.iso-figure:not(.is-wide) + .callout-legend .callout-abbr { min-width: 0; }
+.iso-figure:not(.is-wide) + .callout-legend .callout-name { font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.iso-figure:not(.is-wide) .iso-caption { font-size: 0.5625rem; letter-spacing: 0.02em; gap: 6px; }
+.iso-figure:not(.is-wide) .iso-caption-line { width: 16px; }
 
 .equip-stage-note {
   max-width: var(--max);

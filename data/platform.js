@@ -15,6 +15,12 @@
 //   label = 도면식 이름표 { no: 번호, abbr: 영문 약어, anchor: 지시선이 닿는 자리(top·front·right) }
 //           → 화면에는 "번호  약어  한글명(name)" 으로 표시됨 (js/explode/callouts.js)
 //           anchor는 없어도 됨: 지시선 끝점은 렌더러가 "가려지지 않은 점" 중에서 자동으로 고름
+//           anchor가 있으면 그 면(top·front·right) 위의 보이는 점에서만 고름 (EFEM은 윗면 → FOUP 쪽에 안 찍힘)
+//   explode      = 분해가 끝났을 때 이 부품(과 자식들)이 옮겨 가 있는 방향×거리 [x, y, z] (u)
+//                  · 부품 "자기 좌표" 기준 → rotZ로 돌린 공정 챔버 복사본도 값 하나로 각자 바깥쪽을 향함
+//                  · 장비 전체 기준 최종 이동량이다 (부모가 나중에 움직여도 자식은 이미 간 자리에 그대로)
+//   explodeOrder = 분해되는 차례 (1부터). 같은 차례끼리는 목록 순서대로 조금씩 시간차를 두고 움직임
+//                  explodeOrder가 있는 부품 = 한 덩어리로 움직이는 "모듈" (js/explode/stage.js가 사용)
 //   tag   = 그림 위 작은 표시 글자 (예: "PM1" — 공정 챔버와 그 챔버의 펌프를 짝지어 보여 줌)
 //   details = 겉모양 디테일 "종류"만 적는다 (그리는 방법·색은 렌더러가 정함)
 //     face: front(-y) · back(+y) · left(-x) · right(+x) · top
@@ -39,7 +45,8 @@ window.EQUIPMENT_PLATFORMS["common-300"] = {
         { type: "label-plate", face: "right" },
         { type: "vent", face: "right", area: [0.2, 0.08, 0.8, 0.3] }
       ],
-      label: { no: 2, abbr: "EFEM", anchor: "top" }
+      label: { no: 2, abbr: "EFEM", anchor: "front" },  // 윗면은 FFU가 덮음 → 앞면 패널에 지시선
+      explode: [0, -10.5, 0], explodeOrder: 2       // 앞쪽으로 (시그널 타워·HMI·EMO가 함께)
     },
     {
       // FFU(팬 필터 유닛): EFEM 위에서 깨끗한 공기를 아래로 불어 넣는 장치
@@ -59,7 +66,8 @@ window.EQUIPMENT_PLATFORMS["common-300"] = {
       details: [
         { type: "seam", face: "front", count: 2, dir: "h" },
         { type: "label-plate", face: "front", area: [0.12, 0.62, 0.45, 0.74] }
-      ]
+      ],
+      explode: [0, -14, 0], explodeOrder: 1        // 맨 먼저, EFEM보다 더 앞쪽으로 (FOUP 함께)
     },
     {
       id: "lp-stage", name: "로드포트 받침대", en: "Load Port Stage",
@@ -127,7 +135,8 @@ window.EQUIPMENT_PLATFORMS["common-300"] = {
       parent: null, level: 1,
       shape: "box", size: [5.4, 4.6, 3.5], pos: [0, 6.35, 0],
       material: "dark",
-      details: [{ type: "vent", face: "right", area: [0.2, 0.15, 0.8, 0.45] }]
+      details: [{ type: "vent", face: "right", area: [0.2, 0.15, 0.8, 0.45] }],
+      explode: [0, -4, 0], explodeOrder: 3         // 로드락 2개를 받침 프레임째 앞쪽으로 조금
     },
     {
       id: "loadlock", name: "로드락", en: "Load Lock",
@@ -147,7 +156,8 @@ window.EQUIPMENT_PLATFORMS["common-300"] = {
       id: "tm-frame", name: "메인프레임", en: "Mainframe",
       parent: null, level: 1,
       shape: "prism", sides: 6, size: [10, 10, 3.5], pos: [0, 13, 0],
-      material: "dark"
+      material: "dark",
+      explode: [0, 0, 0], explodeOrder: 4          // 기준점: 제자리 (차례가 오면 이름표만 나타남)
     },
     {
       id: "tm", name: "트랜스퍼 모듈", en: "Transfer Module (TM)",

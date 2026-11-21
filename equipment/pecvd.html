@@ -9,18 +9,23 @@
 <body data-root="../" data-process="cvd">
   <header id="site-header"></header>
 
-  <!-- 장비 무대: 지금(1단계)은 외관 정지 그림. 2단계에서 스크롤 분해 연출(stage.js)이 붙는다 -->
+  <!-- 장비 무대: 화면이 고정된 채 스크롤하면 장비가 모듈별로 분해된다 (js/explode/stage.js) -->
   <section class="equip-stage" data-equipment="pecvd">
-    <div class="equip-stage-copy">
-      <!-- 제목 위계: 작은 영문 라벨(고정폭) → 큰 제목 → 한 줄 설명 -->
-      <p class="equip-kicker">Equipment <span class="equip-kicker-no">01</span></p>
-      <h1>PECVD 장비</h1>
-      <p class="equip-lede">대표적인 300mm PECVD 장비 구성 — 웨이퍼가 지나가는 순서대로 번호를 붙였습니다.</p>
-    </div>
-    <!-- 그림틀: 장비 그림(svg) + 도면식 이름표(callouts.js가 채움) -->
-    <div class="iso-figure">
-      <svg class="iso-view" role="img" data-iso-view
-        aria-label="PECVD 장비 외관 그림. 팹 바닥 위 앞쪽에 FOUP 3개가 놓인 EFEM과 그 위 시그널 타워, 오른쪽 끝에 조작 화면과 비상 정지 버튼이 있다. 그 뒤에 로드락 2개, 가운데 육각형 트랜스퍼 모듈, 그 둘레에 공정 챔버 4개가 붙어 있고, 오른쪽에 가스 박스와 RF 전원 장치가 있다. 바닥 아래층(서브팹)에는 공정 챔버마다 드라이 펌프가 1대씩 있고 배기 배관으로 연결된다."></svg>
+    <!-- 고정(pin)되는 부분: 제목 + 그림틀 -->
+    <div class="equip-stage-pin">
+      <div class="equip-stage-copy">
+        <!-- 제목 위계: 작은 영문 라벨(고정폭) → 큰 제목 → 한 줄 설명 -->
+        <p class="equip-kicker">Equipment <span class="equip-kicker-no">01</span></p>
+        <h1>PECVD 장비</h1>
+        <p class="equip-lede">대표적인 300mm PECVD 장비 구성 — 웨이퍼가 지나가는 순서대로 번호를 붙였습니다.</p>
+      </div>
+      <!-- 그림틀: 장비 그림(모듈별 층, render-iso.js가 채움) + 도면식 이름표(callouts.js가 채움) -->
+      <div class="iso-figure">
+        <div class="iso-stack" role="img" data-iso-view
+          aria-label="PECVD 장비 분해 그림. 스크롤하면 FOUP와 로드포트, 장비 전방 모듈(EFEM, 시그널 타워·조작 화면·비상 정지 버튼 포함), 로드락이 차례로 앞쪽으로 빠지고, 가운데 트랜스퍼 모듈은 제자리에 있으며, 둘레의 공정 챔버 4개가 바깥쪽으로, 가스 박스·RF 전원 장치·케이블 트레이가 오른쪽으로, 아래층(서브팹)의 드라이 펌프 4대가 앞쪽으로 벌어진다. 마지막에 웨이퍼가 FOUP에서 EFEM, 로드락, 트랜스퍼 모듈을 거쳐 공정 챔버로 가는 경로가 점선으로 표시된다."></div>
+        <p class="iso-hint">스크롤하면 장비가 모듈별로 분해됩니다 ↓</p>
+        <p class="iso-caption"><span class="iso-caption-line"></span>웨이퍼 이동 경로 · FOUP → EFEM → LL → TM → PM</p>
+      </div>
     </div>
     <p class="equip-stage-note">개념도 — 실제 회사 제품의 외형·비율·사양이 아닙니다.</p>
   </section>
@@ -93,16 +98,17 @@
 
   <script src="../js/pages.js"></script>
   <script src="../js/main.js"></script>
-  <!-- 장비 데이터 → 렌더러 순서 (데이터가 먼저 있어야 그림을 그릴 수 있음) -->
+  <!-- GSAP(애니메이션) → 장비 데이터 → 렌더러 → 이름표 → 무대 순서 (앞의 것이 있어야 뒤의 것이 동작) -->
+  <script src="../vendor/gsap/gsap.min.js"></script>
+  <script src="../vendor/gsap/ScrollTrigger.min.js"></script>
   <script src="../data/platform.js"></script>
   <script src="../data/pecvd.js"></script>
   <script src="../js/explode/render-iso.js"></script>
   <script src="../js/explode/callouts.js"></script>
+  <script src="../js/explode/stage.js"></script>
   <script>
-    // 임시 시작 코드: 외관 정지 그림 + 이름표 (2단계에서 stage.js가 맡음)
-    const isoSvg = document.querySelector("[data-iso-view]");
-    const isoInfo = IsoRender.render(isoSvg, window.EQUIPMENT.pecvd, window.EQUIPMENT_PLATFORMS);
-    EquipCallouts.mount(isoSvg.parentElement, isoSvg, isoInfo);
+    // 장비 무대 시작: 그림 그리기 + 이름표 + 스크롤 분해 연출
+    document.querySelectorAll(".equip-stage[data-equipment]").forEach((el) => EquipStage.mount(el));
   </script>
 </body>
 </html>
