@@ -11,7 +11,9 @@
 - Node.js 설치 + `find-skills` 스킬 설치 (Vercel Labs, 컴퓨터 전체 `~/.claude/skills/`에 설치)
 
 ## 진행 중
-- **장비 중심 개편** (브랜치 `equipment-redesign`, `redesign`에서 만듦) — 설계서: `docs/equipment-redesign-plan.md`
+- **장비 중심 개편** — 설계서: `docs/equipment-redesign-plan.md`
+  - 2026-11-21: 4단계까지 `main`에 합침(빨리 감기), 합친 뒤 `equipment-redesign`·`redesign` 브랜치 삭제 (커밋은 모두 `main`에 있음).
+    합친 뒤 점검: 모든 페이지 스크립트 오류 0·못 불러온 파일 0·메인 링크 깨짐 0, PECVD 무대·패널 검사 통과
   - 0단계 완료 (2026-11-21): 브랜치 생성, 설계서 저장, CLAUDE.md 갱신(출처 규칙·장비 데이터 규칙·폴더 구조),
     `gsap-performance` 스킬 설치 (GreenSock 공식, `~/.claude/skills/`)
   - 방식: 2.5D 아이소메트릭 SVG + GSAP. 장비 데이터는 그리는 코드와 분리 (나중에 Three.js로 바꿔도 데이터 재사용)
