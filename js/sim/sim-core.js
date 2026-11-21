@@ -62,7 +62,8 @@
     const noteEl = root.querySelector("[data-sim-note]");
 
     const reduceMq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const saveData = !!(navigator.connection && navigator.connection.saveData);
+    // 데이터 절약·저사양 기기 → 정지 그림 (판정은 js/motion-pref.js 공용, 없으면 데이터 절약만 봄)
+    const saveData = window.MotionPref ? !!MotionPref.liteReason() : !!(navigator.connection && navigator.connection.saveData);
     const canAnimate = typeof scene.update === "function";
     const total = scene.stages.reduce((sum, s) => sum + s.duration, 0);
 

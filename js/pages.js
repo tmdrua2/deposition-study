@@ -34,8 +34,9 @@ const PAGES = [
   // 공정·장비
   { section: "equipment", title: "PVD (물리 기상 증착)", short: "PVD", desc: "물리 기상 증착", path: "equipment/pvd.html",
     keywords: "pvd sputter sputtering 스퍼터 증발 evaporation target 타겟 물리기상증착" },
-  { section: "equipment", title: "CVD / PECVD (화학 기상 증착)", short: "CVD / PECVD", desc: "화학 기상 증착", path: "equipment/cvd-pecvd.html",
-    keywords: "cvd pecvd lpcvd 화학기상증착 precursor 전구체 plasma" },
+  // PECVD: 장비 분해 페이지 (예전 cvd-pecvd.html은 이 페이지로 옮겼다는 안내만 남김)
+  { section: "equipment", title: "PECVD 장비 (플라즈마 화학 기상 증착)", short: "PECVD", desc: "플라즈마 화학 기상 증착", path: "equipment/pecvd.html",
+    keywords: "pecvd cvd 화학기상증착 플라즈마 plasma 장비 분해 공정 챔버 샤워헤드 showerhead efem 로드락 트랜스퍼 rps 시즈닝" },
   { section: "equipment", title: "ALD (원자층 증착)", short: "ALD", desc: "원자층 증착", path: "equipment/ald.html",
     keywords: "ald atomic layer deposition 원자층 self-limiting 자기제한 purge 퍼지" },
   { section: "equipment", title: "Epi (에피택시)", short: "Epi", desc: "에피택시", path: "equipment/epi.html",

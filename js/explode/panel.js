@@ -14,8 +14,10 @@
 //     [검증 필요]                    → 작은 표시
 //     [[보이는 글|basics/plasma.html]] → 링크 (사이트 맨 위 폴더 기준 경로, body의 data-root를 앞에 붙임)
 //
-// 사용법: const panel = EquipPanel.create({ equipment, platforms, onOpen(partId), onClose() })
-//         panel.open(partId, 돌아갈초점요소)  /  panel.close()  /  panel.isOpen()
+// 사용법: const panel = EquipPanel.create({ equipment, platforms, onOpen(partId), onShow(partId), onClose(byPointer) })
+//         panel.open(partId, 돌아갈초점요소)  /  panel.close()  /  panel.isOpen()  /  panel.has(partId)
+//   onShow : 보이는 부품이 바뀔 때마다 (처음 열 때 + "내부 부품" 링크·돌아가기) → 주소 #part= 갱신에 씀
+//   onClose(byPointer) : 마우스·손가락으로 닫았으면 true (닫기 버튼 클릭·바깥 클릭), 키보드(Esc·Enter)면 false
 // =============================================================
 (function () {
   "use strict";
@@ -128,6 +130,7 @@
         body.append(sec);
       });
       body.scrollTop = 0;
+      if (opts.onShow) opts.onShow(id);
       return true;
     }
 
@@ -218,7 +221,7 @@
     const SCROLL_KEYS = new Set([" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"]);
     function blockWheel(e) { if (!inPanel(e.target)) e.preventDefault(); }
     function onKey(e) {
-      if (e.key === "Escape") { e.preventDefault(); close(); return; }
+      if (e.key === "Escape") { e.preventDefault(); close({ pointer: false }); return; }
       if (e.key === "Tab") { trapTab(e); return; }
       if (SCROLL_KEYS.has(e.key) && !inPanel(e.target)) e.preventDefault();
     }
@@ -260,7 +263,7 @@
       closeBtn.focus({ preventScroll: true });
     }
 
-    function close() {
+    function close(how) {
       if (!isOpen()) return;
       panel.classList.remove("is-open");
       backdrop.classList.remove("is-open");
@@ -273,21 +276,22 @@
       const ms = parseFloat(getComputedStyle(panel).transitionDuration) * 1000 || 0;
       closeTimer = setTimeout(() => { panel.hidden = true; backdrop.hidden = true; }, ms + 20);
       current = null;
-      if (opts.onClose) opts.onClose();
+      if (opts.onClose) opts.onClose(!!(how && how.pointer));
       if (returnFocus && returnFocus.isConnected) returnFocus.focus({ preventScroll: true });
       returnFocus = null;
     }
 
     function isOpen() { return panel.classList.contains("is-open") || (!panel.hidden && current !== null); }
 
-    backdrop.addEventListener("click", close);
-    closeBtn.addEventListener("click", close);
+    backdrop.addEventListener("click", () => close({ pointer: true }));
+    // 키보드 Enter·Space로 누른 클릭은 detail이 0 → 키보드로 닫은 것
+    closeBtn.addEventListener("click", (e) => close({ pointer: e.detail > 0 }));
     backBtn.addEventListener("click", () => {
       const prev = history.pop();
       if (prev) { fill(prev); closeBtn.focus(); }
     });
 
-    return { open: open, close: close, isOpen: isOpen, el: panel };
+    return { open: open, close: close, isOpen: isOpen, has: (id) => byId.has(id), el: panel };
   }
 
   window.EquipPanel = { create: create };

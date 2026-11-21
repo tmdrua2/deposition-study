@@ -20,6 +20,7 @@
 //   opts.onFocus(id) : 이름표에 마우스/초점이 들어오면 부품 id, 나가면 null
 //   opts.onSelect(id, 버튼) : 이름표(넓은 화면)·번호 원·아래 목록 항목을 누르면 (부품 패널 열기)
 //   돌려주는 lock(id) : 강조를 이 부품에 고정 (패널이 열려 있는 동안), lock(null)로 풀기
+//   돌려주는 muteFocus() : 다음 초점 한 번은 강조 안 함 (마우스로 패널을 닫았을 때)
 //   opts.tagBlocks   : 작은 표시(PM1 …)를 다른 곳에서 그릴 때, 층 이름표가 피해야 할 그 표시들의 자리
 //                      [{ point(viewBox 좌표), text, place: "below"|"center" }]
 // =============================================================
@@ -80,7 +81,8 @@
       const on = () => highlight(L.id, true), off = () => highlight(L.id, false);
       b.addEventListener("pointerenter", on);
       b.addEventListener("pointerleave", off);
-      b.addEventListener("focus", on);
+      // 초점이 들어오면 강조. 단, 마우스로 패널을 닫아 초점만 돌아온 때(muteFocus)는 강조하지 않음
+      b.addEventListener("focus", () => { if (muted) { muted = false; return; } on(); });
       b.addEventListener("blur", off);
       b.addEventListener("click", () => { if (opts.onSelect) opts.onSelect(L.id, b); });
       return { L: L, el: b, leader: leader, dot: dot };
@@ -122,6 +124,7 @@
     // ---------- 강조: data-tree에 이 부품 id가 들어 있는 그룹(자기 + 자식)만 ----------
     //   locked: 패널이 열려 있는 동안 강조할 부품 → 마우스가 다른 이름표를 지나가도 바뀌지 않음
     let locked = null;
+    let muted = false;      // true면 다음 초점 한 번은 강조하지 않음 (muteFocus)
     function highlight(id, on, force) {
       if (locked && !force) return;
       // data-src-tree: 복사본도 원본 id를 가짐 → PM 이름표에 올리면 PM1~PM4가 모두 강조
@@ -167,23 +170,32 @@
       const padT = parseFloat(fcs.paddingTop) || 0, padB = parseFloat(fcs.paddingBottom) || 0;
       const top = Math.max(14, padT + 8), bottom = H - Math.max(14, padB + (wide ? 24 : 8));
 
+      // 다른 모듈의 부품 윤곽 (지시선이 남의 모듈 그림을 가로지르지 않게 끝점을 고를 때 씀)
+      const othersOf = (layer) => (info.occupiedBy || []).filter((o) => o.module !== layer).map((o) => { const h = o.hull.map(map); h.module = o.module; return h; });
+      // 점 p에서 기둥(x = edgeX)까지 수평으로 갈 때 가로지르는 남의 부품 수
+      const rayHits = (p, edgeX, hulls) => hulls.filter((h) => segPoly(p, [edgeX, p[1]], h)).length;
+
       // 1) 부품마다 왼쪽·오른쪽 끝점 후보와 지시선 길이(비용)
       const all = items.map((it) => {
         const c = (it.L.candidates && it.L.candidates.length ? it.L.candidates : [it.L.point]).map(map);
         const left = c.reduce((a, b) => (b[0] < a[0] ? b : a));
         const right = c.reduce((a, b) => (b[0] > a[0] ? b : a));
+        const hulls = othersOf(it.L.layer);
         // 끝점: 기둥 쪽 가장자리에서 30% 이내의 후보 중, 부품의 보이는 부분 가운데에 가장 가까운 점
         //   → 지시선은 짧게 유지하면서, 끝점이 옆 부품과 맞닿은 윤곽선에 붙어 헷갈리는 것을 막음
+        //   단, 기둥까지 가는 선이 다른 모듈 그림(예: GAS 선이 RF 장치)을 지나는 점은 뒤로 미룸
+        //   → 지나지 않는 점이 있으면 30% 밖이라도 그 점을 씀 (예: GAS 끝점이 RF 장치 아래쪽 높이로)
         const cx = c.reduce((s, p) => s + p[0], 0) / c.length, cy = c.reduce((s, p) => s + p[1], 0) / c.length;
-        const pick = (edge) => {
+        const pick = (edge, edgeX) => {
           const xs = c.map((p) => p[0]), span = Math.max(...xs) - Math.min(...xs);
           // anchor 면을 지정한 부품(centered)은 가장자리 제한 없이 한가운데 점 → 옆 부품과 헷갈리지 않음
-          const near = it.L.centered ? c : c.filter((p) => Math.abs(p[0] - edge[0]) <= span * 0.3 + 1);
-          return near.reduce((a, b) => (Math.hypot(b[0] - cx, b[1] - cy) < Math.hypot(a[0] - cx, a[1] - cy) ? b : a));
+          const inBand = (p) => it.L.centered || Math.abs(p[0] - edge[0]) <= span * 0.3 + 1;
+          const score = (p) => rayHits(p, edgeX, hulls) * 1e6 + (inBand(p) ? 0 : 1e4) + Math.hypot(p[0] - cx, p[1] - cy);
+          return c.reduce((a, b) => (score(b) < score(a) ? b : a));
         };
         return {
-          it: it, no: it.L.no,
-          A: { left: pick(left), right: pick(right) },
+          it: it, no: it.L.no, hulls: hulls,
+          A: { left: pick(left, colL), right: pick(right, colR) },
           cost: { left: left[0] - colL, right: colR - right[0] }
         };
       });
@@ -229,11 +241,36 @@
         }
         return out;
       }
+      // 이름표 글자 상자 (그리기 전 어림: 기둥 위치 + 이름표 크기, CSS의 세로 transform과 같게)
+      //   넓은 화면: 1줄 가운데가 지시선 높이 → 위로 약 7px / 좁은 화면: 번호 원 가운데가 지시선 높이
+      function labelBox(o) {
+        const el = o.it.el, w = el.offsetWidth, h = el.offsetHeight;
+        const x = o.side === "right" ? colR + 4 : colL - 4 - w;
+        const y = wide ? o.y - 7 : o.y - h / 2;
+        return [x - 2, y - 2, x + w + 2, y + h + 2];
+      }
+      // 지시선이 남의 이름표 글자를 지나가는 경우 [지시선 주인, 이름표 주인]
+      function labelHits() {
+        const P = placed(), out = [];
+        P.forEach((a) => P.forEach((b) => {
+          if (a === b) return;
+          const R = labelBox(b);
+          if (a.path.some((p, i) => i > 0 && segRect(a.path[i - 1], p, R))) out.push([a, b]);
+        }));
+        return out;
+      }
+      const conflicts = () => crossings().concat(labelHits());
+      // 남의 모듈 그림을 지나는 지시선 (피할 수 있으면 피함 — 4-1·5단계)
+      //   hitsOf(o) = 지시선 o가 지나는 남의 부품 윤곽들, moduleCost() = 모든 지시선의 그 수 합계
+      //   (살짝 스치는 선 하나보다 여러 부품을 가로지르는 선이 더 나쁨 → 합계로 비교)
+      const hitsOf = (o) => o.hulls.filter((h) => o.path.some((p, i) => i > 0 && segPoly(o.path[i - 1], p, h)));
+      const moduleHits = () => placed().filter((o) => hitsOf(o).length);
+      const moduleCost = () => placed().reduce((n, o) => n + hitsOf(o).length, 0);
       sortSides();
       build();
-      // 4) 교차 고치기: 같은 기둥이면 두 이름표 순서를 바꾸고, 다른 기둥이면 한쪽을 반대 기둥으로
+      // 4) 교차·글자 겹침 고치기: 같은 기둥이면 두 이름표 순서를 바꾸고, 다른 기둥이면 한쪽을 반대 기둥으로
       for (let iter = 0; iter < 80; iter++) {
-        const X = crossings();
+        const X = conflicts();
         if (!X.length) break;
         const [a, b] = X[0];
         if (a.side === b.side) {
@@ -247,7 +284,24 @@
         }
         build();
       }
+      // 4-1) 남의 모듈 그림을 지나는 지시선 줄이기: 같은 기둥의 이웃과 순서를 바꿔 보고, 줄어들면(교차 없이) 그대로 둠
+      for (let pass = 0; pass < 6; pass++) {
+        let improved = false;
+        ["left", "right"].forEach((s) => {
+          const g = order[s];
+          for (let i = 0; i + 1 < g.length; i++) {
+            const before = moduleCost();
+            if (!before) return;
+            [g[i], g[i + 1]] = [g[i + 1], g[i]];
+            build();
+            if (conflicts().length || moduleCost() >= before) { [g[i], g[i + 1]] = [g[i + 1], g[i]]; build(); }
+            else improved = true;
+          }
+        });
+        if (!improved) break;
+      }
       // 5) 번호순 맞추기: 이웃한 두 이름표가 번호 역순이면 바꿔 보고, 교차가 생기면 되돌림
+      const mh0 = moduleCost();
       let changed = true;
       for (let pass = 0; changed && pass < 12; pass++) {
         changed = false;
@@ -257,7 +311,8 @@
             if (g[i].no < g[i + 1].no) continue;
             [g[i], g[i + 1]] = [g[i + 1], g[i]];
             build();
-            if (crossings().length) { [g[i], g[i + 1]] = [g[i + 1], g[i]]; build(); }
+            // 교차·글자 겹침이 생기거나, 남의 모듈 그림을 지나는 지시선이 늘면 되돌림
+            if (conflicts().length || moduleCost() > mh0) { [g[i], g[i + 1]] = [g[i + 1], g[i]]; build(); }
             else changed = true;
           }
         });
@@ -335,7 +390,9 @@
         // 겹침 점수: 화면 밖 > 이름표·지시선·PM 표시·다른 층 이름표와 겹침 > 부품과 겹침. 0점인 첫 자리, 없으면 가장 낮은 자리
         const score = (sp) => {
           const R = [sp[0] - 2, sp[1] - 2, sp[0] + w + 2, sp[1] + h + 2];
-          return (R[0] < 0 || R[2] > W || R[1] < padT || R[3] > H - padB ? 100 : 0)   // 위 = 캡션 자리, 아래 = 안내 문구·경로 설명 자리
+          // 좌우는 화면 끝에서 FM 이상 떨어져야 함 (넓은 화면 24px — 화면 끝에 붙어 보이지 않게)
+          const FM = wide ? 24 : 6;
+          return (R[0] < FM || R[2] > W - FM || R[1] < padT || R[3] > H - padB ? 100 : 0)   // 위 = 캡션 자리, 아래 = 안내 문구·경로 설명 자리
            + (hitRect(R) ? 10 : 0) + (hitPoly(R) ? 1 : 0);
         };
         let spot = spots[0], best = Infinity;
@@ -348,8 +405,16 @@
         blocks.push([spot[0] - 4, spot[1] - 4, spot[0] + w + 4, spot[1] + h + 4]);
       });
 
-      // 점검용: 남은 교차 수를 속성으로 남김 (0이어야 정상)
+      // 점검용: 남은 교차 수 · 지시선-이름표 글자 겹침 수를 속성으로 남김 (둘 다 0이어야 정상)
+      //   module-hits = 지시선이 남의 모듈 그림을 지나는 수 (참고용, 피할 수 없는 배치도 있음)
       figure.dataset.crossings = String(crossings().length);
+      figure.dataset.labelHits = String(labelHits().length);
+      figure.dataset.moduleHits = moduleHits().map((o) => o.it.L.abbr + ">" + [...new Set(hitsOf(o).map((h) => h.module))].join("+")).join(",");
+    }
+    // 선분이 다각형(부품 윤곽)을 지나가나 (끝점이 안에 있거나 변과 교차)
+    function segPoly(a, b, h) {
+      if (inPoly(a, h) || inPoly(b, h)) return true;
+      return h.some((p, i) => segCross(a, b, p, h[(i + 1) % h.length]));
     }
     // 선분이 사각형을 지나가나 (사각형 테두리 4변과 교차하거나, 끝점이 안에 있으면)
     function segRect(a, b, R) {
@@ -385,7 +450,11 @@
       if (id) { highlight(id, true, true); locked = id; }
     }
 
-    return { layout: layout, highlight: highlight, lock: lock, items: items, floorTags: floorTags, legend: legend };
+    // 다음 초점 한 번은 강조하지 않음: 마우스로 패널을 닫으면 초점은 이름표로 돌아가되(화면 읽기 프로그램용) 강조는 풀림
+    //   초점이 바로 안 오면(이미 다른 곳) 다음 차례에 저절로 풀림
+    function muteFocus() { muted = true; setTimeout(() => { muted = false; }, 0); }
+
+    return { layout: layout, highlight: highlight, lock: lock, muteFocus: muteFocus, items: items, floorTags: floorTags, legend: legend };
   }
 
   window.EquipCallouts = { mount: mount };

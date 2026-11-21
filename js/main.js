@@ -171,8 +171,8 @@ const EQUIP_ART = {
     <rect x="48" y="84" width="64" height="4" rx="1" class="f-ink"/>
     <rect x="56" y="88" width="48" height="10" class="f-line"/>
     <path d="M30 60h-12M130 60h12" class="s-line"/>`,
-  // CVD/PECVD: 가스 관 → 샤워헤드(구멍) → 플라즈마 → 히터 위 웨이퍼
-  "equipment/cvd-pecvd.html": `
+  // PECVD: 가스 관 → 샤워헤드(구멍) → 플라즈마 → 히터 위 웨이퍼
+  "equipment/pecvd.html": `
     <path d="M80 4v14" class="s-line"/>
     <rect x="28" y="18" width="104" height="88" rx="6" class="f-body"/>
     <rect x="40" y="26" width="80" height="8" rx="2" class="f-line"/>

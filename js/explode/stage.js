@@ -11,7 +11,9 @@
 // 이 파일은 "몇 % 벌어졌나"만 다루고, 그림은 render-iso.js가 미리 그려 둔 층을 옮기기만 한다.
 //   → 휴대폰 성능: 층마다 CSS transform(translate3d)만 바꿈 = 다시 그리기 없음
 //
-// 움직임 줄이기(prefers-reduced-motion) 설정: 고정·애니메이션 없이 분해된 정지 그림 + 이름표
+// 정지 화면: 움직임 줄이기 설정 · 데이터 절약 모드 · 저사양 기기 (판정은 js/motion-pref.js)
+//   → 고정·애니메이션 없이 분해된 정지 그림 + 이름표. 데이터 절약·저사양이면 "분해 애니메이션 보기" 링크
+// 주소 #part=부품id 로 열면 분해 끝 상태 + 그 부품 패널이 열린 채로 시작 (패널을 열면 주소도 바뀜)
 //
 // 사용법: <section class="equip-stage" data-equipment="pecvd"> 안에
 //         .equip-stage-pin > .iso-figure > [data-iso-view] 를 두고 EquipStage.mount(section)
@@ -158,12 +160,62 @@
     };
     const panel = window.EquipPanel ? EquipPanel.create({
       equipment: eq, platforms: window.EQUIPMENT_PLATFORMS,
-      onOpen: (id) => callouts.lock(labelIdFor(id)),
-      onClose: () => callouts.lock(null)
+      onOpen: (id) => { callouts.lock(labelIdFor(id)); makeRoom(labelIdFor(id)); },
+      // 주소를 #part=부품 으로 (뒤로 가기 기록은 쌓지 않음) → 이 주소를 복사하면 같은 패널이 열린 채로 시작
+      onShow: (id) => setHash(id),
+      onClose: (byPointer) => {
+        callouts.lock(null);
+        // 마우스로 닫으면 강조도 풀림. 키보드로 닫으면 이름표에 초점 + 강조가 그대로 (어디에 있었는지 보이게)
+        if (byPointer) callouts.muteFocus();
+        makeRoom(null);
+        setHash(null);
+      }
     }) : null;
     function select(id, btn) {
       if (!panel || !arrived(id)) return;
       panel.open(id, btn || (itemFor(id) || {}).el);
+    }
+    function setHash(id) {
+      if (!window.history || !history.replaceState) return;
+      try { history.replaceState(null, "", id ? "#part=" + id : location.pathname + location.search); } catch (e) { /* 파일 직접 열기 등에서 막히면 그냥 둠 */ }
+    }
+
+    // ---------- 2-1-1) 패널 자리 비키기 (넓은 화면: 오른쪽 패널) ----------
+    //   패널이 열리면 선택한 모듈(복사본 포함, 예: PM1~PM4) + 그 이름표가 패널 왼쪽 남은 공간 안에 다 보이도록
+    //   그림틀 전체(장비·이름표·지시선)를 왼쪽으로 옮기고, 그래도 넓으면 줄인다. 이미 다 보이면 그대로.
+    //   transform만 바꾸므로 이름표 배치는 다시 계산하지 않음. 닫으면 제자리로.
+    let roomFor = null;
+    const ROOM_GAP = 24;      // 패널과 장비 사이 여백
+    function makeRoom(lid, instant) {
+      roomFor = lid;
+      const to = { x: 0, y: 0, scale: 1 };
+      if (lid && panel && window.innerWidth >= 900) {
+        const key = (labelById.get(lid) || {}).key;
+        // 지금 transform을 뺀 원래 위치로 환산 (패널을 연 채 다른 부품으로 바뀌어도 정확하게)
+        const cur = { x: +gsap.getProperty(figure, "x") || 0, y: +gsap.getProperty(figure, "y") || 0, s: +gsap.getProperty(figure, "scale") || 1 };
+        const fr = figure.getBoundingClientRect();
+        const f0 = { l: fr.left - cur.x, t: fr.top - cur.y };
+        const un = (r) => ({ l: f0.l + (r.left - f0.l - cur.x) / cur.s, r: f0.l + (r.right - f0.l - cur.x) / cur.s,
+          t: f0.t + (r.top - f0.t - cur.y) / cur.s, b: f0.t + (r.bottom - f0.t - cur.y) / cur.s });
+        const rects = [];
+        info.layers.forEach((L) => { if (L.module && L.module.key === key) rects.push(un(L.el.getBoundingClientRect())); });
+        callouts.items.forEach((it) => { if (it.L.id === lid || (key && it.L.key === key)) rects.push(un(it.el.getBoundingClientRect())); });
+        if (rects.length) {
+          const U = rects.reduce((u, r) => ({ l: Math.min(u.l, r.l), r: Math.max(u.r, r.r), t: Math.min(u.t, r.t), b: Math.max(u.b, r.b) }));
+          const pr = panel.el.getBoundingClientRect();
+          const left = 16, right = window.innerWidth - (pr.width || 440) - 16 - ROOM_GAP;
+          if (U.r > right || U.l < left) {
+            const s = Math.min(1, (right - left) / (U.r - U.l));
+            // 오른쪽 끝을 패널 앞에 맞추고, 왼쪽이 화면 밖으로 나가면 왼쪽에 맞춤 (줄였으면 둘 다 들어감)
+            let x = right - f0.l - (U.r - f0.l) * s;
+            if (f0.l + x + (U.l - f0.l) * s < left) x = left - f0.l - (U.l - f0.l) * s;
+            const cy = (U.t + U.b) / 2;
+            Object.assign(to, { x: x, y: (cy - f0.t) * (1 - s), scale: s });
+          }
+        }
+      }
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      gsap.to(figure, Object.assign({ transformOrigin: "0 0", duration: instant || reduce ? 0 : 0.45, ease: "power2.out", overwrite: true }, to));
     }
     // 분해된 모듈 그림을 직접 눌러도 열림 (그 모듈의 대표 이름표 = 모듈 id와 같은 이름표, 없으면 그 모듈의 첫 이름표)
     scene.addEventListener("click", (e) => {
@@ -198,6 +250,19 @@
         capBox.appendChild(el);
         capGroups.push({ el: el, ids: ms.map((m) => m.id), meta: el.firstChild, name: el.lastChild, split: null });
       });
+      // 분해가 다 끝나면: 마지막 모듈 캡션 대신 전체 요약 ("ALL 01–11 / PECVD 장비 · 11개 구성 요소")
+      //   구성 요소 수 = 이름표 수 (데이터에서 자동으로 셈)
+      if (capGroups.length) {
+        const nos = info.labels.map((L) => L.no).sort((a, b) => a - b);
+        const el = document.createElement("div");
+        el.className = "stage-cap stage-cap-summary";
+        el.innerHTML =
+          '<p class="stage-cap-meta"><span class="stage-cap-no">' + pad2(nos[0]) + "–" + pad2(nos[nos.length - 1]) +
+          '</span><span class="stage-cap-abbr">ALL</span></p>' +
+          '<p class="stage-cap-name">' + (eq.title || eq.id) + " · " + info.labels.length + "개 구성 요소</p>";
+        capBox.appendChild(el);
+        capGroups.push({ el: el, ids: null, summary: true, meta: el.firstChild, name: el.lastChild, split: null });
+      }
     }
 
     // ---------- 3) 크기 맞추기 ----------
@@ -215,8 +280,24 @@
     function fit() {
       const header = document.getElementById("site-header");
       stageEl.style.setProperty("--header-h", (header ? header.offsetHeight : 0) + "px");
+      // 패널 자리 비키기 중이면 잠깐 원래 자리로 (이름표 배치는 transform 없는 상태로 재야 정확) → 끝에서 다시 비킴
+      if (roomFor) gsap.set(figure, { x: 0, y: 0, scale: 1 });
       figure.style.height = "";
       figure.style.flex = "";
+      // 휴대폰(목록이 그림 아래 있는 화면): 장비는 폭에 먼저 맞춰져 위아래가 남음
+      //   → 남는 높이의 60%를 아래 목록 줄 높이로 돌림 (줄 높이 최대 약 44px = 손가락으로 누르기 좋은 크기)
+      //   목록이 커진 만큼 그림틀이 줄어 장비 위아래 빈 곳이 줄어듦 (장비 크기는 그대로)
+      const legendEl = callouts.legend;
+      legendEl.style.removeProperty("--legend-py");
+      if (!isStatic && !figure.classList.contains("is-wide")) {
+        const c0 = getComputedStyle(figure);
+        const aw = figure.clientWidth - parseFloat(c0.paddingLeft) - parseFloat(c0.paddingRight);
+        const ah = figure.clientHeight - parseFloat(c0.paddingTop) - parseFloat(c0.paddingBottom);
+        const slack = ah - (eb[3] - eb[1]) * (aw / (eb[2] - eb[0]));
+        const cols = getComputedStyle(legendEl).gridTemplateColumns.split(" ").length || 1;
+        const rows = Math.ceil(legendEl.children.length / cols);
+        if (slack > 0 && rows) legendEl.style.setProperty("--legend-py", (7 + Math.min(9, (slack * 0.6) / (rows * 2))).toFixed(1) + "px");
+      }
       const cs = getComputedStyle(figure);
       const padL = parseFloat(cs.paddingLeft), padR = parseFloat(cs.paddingRight);
       const padT = parseFloat(cs.paddingTop), padB = parseFloat(cs.paddingBottom);
@@ -289,6 +370,7 @@
       callouts.layout();
       // 카메라 값이 바뀌었으면 타임라인의 시작 값도 다시 계산 (진행 정도는 그대로)
       if (tl) { const p = tl.progress(); tl.invalidate(); tl.progress(p); }
+      if (roomFor) makeRoom(roomFor, true);
     }
     if ("ResizeObserver" in window) new ResizeObserver(fit).observe(pin);
     else window.addEventListener("resize", fit);
@@ -389,7 +471,8 @@
       //   (TM은 제자리라 이름표가 로드락보다 먼저 나타남 → 캡션 시각은 앞 캡션보다 최소 0.6 뒤로 밀어 순서를 지킴)
       const capAt = [];
       capGroups.forEach((g, i) => {
-        const t = Math.min(...g.ids.map(endOf)) - 0.2;
+        // 요약 캡션은 마지막 모듈이 도착한 뒤 (웨이퍼 경로를 그리기 시작할 즈음)
+        const t = g.summary ? moveEnd + 0.15 : Math.min(...g.ids.map(endOf)) - 0.2;
         capAt.push(i ? Math.max(t, capAt[i - 1] + 0.6) : t);
       });
       if (!isStatic) capGroups.forEach((g, i) => {
@@ -471,11 +554,38 @@
     }
 
     // ---------- 6) 움직임 설정에 따라: 스크롤 연출 / 정지 화면 ----------
+    //   정지 화면 = 움직임 줄이기 설정, 또는 데이터 절약 모드·저사양 기기 (판정은 js/motion-pref.js 공용)
+    //   데이터 절약·저사양 때문이면 그림 위에 짧은 안내 + "분해 애니메이션 보기" 링크 (?motion=1로 다시 열기)
+    const lite = window.MotionPref ? MotionPref.liteReason() : null;
+    const LITE_TEXT = {
+      "save-data": "데이터 절약 모드라서 분해가 끝난 그림으로 보여 줍니다.",
+      "low-end": "기기 부담을 줄이려고 분해가 끝난 그림으로 보여 줍니다.",
+      "forced": "정지 화면으로 보여 줍니다."
+    };
+    //   자리: 큰 제목 옆(휴대폰은 아래) 설명 바로 밑 — 그림틀 위 여백에 두면 큰 제목과 겹침
+    function liteNote(on) {
+      let n = pin.querySelector(".stage-lite-note");
+      if (!on) { if (n) n.hidden = true; return; }
+      if (!n) {
+        n = document.createElement("p");
+        n.className = "stage-lite-note";
+        const a = document.createElement("a");
+        a.className = "stage-lite-btn";
+        a.href = MotionPref.animateUrl();
+        a.textContent = "분해 애니메이션 보기";
+        n.append(LITE_TEXT[lite] || LITE_TEXT.forced, " ", a);
+        (heroMeta || figure).appendChild(n);
+      }
+      n.hidden = false;
+    }
+    let trigger = null;   // 스크롤 연출의 ScrollTrigger (#part= 바로 열기에서 씀)
     gsap.registerPlugin(ScrollTrigger);
     const mm = gsap.matchMedia();
     mm.add({ motion: "(prefers-reduced-motion: no-preference)", reduce: "(prefers-reduced-motion: reduce)" }, (ctx) => {
-      isStatic = !!ctx.conditions.reduce;
+      isStatic = !!ctx.conditions.reduce || !!lite;
       stageEl.classList.toggle("is-static", isStatic);
+      // 움직임 줄이기 설정이면 안내·링크 없음 (운영체제 설정을 따름)
+      liteNote(!!lite && !ctx.conditions.reduce);
       fit();
       callouts.layout();
       // 캡션 한글명을 글자 단위로 쪼갬 (단어마다 가리개 → 글자가 아래에서 올라오는 연출). 정지 화면에서는 캡션을 안 씀
@@ -500,7 +610,7 @@
       }
       if (heroMeta) gsap.from(heroMeta.children, { opacity: 0, y: 10, duration: 0.8, stagger: 0.08, ease: "power2.out", delay: 0.5 });
       if (glow) gsap.from(glow, { opacity: 0, duration: 1.4, ease: "power1.out" });
-      ScrollTrigger.create({
+      trigger = ScrollTrigger.create({
         trigger: pin,
         pin: true,
         start: () => "top " + (document.getElementById("site-header") || { offsetHeight: 0 }).offsetHeight + "px",
@@ -513,12 +623,43 @@
       });
       // 정리: 설정이 바뀌면(움직임 줄이기 켬/끔) GSAP이 타임라인을 되돌리고, 여기서 층 위치도 처음으로
       return () => {
+        trigger = null;
         seq.forEach((m) => { prog[m.id].p = 0; });
         apply(true);
       };
     });
-    // 글꼴이 늦게 들어오면 제목 높이가 바뀜 → 고정 위치 다시 계산
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fit(); ScrollTrigger.refresh(); });
+
+    // ---------- 7) 주소 #part=부품 으로 열면: 분해가 끝난 상태 + 그 부품 패널이 열린 채로 시작 ----------
+    //   예: pecvd.html#part=showerhead (내부 부품도 됨 — 강조는 그 부품이 들어 있는 모듈)
+    //   없는 부품 이름이면 아무것도 하지 않음
+    function openFromHash() {
+      const m = /^#part=([\w-]+)$/.exec(window.location.hash);
+      if (!m || !panel || !panel.has(m[1])) return;
+      const id = m[1];
+      if (!isStatic && trigger && tl) {
+        // 분해 끝(웨이퍼 경로까지 그린 시점, 크림 전환 전)으로 바로 이동. scrub 따라오기도 바로 끝냄
+        const p = Math.min(1, (flowAt + 0.02) / tl.duration());
+        window.scrollTo({ top: trigger.start + (trigger.end - trigger.start) * p, behavior: "instant" });
+        trigger.update();
+        const tw = trigger.getTween && trigger.getTween();
+        if (tw) tw.progress(1);
+        tl.progress(p);
+        apply(true);
+      } else {
+        // 정지 화면: 그림틀이 보이게 스크롤만
+        const hh = (document.getElementById("site-header") || { offsetHeight: 0 }).offsetHeight;
+        window.scrollTo({ top: figure.getBoundingClientRect().top + window.scrollY - hh, behavior: "instant" });
+      }
+      const it = itemFor(labelIdFor(id));
+      panel.open(id, it ? it.el : null);
+    }
+    // 브라우저가 예전 스크롤 위치로 되돌리지 않게 (#part= 위치가 우선)
+    if (/^#part=/.test(window.location.hash) && "scrollRestoration" in history) history.scrollRestoration = "manual";
+    window.addEventListener("hashchange", openFromHash);
+
+    // 글꼴이 늦게 들어오면 제목 높이가 바뀜 → 고정 위치 다시 계산 → 그다음 #part= 처리
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fit(); ScrollTrigger.refresh(); openFromHash(); });
+    else setTimeout(openFromHash, 300);
 
     return { info: info, callouts: callouts, panel: panel };
   }

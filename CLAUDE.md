@@ -23,6 +23,7 @@ css/style.css         공통 스타일 (색상은 :root 변수에서만 바꾼�
 fonts/                Pretendard(한글) + IBM Plex Mono(영문 약어·번호) woff2 + 라이선스 — CDN 대신 직접 넣어 둠
 js/pages.js           ★ 전체 페이지 목록 — 목차·메뉴·검색이 모두 여기서 만들어짐
 js/main.js            공통 동작: 헤더 메뉴, 목차, 검색, 페이지 안 목차
+js/motion-pref.js     정지 화면 판정(움직임 줄이기·데이터 절약·저사양) — 공정 모션·장비 무대가 함께 씀
 js/sim/               공정 모션: sim-core.js(공용) + 공정별 장면(pvd.js 등)
 js/explode/           장비 분해 연출: render-iso.js(그리기) · callouts.js(이름표) · stage.js(스크롤) · panel.js(부품 패널)
 data/                 장비 데이터: platform.js(공통 플랫폼) · pecvd.js · ald.js
