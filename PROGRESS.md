@@ -15,7 +15,7 @@
   - 방식: PVD 페이지 하나로 시제품 먼저 (2D Canvas 모션 + GSAP 스크롤 전환)
   - [x] 0. GSAP 공식 스킬 3개 설치 (gsap-core, gsap-scrolltrigger, gsap-timeline)
   - [x] 1. 색 체계 개편 (종이색 본문 + 먹색 글자 + 공정별 포인트 색), CLAUDE.md 규칙 갱신
-  - [ ] 2. GSAP 파일을 `vendor/gsap/`에 넣기 + 라이선스 원문
+  - [x] 2. GSAP 3.15.1 파일을 `vendor/gsap/`에 넣기 + 라이선스 원문 (웹사이트 사용은 무료·허용)
   - [ ] 3. `js/sim/sim-core.js` (반복·일시정지·정지 이미지 대체)
   - [ ] 4. PVD 정지 단면도 → **사용자 승인 받고 나서** 5단계
   - [ ] 5. PVD 단계별 모션
