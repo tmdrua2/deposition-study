@@ -12,6 +12,15 @@
 
 ## 진행 중
 - 사이트 대규모 업그레이드 → `redesign` 브랜치에서 작업, 승인 후 `main`에 합침
+  - 방식: PVD 페이지 하나로 시제품 먼저 (2D Canvas 모션 + GSAP 스크롤 전환)
+  - [x] 0. GSAP 공식 스킬 3개 설치 (gsap-core, gsap-scrolltrigger, gsap-timeline)
+  - [x] 1. 색 체계 개편 (종이색 본문 + 먹색 글자 + 공정별 포인트 색), CLAUDE.md 규칙 갱신
+  - [ ] 2. GSAP 파일을 `vendor/gsap/`에 넣기 + 라이선스 원문
+  - [ ] 3. `js/sim/sim-core.js` (반복·일시정지·정지 이미지 대체)
+  - [ ] 4. PVD 정지 단면도 → **사용자 승인 받고 나서** 5단계
+  - [ ] 5. PVD 단계별 모션
+  - [ ] 6. 스크롤 전환 (`js/hero-scroll.js`)
+  - [ ] 7. 휴대폰·움직임 줄이기·file:// 점검 → 승인 요청
 
 ## 다음에 할 일 (이 순서대로, 한 번에 한 페이지)
 1. 플라즈마 (`basics/plasma.html`)

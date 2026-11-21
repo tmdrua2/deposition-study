@@ -10,7 +10,8 @@
 
 ## 기술 규칙
 - **HTML, CSS, JavaScript만** 사용한다. 프레임워크(React 등), 빌드 도구, npm 패키지, 서버 코드 금지.
-- 외부 라이브러리·CDN도 쓰지 않는다 (꼭 필요하면 먼저 물어본다).
+- CDN은 쓰지 않는다. 라이브러리는 사용자가 승인한 것만 `vendor/` 폴더에 **파일로 넣고 라이선스 원문을 함께** 둔다
+  (현재 승인: GSAP + ScrollTrigger → `vendor/gsap/`). 그 밖의 라이브러리는 먼저 물어본다.
 - 모든 링크와 경로는 **상대 경로**로 쓴다 (`/css/...` 처럼 `/`로 시작 금지). GitHub Pages 하위 주소와 파일 직접 열기 모두에서 동작해야 한다.
 - 사이트는 `index.html`을 브라우저로 **직접 열어도(file://)** 동작해야 한다. 그래서 `fetch()`로 다른 파일을 읽는 방식은 쓰지 않는다.
 - 파일 이름은 영어 소문자와 `-`만 사용한다 (예: `cvd-pecvd.html`). 화면에 보이는 글은 한국어.
@@ -22,6 +23,9 @@ css/style.css         공통 스타일 (색상은 :root 변수에서만 바꾼�
 fonts/                Pretendard 글꼴 파일(woff2) + 라이선스 — 외부 CDN 대신 직접 넣어 둠
 js/pages.js           ★ 전체 페이지 목록 — 목차·메뉴·검색이 모두 여기서 만들어짐
 js/main.js            공통 동작: 헤더 메뉴, 목차, 검색, 페이지 안 목차
+js/sim/               공정 모션: sim-core.js(공용) + 공정별 장면(pvd.js 등)
+js/hero-scroll.js     공정 첫 화면 → 본문 스크롤 전환 (GSAP)
+vendor/gsap/          GSAP 라이브러리 파일 + LICENSE.txt
 basics/               기초: 진공, 플라즈마, 박막 성장 원리
   _template.html      기초 페이지 틀
 equipment/            공정·장비: PVD, CVD/PECVD, ALD, Epi, ECD
@@ -35,6 +39,9 @@ lab/index.html        내 실습 기록
 - `<body data-root="...">`: 맨 위 폴더의 `index.html`은 `""`, 하위 폴더 파일은 `"../"`.
 - 섹션 제목은 `<h2 id="영어-id">`로 쓴다. id가 있는 h2는 페이지 안 목차(`#page-toc`)에 자동으로 들어간다.
 - 아직 안 채운 자리는 `class="todo"`와 "작성 예정"으로 표시한다.
+- 공정 페이지는 `<body data-process="pvd">`처럼 공정 이름을 적으면 포인트 색이 바뀐다
+  (pvd 앰버, cvd 청록, ald 코발트, epi 올리브, ecd 구리 — 값은 `:root`의 `--c-*`).
+  공정 색은 선·점·버튼에만 쓰고 본문 글자색으로는 쓰지 않는다.
 
 ## 장비 페이지 틀 (모든 장비 페이지는 반드시 이 순서)
 1. **원리** (`#principle`)
