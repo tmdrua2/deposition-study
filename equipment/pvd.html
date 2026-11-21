@@ -6,12 +6,36 @@
   <title>PVD (물리 기상 증착) | 증착 공정 노트</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-root="../">
+<body data-root="../" data-process="pvd">
   <header id="site-header"></header>
 
+  <!-- 첫 화면: 공정 모션. 그림은 js/sim/pvd.js가 캔버스에 그림 -->
+  <section class="process-hero" data-scene="pvd">
+    <canvas class="sim-canvas" role="img"
+      aria-label="마그네트론 스퍼터링 챔버 단면도. 위쪽 타깃(음극) 뒤에 자석이 있고, 타깃 앞 시스에서 가속된 아르곤 이온이 타깃을 때리면 튀어나온 타깃 원자가 여러 각도로 날아가 아래쪽 웨이퍼와 실드에 쌓인다."></canvas>
+
+    <div class="hero-copy">
+      <h1>PVD (물리 기상 증착)</h1>
+      <p class="subtitle">스퍼터링·증발 등 물리적 방법으로 박막을 쌓는 공정</p>
+    </div>
+
+    <!-- 아래쪽 줄: 현재 단계, 범례, 일시정지 -->
+    <div class="sim-bar">
+      <p class="sim-stage" data-sim-stage></p>
+      <ul class="sim-legend" aria-label="그림 범례">
+        <li><i class="k-ar"></i>Ar 원자</li>
+        <li><i class="k-ion"></i>Ar⁺ 이온</li>
+        <li><i class="k-e"></i>2차 전자</li>
+        <li><i class="k-metal"></i>타깃 원자 (중성)</li>
+        <li><i class="k-film"></i>쌓인 막</li>
+      </ul>
+      <p class="sim-caption">개념도, 실제 비율 아님</p>
+      <button type="button" class="sim-pause" data-sim-pause aria-pressed="false">일시정지</button>
+      <p class="sim-note" data-sim-note aria-live="polite"></p>
+    </div>
+  </section>
+
   <main>
-    <h1>PVD (물리 기상 증착)</h1>
-    <p class="subtitle">스퍼터링·증발 등 물리적 방법으로 박막을 쌓는 공정</p>
 
     <!-- 아래 h2 제목들로 목차가 자동으로 만들어집니다 -->
     <nav id="page-toc"></nav>
@@ -80,5 +104,8 @@
 
   <script src="../js/pages.js"></script>
   <script src="../js/main.js"></script>
+  <!-- 공정 모션: 공용 엔진 → PVD 장면 순서 -->
+  <script src="../js/sim/sim-core.js"></script>
+  <script src="../js/sim/pvd.js"></script>
 </body>
 </html>

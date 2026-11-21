@@ -47,6 +47,11 @@
   --hero-line-strong: #8A939E;
   --hero-text: #E6E8EB;
   --hero-muted: #9AA2AC;
+  /* 공정 모션 속 입자 색 (js/sim/*.js가 여기서 읽어 감) */
+  --sim-ar: #6E7782;      /* Ar 원자 */
+  --sim-electron: #8DB4D8;/* 2차 전자 */
+  --sim-metal: #C9CED4;   /* 타깃 원자·쌓인 막 */
+  --sim-sheath: #0D1014;  /* 시스(암흑부) */
 
   /* 카테고리 카드 배경색 (카드에만 진한 색, 모두 먹색 계열) */
   --card-basics: #1C2026;
@@ -618,6 +623,72 @@ footer a:hover { color: var(--ink); }
 .s-sky.s-thin { stroke: var(--sky); }
 
 /* =============================================================
+   공정 페이지 첫 화면: 어두운 도면 위에 공정 모션 (js/sim/*.js가 캔버스에 그림)
+   ============================================================= */
+.process-hero {
+  position: relative;
+  height: calc(100svh - 72px);   /* 헤더 아래 화면 전체 */
+  min-height: 560px;
+  background: var(--hero-bg);
+  color: var(--hero-text);
+  overflow: hidden;
+}
+.sim-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* 제목 (왼쪽 위) */
+.hero-copy {
+  position: absolute;
+  z-index: 1;
+  top: clamp(32px, 9vh, 104px);
+  left: var(--gutter);
+  max-width: min(34%, 420px);
+}
+.process-hero h1 { color: var(--hero-text); font-size: clamp(2.2rem, 4.4vw, 3.6rem); }
+.process-hero .subtitle { color: var(--hero-muted); font-size: 1.05rem; }
+
+/* 아래쪽 줄: 현재 단계 · 범례 · 일시정지 */
+.sim-bar {
+  position: absolute;
+  z-index: 1;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+.sim-stage { margin: 0; color: var(--hero-text); font-weight: 600; min-width: 11em; }
+.sim-stage-num { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 6px; }
+.sim-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; color: var(--hero-muted); }
+.sim-legend li { display: flex; align-items: center; gap: 7px; margin: 0; }
+.sim-legend i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+.sim-legend .k-ar { background: var(--sim-ar); }
+.sim-legend .k-ion { background: var(--accent); }
+.sim-legend .k-e { background: var(--sim-electron); width: 5px; height: 5px; }
+.sim-legend .k-metal { background: var(--sim-metal); }
+.sim-legend .k-film { background: var(--sim-metal); width: 14px; height: 3px; border-radius: 0; }
+.sim-pause {
+  margin-left: auto;
+  padding: 7px 16px;
+  border: 1px solid var(--hero-line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hero-text);
+  font: inherit;
+  cursor: pointer;
+}
+.sim-pause:hover { border-color: var(--hero-text); }
+.sim-note { margin: 0; width: 100%; color: var(--hero-muted); font-size: 0.8125rem; }
+.sim-note:empty { display: none; }
+.sim-caption { margin: 0; color: var(--hero-muted); font-size: 0.8125rem; }
+
+/* 첫 화면 다음 본문: 위쪽 여백 (제목이 첫 화면으로 올라갔으므로) */
+.process-hero + main { padding-top: 56px; }
+
+/* =============================================================
    "맨 위로" 버튼
    ============================================================= */
 .to-top {
@@ -686,6 +757,7 @@ footer a:hover { color: var(--ink); }
   .menu-toggle { padding: 22px 4px; font-size: 1.2rem; }
   .menu-bar { padding: 22px 22px; font-size: 1.1rem; }
   .to-top { width: 52px; height: 52px; }
+  .hero-copy { right: var(--gutter); max-width: none; } /* 휴대폰: 제목을 화면 폭 전체로 */
 }
 
 /* =============================================================
