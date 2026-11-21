@@ -1125,3 +1125,235 @@ footer a:hover { color: var(--ink); }
   font-size: var(--fs-xs);
 }
 .equip-stage + main { padding-top: 56px; }
+
+/* =============================================================
+   부품 정보 패널 (js/explode/panel.js)
+   넓은 화면: 오른쪽 패널 / 좁은 화면(900px 미만): 아래에서 올라오는 시트
+   글자 체계는 이름표와 같음: 번호·약어 = Plex Mono, 본문 = Pretendard, 크기 = --fs-* 변수
+   ============================================================= */
+/* 이름표·목록·분해된 모듈은 누를 수 있음 */
+.callout { cursor: pointer; }
+.callout:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
+/* 모듈 그림: 층 상자(빈 곳 포함)가 아니라 실제로 칠해진 도형만 클릭을 받음 → 옆 모듈을 잘못 누르지 않게 */
+.iso-layer-module { pointer-events: none; }
+.iso-scene.is-exploded .iso-layer-module svg * { pointer-events: visiblePainted; cursor: pointer; }
+.callout-legend-btn {
+  display: grid;
+  grid-template-columns: 2.2ch 5.4ch minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: baseline;
+  width: 100%;
+  padding: 7px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.callout-legend-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.callout-legend li { display: block; padding: 0; }   /* 격자·여백은 안의 버튼이 가짐 (누르는 면적이 줄 전체) */
+
+/* 바깥(어두운 바탕): 누르면 닫힘. 넓은 화면은 아주 옅게 → 강조된 모듈이 계속 보이게 */
+.part-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1990;
+  background: rgba(28, 32, 38, 0.06);
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
+}
+.part-panel-backdrop.is-open { opacity: 1; }
+
+.part-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  width: min(460px, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-left: 1px solid var(--line-strong);
+  box-shadow: -16px 0 40px var(--shadow);
+  transform: translateX(100%);
+  transition: transform 0.42s var(--ease);
+}
+.part-panel.is-open { transform: none; }
+.part-panel-grip { display: none; }
+
+/* 헤더: 05 PM / 공정 챔버 / Process Module (PM) */
+.part-panel-head {
+  position: relative;
+  flex: none;
+  padding: 22px 64px 18px 28px;
+  border-bottom: 1px solid var(--line);
+}
+.part-panel-id {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin: 0 0 10px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.part-panel-id .pp-no { color: var(--faint); font-size: var(--fs-xs); letter-spacing: 0.02em; }
+.part-panel-id .pp-abbr { color: var(--ink); font-size: var(--fs-sm); font-weight: 500; letter-spacing: 0.04em; padding-bottom: 3px; border-bottom: 1.5px solid var(--accent); }
+.part-panel-id .pp-sub { color: var(--muted); font-family: inherit; font-size: var(--fs-xs); }
+.part-panel-title { margin: 0; padding: 0; border: 0; color: var(--ink); font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
+.part-panel-en { margin: 6px 0 0; color: var(--faint); font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 0.02em; }
+.part-panel-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+}
+.part-panel-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.part-panel-close:hover { color: var(--ink); border-color: var(--line-strong); }
+.part-panel-back {
+  display: block;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sky-deep);
+  font: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.part-panel-back:hover { text-decoration: underline; }
+.part-panel :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 본문: 이 안에서만 스크롤 (끝에 닿아도 뒤 페이지로 스크롤이 넘어가지 않게) */
+.part-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 28px 40px;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+}
+.part-panel-body:focus { outline: none; }
+.pp-sec { padding: 22px 0 6px; border-bottom: 1px solid var(--line); }
+.pp-sec:last-child { border-bottom: 0; }
+.pp-h { display: flex; gap: 10px; align-items: baseline; margin: 0 0 12px; line-height: 1.2; }
+.pp-h-en { color: var(--faint); font-family: var(--font-mono); font-size: var(--fs-2xs); font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; min-width: 6.5em; }
+.pp-h-ko { color: var(--ink); font-size: var(--fs-md); font-weight: 650; letter-spacing: -0.01em; }
+.pp-sub-h { margin: 18px 0 8px; color: var(--ink); font-size: var(--fs-sm); font-weight: 650; }
+.pp-text { margin: 0 0 12px; }
+.part-panel-body a { color: var(--sky-deep); text-underline-offset: 2px; }
+.part-panel-body .todo { margin: 0 0 14px; }
+/* [검증 필요] 작은 표시 */
+.verify-tag {
+  display: inline-block;
+  margin: 0 2px;
+  padding: 1px 6px;
+  border: 1px solid var(--todo);
+  border-radius: 3px;
+  color: var(--todo);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  line-height: 1.5;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+/* 구성품: 이름(굵게) + 영문(고정폭, 옅게) / 설명 */
+.pp-parts { margin: 0; }
+.pp-part { padding: 10px 0; border-top: 1px solid var(--line); }
+.pp-part dt { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; margin-bottom: 2px; }
+.pp-part-name { color: var(--ink); font-weight: 600; }
+.pp-part-en { color: var(--faint); font-family: var(--font-mono); font-size: var(--fs-2xs); letter-spacing: 0.02em; }
+.pp-part dd { margin: 0; color: var(--muted); }
+.pp-link-row { display: block; margin-top: 6px; }
+.pp-link {
+  padding: 5px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.pp-link:hover { background: var(--accent); color: #fff; }
+
+/* 공정변수: 사양 표처럼 — 변수 이름 줄 아래 "올리면 / 내리면 / 트레이드오프" (정의 목록) */
+.pp-spec { border-top: 1px solid var(--line-strong); }
+.pp-spec-row { padding: 12px 0 10px; border-bottom: 1px solid var(--line); }
+.pp-spec-name { margin: 0 0 6px; color: var(--ink); font-weight: 650; }
+.pp-spec-dl { display: grid; grid-template-columns: 6.4em minmax(0, 1fr); gap: 4px 12px; margin: 0; }
+.pp-spec-dl dt { color: var(--faint); font-size: var(--fs-xs); line-height: 1.95; white-space: nowrap; }
+.pp-spec-dl dd { margin: 0; }
+
+/* 문제·면접 질문: 펼치는 상자 */
+.pp-details { border-top: 1px solid var(--line); border-bottom: 0; }
+.pp-details:last-of-type { border-bottom: 1px solid var(--line); }
+.pp-details > summary { padding: 11px 28px 11px 0; color: var(--ink); font-size: var(--fs-sm); font-weight: 600; line-height: 1.5; }
+.pp-details > :not(summary) { margin-left: 0; margin-right: 0; }
+.pp-details > :last-child { margin-bottom: 16px; }
+.pp-checks-h { margin: 0 0 4px; color: var(--faint); font-size: var(--fs-xs); }
+.pp-checks, .pp-list { margin: 0 0 12px; padding-left: 1.4em; }
+.pp-checks li, .pp-list li { margin: 3px 0; }
+.pp-checks li::marker { color: var(--faint); font-family: var(--font-mono); font-size: var(--fs-xs); }
+.pp-q-no { margin-right: 10px; color: var(--faint); font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 500; }
+.pp-cs {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  vertical-align: 1px;
+}
+.pp-answer { padding-left: 12px; border-left: 2px solid var(--line-strong); color: var(--text); }
+
+/* 출처: 종류(고정폭 작은 글자) / 제목 링크 / 확인 내용 / 확인 날짜 */
+.pp-sources { margin: 0; padding: 0; list-style: none; }
+.pp-sources li { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-top: 1px solid var(--line); }
+.pp-src-kind { color: var(--faint); font-family: var(--font-mono); font-size: var(--fs-2xs); letter-spacing: 0.06em; }
+.pp-src-title { color: var(--ink); font-size: var(--fs-xs); font-weight: 500; overflow-wrap: anywhere; }
+.pp-src-note { color: var(--muted); font-size: var(--fs-xs); line-height: 1.6; }
+.pp-src-date { color: var(--faint); font-family: var(--font-mono); font-size: var(--fs-2xs); font-variant-numeric: tabular-nums; }
+
+/* 좁은 화면: 아래에서 올라오는 시트 */
+@media (max-width: 899px) {
+  .part-panel-backdrop { background: rgba(28, 32, 38, 0.28); }
+  .part-panel {
+    top: auto;
+    left: 0;
+    width: 100%;
+    max-height: 86vh;
+    max-height: 86dvh;
+    border-left: 0;
+    border-top: 1px solid var(--line-strong);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -12px 32px var(--shadow);
+    transform: translateY(100%);
+  }
+  .part-panel-grip { display: block; flex: none; width: 36px; height: 4px; margin: 8px auto 0; border-radius: 2px; background: var(--line-strong); }
+  .part-panel-head { padding: 12px 60px 14px var(--gutter); }
+  .part-panel-close { top: 10px; right: 12px; }
+  .part-panel-body { padding: 0 var(--gutter) calc(32px + env(safe-area-inset-bottom)); }
+}
+/* 움직임 줄이기: 미끄러지지 않고 바로 나타남 */
+@media (prefers-reduced-motion: reduce) {
+  .part-panel, .part-panel-backdrop { transition: none; }
+}

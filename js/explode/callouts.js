@@ -18,6 +18,8 @@
 // 사용법: EquipCallouts.mount(그림틀, 그림 요소(svg 또는 층 묶음), IsoRender.render()의 결과, opts)
 //   opts.legendAfter : 좁은 화면 목록을 이 요소 뒤에 넣음 (기본: 그림틀 뒤)
 //   opts.onFocus(id) : 이름표에 마우스/초점이 들어오면 부품 id, 나가면 null
+//   opts.onSelect(id, 버튼) : 이름표(넓은 화면)·번호 원·아래 목록 항목을 누르면 (부품 패널 열기)
+//   돌려주는 lock(id) : 강조를 이 부품에 고정 (패널이 열려 있는 동안), lock(null)로 풀기
 //   opts.tagBlocks   : 작은 표시(PM1 …)를 다른 곳에서 그릴 때, 층 이름표가 피해야 할 그 표시들의 자리
 //                      [{ point(viewBox 좌표), text, place: "below"|"center" }]
 // =============================================================
@@ -54,7 +56,7 @@
     layer.className = "callout-layer";
     figure.append(lines, layer);
 
-    // 이름표 버튼 (3단계에서 클릭 → 부품 패널 열기를 붙인다)
+    // 이름표 버튼: 누르면 opts.onSelect → 부품 패널 (키보드 Enter·Space도 버튼이라 저절로 됨)
     const items = info.labels.map((L) => {
       const b = document.createElement("button");
       b.type = "button";
@@ -80,6 +82,7 @@
       b.addEventListener("pointerleave", off);
       b.addEventListener("focus", on);
       b.addEventListener("blur", off);
+      b.addEventListener("click", () => { if (opts.onSelect) opts.onSelect(L.id, b); });
       return { L: L, el: b, leader: leader, dot: dot };
     });
 
@@ -106,13 +109,21 @@
     // 좁은 화면용 목록 (그림 바로 아래)
     const legend = document.createElement("ol");
     legend.className = "callout-legend";
+    // 항목마다 버튼 → 휴대폰에서도 목록을 눌러 부품 패널을 열 수 있음
     legend.innerHTML = info.labels.map((L) =>
-      '<li><span class="callout-no">' + pad2(L.no) + '</span><span class="callout-abbr">' + L.abbr +
-      '</span><span class="callout-name">' + L.name + "</span></li>").join("");
+      '<li><button type="button" class="callout-legend-btn" data-part="' + L.id + '">' +
+      '<span class="callout-no">' + pad2(L.no) + '</span><span class="callout-abbr">' + L.abbr +
+      '</span><span class="callout-name">' + L.name + "</span></button></li>").join("");
+    legend.querySelectorAll("button").forEach((btn) => {
+      btn.addEventListener("click", () => { if (opts.onSelect) opts.onSelect(btn.dataset.part, btn); });
+    });
     (opts.legendAfter || figure).after(legend);   // 기본: 그림틀 바로 뒤 (분해 무대에서는 고정 화면 안)
 
     // ---------- 강조: data-tree에 이 부품 id가 들어 있는 그룹(자기 + 자식)만 ----------
-    function highlight(id, on) {
+    //   locked: 패널이 열려 있는 동안 강조할 부품 → 마우스가 다른 이름표를 지나가도 바뀌지 않음
+    let locked = null;
+    function highlight(id, on, force) {
+      if (locked && !force) return;
       // data-src-tree: 복사본도 원본 id를 가짐 → PM 이름표에 올리면 PM1~PM4가 모두 강조
       svg.querySelectorAll('[data-src-tree~="' + id + '"]').forEach((g) => g.classList.toggle("is-hl", on));
       items.forEach((it) => { if (it.L.id === id) it.el.classList.toggle("is-hl", on); });
@@ -365,7 +376,12 @@
     else window.addEventListener("resize", layout);
     // 글꼴이 늦게 들어오면 글자 폭이 바뀌므로 한 번 더
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
-    return { layout: layout, highlight: highlight, items: items, floorTags: floorTags, legend: legend };
+    function lock(id) {
+      if (locked) { const prev = locked; locked = null; highlight(prev, false, true); }
+      if (id) { highlight(id, true, true); locked = id; }
+    }
+
+    return { layout: layout, highlight: highlight, lock: lock, items: items, floorTags: floorTags, legend: legend };
   }
 
   window.EquipCallouts = { mount: mount };

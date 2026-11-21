@@ -5,6 +5,7 @@
 //   ① 외관 (살짝 확대된 상태) → ② 모듈이 차례로 벌어짐 + 도착할 때 이름표 등장
 //   → ③ 웨이퍼 경로 점선 → 잠깐 머문 뒤 고정이 풀리고 아래 본문으로
 //   위로 스크롤하면 같은 타임라인이 거꾸로 재생 = 정확히 거꾸로 조립
+//   분해되어 도착한 모듈(그림이나 이름표)을 누르면 부품 정보 패널이 열림 (panel.js)
 //
 // 분해 순서·방향은 데이터(data/*.js)의 explodeOrder·explode 값을 그대로 쓴다.
 // 이 파일은 "몇 % 벌어졌나"만 다루고, 그림은 render-iso.js가 미리 그려 둔 층을 옮기기만 한다.
@@ -112,7 +113,42 @@
           L.el.classList.toggle("is-focus-on", on);
           if (L.carrier) L.carrier.classList.toggle("is-focus-on", on);
         });
-      }
+      },
+      onSelect: (id, btn) => select(id, btn)
+    });
+
+    // ---------- 2-1) 부품 정보 패널 ----------
+    //   이름표가 나타난 뒤(= 그 모듈이 분해되어 도착한 뒤)에만 열림
+    //   열려 있는 동안 그 모듈은 강조 고정, 나머지는 흐리게. 스크롤은 panel.js가 막음
+    const allParts = [...((window.EQUIPMENT_PLATFORMS || {})[eq.platform] || { parts: [] }).parts, ...eq.parts];
+    const parentOf = new Map(allParts.map((p) => [p.id, p.parent || null]));
+    // 내부 부품(예: 샤워헤드)은 이름표가 있는 조상(공정 챔버)을 강조
+    const labelIdFor = (id) => { let p = id; while (p && !labelById.has(p)) p = parentOf.get(p); return p; };
+    const itemFor = (id) => callouts.items.find((it) => it.L.id === id);
+    const arrived = (id) => {
+      if (isStatic) return true;
+      const it = itemFor(id);
+      if (!it) return false;
+      const cs = getComputedStyle(it.el);
+      return cs.visibility !== "hidden" && parseFloat(cs.opacity) > 0.5;
+    };
+    const panel = window.EquipPanel ? EquipPanel.create({
+      equipment: eq, platforms: window.EQUIPMENT_PLATFORMS,
+      onOpen: (id) => callouts.lock(labelIdFor(id)),
+      onClose: () => callouts.lock(null)
+    }) : null;
+    function select(id, btn) {
+      if (!panel || !arrived(id)) return;
+      panel.open(id, btn || (itemFor(id) || {}).el);
+    }
+    // 분해된 모듈 그림을 직접 눌러도 열림 (그 모듈의 대표 이름표 = 모듈 id와 같은 이름표, 없으면 그 모듈의 첫 이름표)
+    scene.addEventListener("click", (e) => {
+      const layerEl = e.target.closest && e.target.closest(".iso-layer-module");
+      const L = layerEl && layerById.get(layerEl.dataset.layer);
+      if (!L || !L.module) return;
+      const key = L.module.key;
+      const lab = info.labels.find((x) => x.id === key) || info.labels.find((x) => x.key === key);
+      if (lab) select(lab.id);
     });
 
     const legendItems = [...callouts.legend.children];
@@ -229,6 +265,8 @@
         kfNow = k;
         info.layers.forEach((L) => { L.el.style.zIndex = String(keyframes[k][L.id]); });
       }
+      // 다 분해된 뒤에만 모듈 그림에 "누를 수 있음" 손가락 모양
+      scene.classList.toggle("is-exploded", isStatic || (!!tl && time >= moveEnd));
       // 웨이퍼 경로를 다 그린 뒤에만 점선이 천천히 흐름
       wafer.classList.toggle("is-flowing", !!tl && time >= flowAt);
     }
@@ -317,7 +355,7 @@
     // 글꼴이 늦게 들어오면 제목 높이가 바뀜 → 고정 위치 다시 계산
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fit(); ScrollTrigger.refresh(); });
 
-    return { info: info, callouts: callouts };
+    return { info: info, callouts: callouts, panel: panel };
   }
 
   window.EquipStage = { mount: mount };
