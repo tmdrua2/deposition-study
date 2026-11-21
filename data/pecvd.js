@@ -36,7 +36,7 @@ window.EQUIPMENT.pecvd = {
       tag: "PM1",                 // 그림 위 작은 챔버 번호 (펌프의 tag와 짝)
       label: { no: 5, abbr: "PM" },
       // 자기 좌표의 back(+y) = 트랜스퍼 모듈 반대쪽 → 복사본 4개 모두 TM에서 바깥쪽으로 빠짐
-      explode: [0, 3.2, 0], explodeOrder: 5
+      explode: [0, 8.5, 0], explodeOrder: 5
     },
     {
       // 챔버 아래 캐비닛: 히터 전원·리프트 장치·배기 밸브 등이 들어가는 자리
@@ -95,7 +95,7 @@ window.EQUIPMENT.pecvd = {
         { type: "warning-label", face: "front", at: [0.5, 0.42] }
       ],
       label: { no: 6, abbr: "GAS", anchor: "top" },
-      explode: [4.5, 0, 0], explodeOrder: 6        // 오른쪽 옆으로
+      explode: [13.5, -6.5, 0], explodeOrder: 6    // 오른쪽 앞으로 (PM1·PM2 사이로 빠져 화면에서 겹치지 않게)
     },
     // 가스 배관: 가스 박스 윗면 → 위로 → 장비 위쪽을 지나 → 각 공정 챔버 뚜껑으로 (챔버마다 1줄)
     //   RF 매칭 박스보다 높게 지나고, 줄마다 높이를 조금씩 달리해 서로 겹치지 않게 함
@@ -142,7 +142,7 @@ window.EQUIPMENT.pecvd = {
         { type: "warning-label", face: "right", at: [0.78, 0.17] }
       ],
       label: { no: 7, abbr: "RF", anchor: "top" },
-      explode: [4.5, 0, 0], explodeOrder: 6
+      explode: [13.5, -6.5, 0], explodeOrder: 6
     },
     // connects = 이 배관이 잇는 모듈 → 분해 때 그 모듈이 움직이기 시작하면 배관은 희미해지며 사라짐
     // RF 케이블: 공중 아치 대신 낮은 케이블 트레이 위를 따라 1번 챔버의 RF 매칭 박스까지
@@ -152,7 +152,7 @@ window.EQUIPMENT.pecvd = {
       parent: null, level: 1,
       shape: "box", size: [0.6, 9.2, 0.12], pos: [10.6, 14.1, 6.8],
       material: "metal",
-      explode: [4.5, 0, 0], explodeOrder: 6        // 가스 박스·RF와 함께 옆으로
+      explode: [13.5, -6.5, 0], explodeOrder: 6    // 가스 박스·RF와 함께
     },
     // 가로 트레이·지지대는 세로 트레이의 자식 (pos는 세로 트레이 기준) → 같이 움직인다
     {
@@ -190,7 +190,7 @@ window.EQUIPMENT.pecvd = {
       ],
       tag: "PM1",
       label: { no: 8, abbr: "PUMP" },
-      explode: [3, -3, 0], explodeOrder: 7         // 마지막: 서브팹 바닥 위에서 앞·오른쪽으로 (가려진 펌프가 드러남)
+      explode: [2, -10, 0], explodeOrder: 7       // 마지막: 서브팹 바닥 위에서 앞쪽(화면 왼쪽 아래 빈 곳)으로 → 가려진 펌프가 드러남
     },
     { id: "pump-2", copyOf: "pump", name: "드라이 펌프 (PM2)", pos: [13.5, 15.0, -6.5], tag: "PM2" },
     { id: "pump-3", copyOf: "pump", name: "드라이 펌프 (PM3)", pos: [13.5, 18.5, -6.5], tag: "PM3" },

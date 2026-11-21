@@ -11,14 +11,15 @@
 
   <!-- 장비 무대: 화면이 고정된 채 스크롤하면 장비가 모듈별로 분해된다 (js/explode/stage.js) -->
   <section class="equip-stage" data-equipment="pecvd">
-    <!-- 고정(pin)되는 부분: 제목 + 그림틀 -->
+    <!-- 제목 영역: 고정되지 않음 → 스크롤하면 위로 지나가고, 그다음 무대가 화면을 채움 -->
+    <div class="equip-stage-copy">
+      <!-- 제목 위계: 작은 영문 라벨(고정폭) → 큰 제목 → 한 줄 설명 -->
+      <p class="equip-kicker">Equipment <span class="equip-kicker-no">01</span></p>
+      <h1>PECVD 장비</h1>
+      <p class="equip-lede">대표적인 300mm PECVD 장비 구성 — 웨이퍼가 지나가는 순서대로 번호를 붙였습니다.</p>
+    </div>
+    <!-- 고정(pin)되는 부분: 헤더 아래 화면을 꽉 채우는 그림틀. 윗변이 헤더에 닿는 순간부터 분해 시작 -->
     <div class="equip-stage-pin">
-      <div class="equip-stage-copy">
-        <!-- 제목 위계: 작은 영문 라벨(고정폭) → 큰 제목 → 한 줄 설명 -->
-        <p class="equip-kicker">Equipment <span class="equip-kicker-no">01</span></p>
-        <h1>PECVD 장비</h1>
-        <p class="equip-lede">대표적인 300mm PECVD 장비 구성 — 웨이퍼가 지나가는 순서대로 번호를 붙였습니다.</p>
-      </div>
       <!-- 그림틀: 장비 그림(모듈별 층, render-iso.js가 채움) + 도면식 이름표(callouts.js가 채움) -->
       <div class="iso-figure">
         <div class="iso-stack" role="img" data-iso-view

@@ -25,7 +25,10 @@
   const EASE = "power2.inOut"; // 천천히 출발 → 천천히 도착 (튕김 없음)
   const SCROLL_SCREENS = 4.5;  // 분해 구간 길이 = 화면 높이 × 이 값
   const SCRUB = 1.2;           // 스크롤을 멈춰도 이 시간(초) 동안 미끄러지듯 따라옴
-  const ZOOM_MAX = 1.6;        // 처음 외관을 최대 몇 배까지 키워 보여 줄지
+  // 카메라: 진입 순간 조립된 장비를 크게 → 분해하면서 아주 조금만 물러남
+  const START_W = 0.83;        // 진입 순간 장비 몸체 폭 = 화면 폭 × 이 값 (목표)
+  const START_H = 0.96;        //   단, 높이는 무대 높이 × 이 값을 넘지 않음 (가로로 긴 화면은 높이가 먼저 참)
+  const ZOOM_MAX = 1.25;       // 시작 배율 ÷ 끝 배율의 최댓값 → 분해 중 축소는 최대 20% (1 ÷ 1.25 = 0.8)
   // 웨이퍼가 지나가는 부품 순서 (FOUP는 가운데 로드포트의 것)
   const WAFER_PATH = ["loadport-2.foup", "efem", "loadlock", "tm", "pm"];
 
@@ -114,34 +117,60 @@
 
     const legendItems = [...callouts.legend.children];
 
-    // ---------- 3) 크기 맞추기: 그림 비율을 지키며 그림틀 안에 꽉 차게 ----------
+    // ---------- 3) 크기 맞추기 ----------
+    //   끝 화면(분해 완료): 벌어진 장비 몸체가 이름표 기둥 사이에 꽉 차게 = 배율 k1 (그림 묶음의 실제 크기)
+    //   시작 화면(조립):   장비 몸체가 화면 폭의 START_W만큼 = 배율 k0, 단 k0 ≤ k1 × ZOOM_MAX
+    //   바닥 점선판은 몸체보다 넓으므로 화면 가장자리 밖으로 잘려도 됨 (무대가 overflow: clip)
     let isStatic = false;
+    const cam = { zoom: 1, x: 0, y: 0 };   // 시작 화면의 카메라 (scene에 거는 scale·이동 px)
+    const eb = info.equipBounds, ab = info.assembledBody;
     function fit() {
       const header = document.getElementById("site-header");
       stageEl.style.setProperty("--header-h", (header ? header.offsetHeight : 0) + "px");
-      // 먼저 그림틀을 원래대로 → 쓸 수 있는 폭·높이를 잰다
-      figure.style.flex = "";
       figure.style.height = "";
+      figure.style.flex = "";
       const cs = getComputedStyle(figure);
-      const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-      const w = figure.clientWidth - padX;
-      const h = isStatic ? window.innerHeight * 0.78 : figure.clientHeight - padY;
-      const ratio = vb[2] / vb[3];
-      let W = Math.max(0, w), H = W / ratio;
-      if (H > h && h > 0) { H = h; W = H * ratio; }
-      stack.style.width = W.toFixed(1) + "px";
-      stack.style.height = H.toFixed(1) + "px";
-      // 좁은 화면(휴대폰): 그림틀 높이를 그림에 딱 맞춤 → 남는 높이는 그림+목록 위아래로 고르게 (CSS margin auto)
-      if (!isStatic && !figure.classList.contains("is-wide")) {
+      const padL = parseFloat(cs.paddingLeft), padR = parseFloat(cs.paddingRight);
+      const padT = parseFloat(cs.paddingTop), padB = parseFloat(cs.paddingBottom);
+      const wide = figure.classList.contains("is-wide");
+      const availW = Math.max(1, figure.clientWidth - padL - padR);
+      // 휴대폰: 그림틀 높이를 내용에 맞추므로 높이 제한은 "무대 높이 − 아래 목록" 정도로 어림
+      const pinH = pin.clientHeight;
+      const legendH = (!wide && callouts.legend) ? callouts.legend.offsetHeight + 12 : 0;
+      const availH = isStatic ? window.innerHeight * 0.78
+        : Math.max(1, (wide ? figure.clientHeight : pinH - legendH) - padT - padB);
+      const expW = eb[2] - eb[0], expH = eb[3] - eb[1];
+      const asmW = ab[2] - ab[0], asmH = ab[3] - ab[1];
+      const k1 = Math.min(availW / expW, availH / expH);
+      const k0 = isStatic ? k1 : Math.max(k1, Math.min(
+        (window.innerWidth * START_W) / asmW, availH * START_H / asmH, k1 * ZOOM_MAX));
+      // 그림 묶음(viewBox 전체) 크기 = viewBox × k1, 벌어진 몸체 가운데가 쓸 수 있는 칸 가운데에 오게
+      const W = vb[2] * k1, H = vb[3] * k1;
+      if (isStatic || !wide) {
+        // 휴대폰: 그림틀 높이 = 시작·끝 중 더 큰 그림 높이 → 남는 높이는 그림+목록 위아래로 고르게 (CSS margin auto)
+        // 움직임 줄이기(정지 화면): 고정이 없어 그림틀 높이가 저절로 안 생김 → 분해 그림 높이로 정함
         figure.style.flex = "0 0 auto";
-        figure.style.height = (H + padY).toFixed(1) + "px";
+        figure.style.height = (Math.max(expH * k1, asmH * k0) + padT + padB).toFixed(1) + "px";
       }
+      const boxH = figure.clientHeight - padT - padB;
+      const left = padL + availW / 2 - ((eb[0] + eb[2]) / 2 - vb[0]) * k1;
+      const top = padT + boxH / 2 - ((eb[1] + eb[3]) / 2 - vb[1]) * k1;
+      Object.assign(stack.style, { width: W.toFixed(1) + "px", height: H.toFixed(1) + "px",
+        left: left.toFixed(1) + "px", top: top.toFixed(1) + "px" });
+      // 시작 카메라: scene을 가운데(W/2, H/2) 기준으로 zoom배 → 조립 몸체 가운데가 그림틀 가운데(헤더 아래 화면 가운데)에 오게 이동
+      const zoom = k0 / k1;
+      const bx = ((ab[0] + ab[2]) / 2 - vb[0]) * k1, by = ((ab[1] + ab[3]) / 2 - vb[1]) * k1;
+      const tx = figure.clientWidth / 2 - left, ty = padT + boxH / 2 - top;   // 안내 문구 자리 위 칸의 가운데
+      cam.zoom = zoom;
+      cam.x = tx - W / 2 - zoom * (bx - W / 2);
+      cam.y = ty - H / 2 - zoom * (by - H / 2);
       // 그림 크기·위치가 바뀌었으니 이름표를 바로 다시 배치
       //   (ResizeObserver는 "위치만 바뀐 것"은 알려 주지 않아서 지시선이 어긋날 수 있음)
       callouts.layout();
+      // 카메라 값이 바뀌었으면 타임라인의 시작 값도 다시 계산 (진행 정도는 그대로)
+      if (tl) { const p = tl.progress(); tl.invalidate(); tl.progress(p); }
     }
-    if ("ResizeObserver" in window) new ResizeObserver(fit).observe(figure);
+    if ("ResizeObserver" in window) new ResizeObserver(fit).observe(pin);
     else window.addEventListener("resize", fit);
 
     // ---------- 4) 분해 상태를 화면에 적용 (타임라인이 움직일 때마다 호출) ----------
@@ -205,10 +234,6 @@
     }
 
     // ---------- 5) 타임라인 ----------
-    const ab = info.assembledBounds;
-    const zoom = Math.max(1, Math.min(ZOOM_MAX, vb[2] / (ab[2] - ab[0]), vb[3] / (ab[3] - ab[1])));
-    // 조립 상태 가운데가 화면 가운데에 오도록 (scale은 가운데 기준)
-    const fx = ((ab[0] + ab[2]) / 2 - vb[0]) / vb[2], fy = ((ab[1] + ab[3]) / 2 - vb[1]) / vb[3];
     const wpAt = moveEnd + 0.2;            // 웨이퍼 경로 그리기 시작
     const flowAt = wpAt + 1.2;
 
@@ -216,11 +241,12 @@
       tl = gsap.timeline({ paused: true, defaults: { ease: EASE }, onUpdate: () => apply(false) });
       // 안내 문구는 바로 사라짐
       if (hint) tl.to(hint, { autoAlpha: 0, duration: 0.3, ease: "none" }, 0.02);
-      // 카메라: 크게 본 외관 → 첫 모듈이 도착할 때까지 천천히 물러남 (분해할 공간 확보)
+      // 카메라: 크게 본 외관 → 첫 모듈이 도착할 때까지 아주 조금(최대 20%) 물러남
       const firstEnd = endOf(seq[0].id);
+      //   (함수로 적어 두면 화면 크기가 바뀔 때 invalidate()로 다시 계산됨)
       tl.fromTo(scene,
-        { scale: zoom, xPercent: -(fx - 0.5) * zoom * 100, yPercent: -(fy - 0.5) * zoom * 100 },
-        { scale: 1, xPercent: 0, yPercent: 0, duration: firstEnd - 0.15 }, 0.15);
+        { scale: () => cam.zoom, x: () => cam.x, y: () => cam.y },
+        { scale: 1, x: 0, y: 0, duration: firstEnd - 0.15 }, 0.15);
       // 모듈 이동
       seq.forEach((m) => {
         if (moving(m.id)) tl.to(prog[m.id], { p: 1, duration: MOVE }, startOf[m.id]);

@@ -46,7 +46,7 @@ window.EQUIPMENT_PLATFORMS["common-300"] = {
         { type: "vent", face: "right", area: [0.2, 0.08, 0.8, 0.3] }
       ],
       label: { no: 2, abbr: "EFEM", anchor: "front" },  // 윗면은 FFU가 덮음 → 앞면 패널에 지시선
-      explode: [0, -10.5, 0], explodeOrder: 2       // 앞쪽으로 (시그널 타워·HMI·EMO가 함께)
+      explode: [0, -15, 0], explodeOrder: 2       // 앞쪽으로 (시그널 타워·HMI·EMO가 함께)
     },
     {
       // FFU(팬 필터 유닛): EFEM 위에서 깨끗한 공기를 아래로 불어 넣는 장치
@@ -67,7 +67,7 @@ window.EQUIPMENT_PLATFORMS["common-300"] = {
         { type: "seam", face: "front", count: 2, dir: "h" },
         { type: "label-plate", face: "front", area: [0.12, 0.62, 0.45, 0.74] }
       ],
-      explode: [0, -14, 0], explodeOrder: 1        // 맨 먼저, EFEM보다 더 앞쪽으로 (FOUP 함께)
+      explode: [0, -22.5, 0], explodeOrder: 1        // 맨 먼저, EFEM보다 더 앞쪽으로 (FOUP 함께)
     },
     {
       id: "lp-stage", name: "로드포트 받침대", en: "Load Port Stage",
@@ -136,7 +136,7 @@ window.EQUIPMENT_PLATFORMS["common-300"] = {
       shape: "box", size: [5.4, 4.6, 3.5], pos: [0, 6.35, 0],
       material: "dark",
       details: [{ type: "vent", face: "right", area: [0.2, 0.15, 0.8, 0.45] }],
-      explode: [0, -4, 0], explodeOrder: 3         // 로드락 2개를 받침 프레임째 앞쪽으로 조금
+      explode: [0, -6, 0], explodeOrder: 3         // 로드락 2개를 받침 프레임째 앞쪽으로
     },
     {
       id: "loadlock", name: "로드락", en: "Load Lock",

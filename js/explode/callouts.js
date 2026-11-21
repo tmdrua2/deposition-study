@@ -10,7 +10,7 @@
 //   1) 지시선끼리 절대 교차하지 않는다  → 모든 선 쌍을 계산으로 검사하고 고친다
 //   2) 지시선은 짧게: 끝점 후보 중 기둥에 가장 가까운 점, 모양은 "짧은 사선 + 수평선"
 //   3) 이름표 위아래 순서는 부품의 화면 높이순, 교차가 안 생기는 범위에서만 번호순으로 맞춤
-//   · 넓은 화면: 기둥에 "번호 약어 한글명" / 좁은 화면: 기둥에 번호만 + 그림 아래 목록
+//   · 넓은 화면: 기둥에 두 줄 표기 "번호 약어 / 한글명" / 좁은 화면: 기둥에 얇은 선 원 번호 + 그림 아래 목록
 //   · 이름표에 마우스·키보드 초점 → 그 부품 외곽선만 포인트 색(청록)으로 강조 (+ opts.onFocus로 알림)
 //   · 지시선·끝점·이름표는 처음에 한 번만 만들고, 배치할 때는 위치만 고친다
 //     → stage.js가 걸어 둔 "나타나기" 애니메이션 상태가 화면 크기가 바뀌어도 유지됨
@@ -145,10 +145,11 @@
       items.forEach((it) => { it.el.style.width = ""; it.el.classList.remove("is-right"); });
       const labelW = Math.max(...items.map((it) => it.el.offsetWidth)) + 6;
       const eb = [map([info.equipBounds[0], info.equipBounds[1]]), map([info.equipBounds[2], info.equipBounds[3]])];
-      const off = wide ? 26 : 8;
-      const colL = Math.max(labelW, eb[0][0] - off);        // 왼쪽 기둥 이름표의 오른쪽 끝(지시선이 닿는 x)
-      const colR = Math.min(W - labelW, eb[1][0] + off);    // 오른쪽 기둥 이름표의 왼쪽 끝
-      const GAP = wide ? 30 : 24;                          // 이름표끼리 최소 세로 간격
+      const off = wide ? 22 : 8;
+      const EDGE = wide ? 16 : 2;                          // 이름표와 화면 끝 사이 최소 여백
+      const colL = Math.max(labelW + EDGE, eb[0][0] - off);        // 왼쪽 기둥 이름표의 오른쪽 끝(지시선이 닿는 x)
+      const colR = Math.min(W - labelW - EDGE, eb[1][0] + off);    // 오른쪽 기둥 이름표의 왼쪽 끝
+      const GAP = wide ? 38 : 22;                          // 이름표끼리 최소 세로 간격 (넓은 화면은 두 줄 표기)
       const top = 14, bottom = H - 14;
 
       // 1) 부품마다 왼쪽·오른쪽 끝점 후보와 지시선 길이(비용)
@@ -260,13 +261,17 @@
         o.it.dot.setAttribute("cy", o.path[0][1].toFixed(1));
         o.it.dot.setAttribute("r", wide ? "3" : "2.5");
       });
-      // 7) 층 이름표: 바닥면의 앞쪽 두 가장자리(왼쪽 꼭짓점→아래 꼭짓점→오른쪽 꼭짓점)를 따라
-      //    바닥 바깥쪽에 놓아 보고, 부품·이름표·PM 표시·다른 층 이름표와 안 겹치는 첫 자리를 고름
+      // 7) 층 이름표: 층마다 "자기 모서리"를 먼저 시도 → 두 이름표가 한곳에 몰려 겹치지 않음
+      //    팹 바닥(위층) = 위 꼭짓점에서 오른쪽으로 뻗은 변(바닥판 위쪽 바깥, 화면 오른쪽 위 빈 곳),
+      //    서브팹(아래층) = 아래 꼭짓점에서 왼쪽으로 뻗은 변(바닥판 아래쪽 바깥, 화면 왼쪽 아래 빈 곳).
+      //    → 위층 이름은 위에, 아래층 이름은 아래에 놓여 헷갈리지 않음
+      //    꼭짓점이 화면 밖(바닥판은 화면보다 넓을 수 있음)이거나 막혀 있으면 그 변을 따라 조금씩 안쪽으로
+      //    옮겨 가며, 부품·이름표·지시선·PM 표시·다른 층 이름표와 안 겹치는 첫 자리
       const rectOf = (el) => { const r = el.getBoundingClientRect(); return [r.left - fr.left, r.top - fr.top, r.right - fr.left, r.bottom - fr.top]; };
       const blocks = items.map((it) => rectOf(it.el)).concat(partTags.map((t) => rectOf(t.el)));
       // 다른 곳에서 그리는 PM 표시: 글자 수로 크기를 어림 (CSS .part-tag 크기와 비슷하게)
       (opts.tagBlocks || []).forEach((T) => {
-        const p = map(T.point), w = T.text.length * (wide ? 6.2 : 5) + (wide ? 10 : 8), h = wide ? 15 : 12;
+        const p = map(T.point), w = T.text.length * (wide ? 6.2 : 5) + 4, h = wide ? 11 : 9;
         const y0 = T.place === "below" ? p[1] + 6 : p[1] - h / 2;
         blocks.push([p[0] - w / 2, y0, p[0] + w / 2, y0 + h]);
       });
@@ -277,27 +282,46 @@
       });
       const hitRect = (R) => blocks.some((B) => R[0] < B[2] && B[0] < R[2] && R[1] < B[3] && B[1] < R[3]) ||
         placed().some((o) => o.path.some((p, i) => i > 0 && segRect(o.path[i - 1], p, R)));   // 지시선과도 안 겹치게
+      // [위층, 아래층]이 차례로 시도할 [모서리, 그 모서리에서 뻗은 변의 반대쪽 꼭짓점]
+      const PREFER = [[["T", "R"], ["T", "L"], ["R", "B"]], [["B", "L"], ["B", "R"], ["L", "B"]]];
+      // 층 높이(z) 순서: 가장 높은 층 = 0번(위층)
+      const zRank = floorTags.map((t) => t.F.z || 0).sort((a, b) => b - a);
       floorTags.forEach((t) => {
+        const fi = zRank.indexOf(t.F.z || 0);
         const c = (t.F.corners || [t.F.point]).map(map);
         const w = t.el.offsetWidth, h = t.el.offsetHeight;
-        const L = c.reduce((a, b) => (b[0] < a[0] ? b : a)), B = c.reduce((a, b) => (b[1] > a[1] ? b : a));
-        const Rr = c.reduce((a, b) => (b[0] > a[0] ? b : a));
-        const T = c.reduce((a, b) => (b[1] < a[1] ? b : a));
+        const V = {
+          L: c.reduce((a, b) => (b[0] < a[0] ? b : a)), R: c.reduce((a, b) => (b[0] > a[0] ? b : a)),
+          B: c.reduce((a, b) => (b[1] > a[1] ? b : a)), T: c.reduce((a, b) => (b[1] < a[1] ? b : a))
+        };
+        const ctr = [(V.L[0] + V.R[0]) / 2, (V.T[1] + V.B[1]) / 2];
+        // 점 P에서 바닥 바깥쪽으로 6px 떨어지게 이름표 상자를 놓음
+        const boxAt = (P) => {
+          const x = P[0] < ctr[0] - 1 ? P[0] - 6 - w : P[0] > ctr[0] + 1 ? P[0] + 6 : P[0] - w / 2;
+          const y = P[1] < ctr[1] ? P[1] - 4 - h : P[1] + 4;
+          return [x, y];
+        };
         const spots = [];
-        [0.5, 0.62, 0.38, 0.74, 0.26, 0.86, 0.14].forEach((k) => {
-          // 앞쪽 두 가장자리(먼저 시도): 왼쪽 아래 변은 점의 왼쪽 아래, 오른쪽 아래 변은 점의 오른쪽 아래 (바닥 바깥)
-          spots.push([L[0] + (B[0] - L[0]) * k - w, L[1] + (B[1] - L[1]) * k + 4]);
-          spots.push([B[0] + (Rr[0] - B[0]) * k, B[1] + (Rr[1] - B[1]) * k + 4]);
+        // 바닥판 안쪽 가장자리: 바깥에 자리가 없을 때(휴대폰에서 바닥판이 그림틀보다 클 때)
+        const boxIn = (P) => {
+          const x = P[0] < ctr[0] - 1 ? P[0] + 10 : P[0] > ctr[0] + 1 ? P[0] - 10 - w : P[0] - w / 2;
+          const y = P[1] < ctr[1] ? P[1] + 6 : P[1] - 6 - h;
+          return [x, y];
+        };
+        [boxAt, boxIn].forEach((fn) => {
+          (PREFER[fi] || PREFER[1]).forEach(([k, n]) => {
+            const C = V[k], N = V[n];
+            for (let f = 0.04; f <= 0.7; f += 0.03) {
+              // 변 위의 점에서 바닥판 바깥쪽(가운데 반대쪽)으로 / 안쪽으로
+              spots.push(fn([C[0] + (N[0] - C[0]) * f, C[1] + (N[1] - C[1]) * f]));
+            }
+          });
         });
-        [0.3, 0.5, 0.7].forEach((k) => {
-          // 뒤쪽 두 가장자리(나중에 시도): 왼쪽 위 변은 점의 왼쪽 위, 오른쪽 위 변은 점의 오른쪽 위
-          spots.push([L[0] + (T[0] - L[0]) * k - w, L[1] + (T[1] - L[1]) * k - h - 4]);
-          spots.push([T[0] + (Rr[0] - T[0]) * k, T[1] + (Rr[1] - T[1]) * k - h - 4]);
-        });
-        // 겹침 점수: 화면 밖 > 이름표·지시선·PM 표시와 겹침 > 부품과 겹침. 0점인 첫 자리, 없으면 가장 낮은 자리
-        const score = (s) => {
-          const R = [s[0] - 2, s[1] - 2, s[0] + w + 2, s[1] + h + 2];
-          return (R[0] < 0 || R[2] > W || R[1] < 0 || R[3] > H ? 100 : 0) + (hitRect(R) ? 10 : 0) + (hitPoly(R) ? 1 : 0);
+        // 겹침 점수: 화면 밖 > 이름표·지시선·PM 표시·다른 층 이름표와 겹침 > 부품과 겹침. 0점인 첫 자리, 없으면 가장 낮은 자리
+        const score = (sp) => {
+          const R = [sp[0] - 2, sp[1] - 2, sp[0] + w + 2, sp[1] + h + 2];
+          return (R[0] < 0 || R[2] > W || R[1] < 0 || R[3] > H - (wide ? 28 : 36) ? 100 : 0)   // 아래 = 안내 문구·경로 설명 자리
+           + (hitRect(R) ? 10 : 0) + (hitPoly(R) ? 1 : 0);
         };
         let spot = spots[0], best = Infinity;
         for (const sp of spots) {
@@ -306,7 +330,7 @@
           if (v === 0) break;
         }
         place(t.el, spot);
-        blocks.push([spot[0], spot[1], spot[0] + w, spot[1] + h]);
+        blocks.push([spot[0] - 4, spot[1] - 4, spot[0] + w + 4, spot[1] + h + 4]);
       });
 
       // 점검용: 남은 교차 수를 속성으로 남김 (0이어야 정상)

@@ -858,6 +858,11 @@
     const asmPts = [];
     A0.drawables.forEach((d) => asmPts.push(d.sMin, d.sMax));
     const assembledBounds = rangeOf(asmPts.concat(floorPts(ext0)));
+    // 조립 상태 장비 몸체만의 범위 (바닥판·여백 제외) → stage.js가 "장비가 화면 폭의 몇 %"를 맞출 때 씀
+    const assembledBody = [
+      Math.min(...asmPts.map((p) => p[0])), Math.min(...asmPts.map((p) => p[1])),
+      Math.max(...asmPts.map((p) => p[0])), Math.max(...asmPts.map((p) => p[1]))
+    ];
 
     // ---------- DOM 만들기 ----------
     while (container.firstChild) container.removeChild(container.firstChild);
@@ -967,7 +972,7 @@
     // 층 이름 자리: 분해 완료 상태의 바닥면 네 꼭짓점
     const floorInfo = floors.length > 1 ? floors.map((fl) => {
       const rect = floorRect(fl.z, ext1).map(project);
-      return { id: fl.id, name: fl.name || fl.id, ko: fl.ko || "", point: rect.reduce((a, b) => (b[1] > a[1] ? b : a)), corners: rect };
+      return { id: fl.id, name: fl.name || fl.id, ko: fl.ko || "", z: fl.z, point: rect.reduce((a, b) => (b[1] > a[1] ? b : a)), corners: rect };
     }) : [];
 
     // 분해 완료 상태: 장비 화면 범위(이름표 기둥 위치) + 물체가 차지한 영역(글자 빈 자리 찾기)
@@ -976,6 +981,8 @@
       Math.max(...A1.drawables.map((d) => d.sMax[0])), Math.max(...A1.drawables.map((d) => d.sMax[1]))
     ];
     const occupied = A1.drawables.filter((d) => d.kind === "solid").map((d) => d.hull);
+    // 점검용: 분해 완료 상태의 부품 윤곽 + 그 부품이 속한 모듈 (모듈끼리 화면에서 겹치는지 검사)
+    const occupiedBy = A1.drawables.filter((d) => d.kind === "solid").map((d) => ({ module: moduleOf.get(d.part.id), hull: d.hull }));
     // 분해 완료 상태에서 부품 하나의 3D 범위 (웨이퍼 경로 점 계산용)
     function partBox(id) {
       const mine = A1.drawables.filter((d) => d.part.id === id);
@@ -992,11 +999,11 @@
     }
 
     return {
-      viewBox: viewBox, assembledBounds: assembledBounds,
+      viewBox: viewBox, assembledBounds: assembledBounds, assembledBody: assembledBody,
       layers: layerOut, floorPolys: floorPolys, floorPointsAt: floorPointsAt,
       sequence: sequence.map((m) => ({ id: m.id, key: m.key, order: m.order })),
       ranksFor: ranksFor, partBox: partBox,
-      labels: labels, tags: tags, occupied: occupied, floors: floorInfo, equipBounds: equipBounds
+      labels: labels, tags: tags, occupied: occupied, occupiedBy: occupiedBy, floors: floorInfo, equipBounds: equipBounds
     };
   }
 
