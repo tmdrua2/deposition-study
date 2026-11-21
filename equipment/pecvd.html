@@ -20,7 +20,7 @@
         <div class="stage-reed"></div>
         <div class="stage-cream"></div>
       </div>
-      <!-- 글씨 띠: 처음엔 큰 "PECVD" 제목, 분해가 시작되면 같은 자리에 모듈 캡션이 바뀌어 들어옴 (stage.js) -->
+      <!-- 글씨 띠: 큰 "PECVD" 제목 (무대 위에 떠 있는 층, 첫 스크롤에서 사라짐 — stage.js) -->
       <div class="stage-band">
         <div class="stage-hero">
           <h1 class="stage-word"><span class="stage-word-text">PECVD</span><span class="sr-only"> 장비</span></h1>
@@ -29,8 +29,9 @@
             <p class="equip-lede">대표적인 300mm PECVD 장비 구성. 웨이퍼가 지나가는 순서대로 번호를 붙였습니다.</p>
           </div>
         </div>
-        <div class="stage-captions" aria-hidden="true"></div>
       </div>
+      <!-- 분해 캡션: 왼쪽 위 모서리에 작게, 모듈이 도착할 때마다 바뀜 (stage.js가 채움) -->
+      <div class="stage-captions" aria-hidden="true"></div>
       <!-- 그림틀: 장비 그림(모듈별 층, render-iso.js가 채움) + 도면식 이름표(callouts.js가 채움) -->
       <div class="iso-figure">
         <div class="iso-stack" role="img" data-iso-view

@@ -915,8 +915,10 @@ footer a:hover { color: var(--ink); }
   --iso-shadow: var(--st-shadow);
   --iso-floor: var(--st-floor);
   --iso-floor-line: var(--st-floor-line);
-  /* 글씨 띠 높이: 처음엔 큰 제목, 분해 중엔 모듈 캡션이 이 띠 안에 놓임 (이름표는 이 아래에서만) */
-  --band-h: clamp(132px, 23vh, 220px);
+  /* 큰 제목 크기 기준 (글씨 띠는 무대 위에 떠 있는 층 → 장비 자리를 차지하지 않음) */
+  --band-h: clamp(120px, 21vh, 210px);
+  /* 그림틀 위아래 여백: 위 = 작은 모듈 캡션 자리, 아래 = 웨이퍼 경로 설명 자리 (같게 → 장비가 정가운데) */
+  --fig-pad-y: 60px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -984,27 +986,30 @@ footer a:hover { color: var(--ink); }
   transform: none;
 }
 
-/* 글씨 띠: 그림틀 위쪽. 큰 제목은 띠 밖(아래)으로 넘쳐 장비 뒤로 들어감 → 장비가 글씨를 가려 한 장면이 됨 */
+/* 글씨 띠: 무대 맨 위에 떠 있는 층 (높이를 차지하지 않음 → 그림틀이 헤더 아래 화면 전체를 씀)
+   큰 제목 아랫부분은 첫 화면 장비 윗부분 뒤로 들어감 → 장비가 글씨를 가려 한 장면이 됨 (stage.js가 장비 자리를 계산) */
 .stage-band {
-  position: relative;
+  position: absolute;
   z-index: 1;
-  flex: none;
+  top: 0;
+  left: 0;
+  right: 0;
   height: var(--band-h);
-  width: 100%;
   max-width: var(--max);                 /* 헤더 안쪽 폭과 같게 → 큰 제목 왼쪽 끝 = 로고 왼쪽 끝 */
   margin: 0 auto;
   padding: 0 var(--gutter);
+  pointer-events: none;
 }
 .stage-hero { position: absolute; inset: 0 var(--gutter); }
 .stage-word {
   position: absolute;
   left: 0;
-  bottom: calc(var(--band-h) * -0.34);   /* 글자 아랫부분이 그림틀 위쪽(장비 윗부분)과 겹침 */
+  top: clamp(8px, 2vh, 22px);
   margin: 0;
   padding: 0;
   border: 0;
   color: var(--on-navy);
-  font-size: min(19.5vw, calc(var(--band-h) * 1.24));   /* 오른쪽 설명 칸과 겹치지 않는 크기 */
+  font-size: min(19.5vw, calc(var(--band-h) * 1.06));   /* 오른쪽 설명 칸과 겹치지 않는 크기 */
   font-weight: 800;
   letter-spacing: -0.055em;
   line-height: 0.86;
@@ -1019,34 +1024,35 @@ footer a:hover { color: var(--ink); }
   right: 0;
   width: min(260px, 24vw);
 }
-/* 분해 캡션: 모듈이 도착할 때마다 같은 자리에서 바뀜. 번호·약어(고정폭, 작게) / 한글명(크고 굵게) */
+/* 분해 캡션: 무대 왼쪽 위 모서리에 작게. 모듈이 도착할 때마다 같은 자리에서 바뀜
+   번호·약어(고정폭, 작게) / 한글명(굵게). 그림틀 위 여백(--fig-pad-y) 안에 들어가므로 장비·이름표와 안 겹침 */
 .stage-captions {
   position: absolute;
-  left: var(--gutter);
-  right: var(--gutter);
-  bottom: 14px;
+  z-index: 3;
+  top: 14px;
+  left: max(var(--gutter), calc((100% - var(--max)) / 2 + var(--gutter)));   /* 큰 제목·로고와 같은 왼쪽 선 */
   display: grid;
   pointer-events: none;
 }
-.stage-cap { grid-area: 1 / 1; align-self: end; visibility: hidden; }
+.stage-cap { grid-area: 1 / 1; align-self: start; visibility: hidden; white-space: nowrap; }
 .stage-cap-meta {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: baseline;
-  margin: 0 0 10px;
+  margin: 0 0 5px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
-.stage-cap-no { color: var(--faint); font-size: var(--fs-sm); letter-spacing: 0.02em; }
-.stage-cap-abbr { color: var(--ink); font-size: var(--fs-sm); font-weight: 500; letter-spacing: 0.06em; }
+.stage-cap-no { color: var(--faint); font-size: var(--fs-2xs); letter-spacing: 0.02em; }
+.stage-cap-abbr { color: var(--ink); font-size: var(--fs-2xs); font-weight: 500; letter-spacing: 0.06em; }
 .stage-cap-name {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(2rem, 6.2vw, 5.25rem);
-  font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 1.02;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
   font-kerning: none;
 }
 .equip-stage.is-static .stage-captions { display: none; }
@@ -1088,9 +1094,9 @@ footer a:hover { color: var(--ink); }
   z-index: 2;                          /* 글씨 띠(z 1)보다 위 → 큰 제목이 장비 뒤에 깔림 */
   min-height: 0;
   width: 100%;
-  padding: 0 calc(var(--callout-col) + 8px) 38px;  /* 아래 38px: 안내 문구·웨이퍼 경로 설명 자리 (PM 표시와 안 겹치게) */
+  padding: var(--fig-pad-y) calc(var(--callout-col) + 8px);  /* 위 = 캡션 자리, 아래 = 안내 문구·웨이퍼 경로 설명 자리 */
 }
-.iso-figure.is-wide { --callout-col: 140px; padding: 8px calc(var(--callout-col) + 20px) 30px; }   /* 140px ≈ 가장 긴 한글명(조작 화면 (터치 패널)) 폭 + 여백 */
+.iso-figure.is-wide { --callout-col: 140px; padding: var(--fig-pad-y) calc(var(--callout-col) + 20px); }   /* 140px ≈ 가장 긴 한글명(조작 화면 (터치 패널)) 폭 + 여백 */
 /* 그림 묶음: 크기·위치는 stage.js가 정함 (그림틀보다 커서 바닥판이 넘쳐도 됨). z-index 0 → 이름표 층이 항상 위 */
 .iso-stack { position: absolute; z-index: 0; }
 .iso-scene { position: absolute; inset: 0; transform-origin: 50% 50%; }
@@ -1125,12 +1131,12 @@ footer a:hover { color: var(--ink); }
 .wafer-path.is-flowing .wp-line { animation: wp-flow 1.4s linear infinite; }
 @keyframes wp-flow { to { stroke-dashoffset: -26; } }
 
-/* 안내 문구(처음)와 웨이퍼 경로 설명(끝): 그림틀 맨 아래 같은 자리 */
+/* 안내 문구(처음)와 웨이퍼 경로 설명(끝): 그림틀 아래 여백 안 같은 자리 (화면 아래 끝에서 조금 띄움) */
 .iso-hint, .iso-caption {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: calc(var(--fig-pad-y, 40px) * 0.3);
   margin: 0;
   display: flex;
   justify-content: center;
@@ -1285,9 +1291,8 @@ footer a:hover { color: var(--ink); }
 /* 좁은 화면: 층 이름표는 영문 한 줄만 */
 .iso-figure:not(.is-wide) .floor-tag-ko { display: none; }
 .iso-figure:not(.is-wide) .floor-tag-en { font-size: var(--fs-3xs); }
-/* 좁은 화면 + 스크롤 연출: 그림과 목록을 한 덩어리로 남는 높이의 가운데에 */
-.equip-stage:not(.is-static) .iso-figure:not(.is-wide) { margin-top: auto; }
-.equip-stage:not(.is-static) .iso-figure:not(.is-wide) + .callout-legend { margin-bottom: auto; }
+/* 좁은 화면 + 스크롤 연출: 그림틀이 목록 위 남는 높이를 모두 씀 → 장비는 그 칸의 정가운데 */
+.equip-stage:not(.is-static) .iso-figure:not(.is-wide) + .callout-legend { padding-bottom: 10px; }
 /* 좁은 화면: 목록은 고정 화면 안, 그림 바로 아래에 2열로 (분해되며 항목이 차례로 또렷해짐) */
 .iso-figure:not(.is-wide) + .callout-legend {
   position: relative;
@@ -1621,13 +1626,15 @@ footer a:hover { color: var(--ink); }
     transform: translateY(100%);
   }
   .page-stage .part-panel-backdrop { background: rgba(6, 10, 24, 0.40); }
-  /* 글씨 띠: 휴대폰은 낮게, 설명은 큰 제목 위에 가로로 */
-  .equip-stage-pin { --band-h: clamp(150px, 28svh, 240px); }   /* 남는 세로 공간을 글씨 띠가 가져가 큰 제목이 장비와 겹치게 */
-  .stage-hero-meta { top: 16px; left: 0; width: auto; }
+  /* 글씨 띠: 휴대폰은 큰 제목 → 설명 순서로 위에서부터 쌓음 (높이는 내용만큼) */
+  .equip-stage-pin { --fig-pad-y: 46px; }
+  .stage-band { height: auto; }
+  .stage-hero { position: relative; inset: auto; padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .stage-hero-meta { position: static; width: auto; }
   .equip-kicker { margin-bottom: 8px; }
   .equip-lede { font-size: var(--fs-xs); line-height: 1.55; max-width: 30em; }
-  .stage-word { font-size: 24vw; bottom: calc(var(--band-h) * -0.36); }
-  .stage-cap-meta { margin-bottom: 6px; }
-  .stage-cap-no, .stage-cap-abbr { font-size: var(--fs-xs); }
-  .stage-captions { bottom: 8px; }
+  .stage-word { position: relative; top: auto; font-size: 24vw; }
+  .stage-captions { top: 10px; }
+  .stage-cap-meta { margin-bottom: 4px; }
+  .stage-cap-name { font-size: var(--fs-md); }
 }

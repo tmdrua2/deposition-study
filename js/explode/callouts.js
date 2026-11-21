@@ -161,7 +161,11 @@
       const colL = Math.max(labelW + EDGE, eb[0][0] - off);        // 왼쪽 기둥 이름표의 오른쪽 끝(지시선이 닿는 x)
       const colR = Math.min(W - labelW - EDGE, eb[1][0] + off);    // 오른쪽 기둥 이름표의 왼쪽 끝
       const GAP = wide ? 38 : 22;                          // 이름표끼리 최소 세로 간격 (넓은 화면은 두 줄 표기)
-      const top = 14, bottom = H - 14;
+      // 이름표 세로 범위: 그림틀 위아래 여백(캡션·경로 설명 자리) 안쪽. 이름표는 1줄 가운데가 지시선 높이,
+      //   넓은 화면은 아래로 한글명 줄이 더 있으므로 아래쪽을 그만큼 더 띄움 → 이름표 전체가 화면 안
+      const fcs = getComputedStyle(figure);
+      const padT = parseFloat(fcs.paddingTop) || 0, padB = parseFloat(fcs.paddingBottom) || 0;
+      const top = Math.max(14, padT + 8), bottom = H - Math.max(14, padB + (wide ? 24 : 8));
 
       // 1) 부품마다 왼쪽·오른쪽 끝점 후보와 지시선 길이(비용)
       const all = items.map((it) => {
@@ -331,7 +335,7 @@
         // 겹침 점수: 화면 밖 > 이름표·지시선·PM 표시·다른 층 이름표와 겹침 > 부품과 겹침. 0점인 첫 자리, 없으면 가장 낮은 자리
         const score = (sp) => {
           const R = [sp[0] - 2, sp[1] - 2, sp[0] + w + 2, sp[1] + h + 2];
-          return (R[0] < 0 || R[2] > W || R[1] < 0 || R[3] > H - (wide ? 28 : 36) ? 100 : 0)   // 아래 = 안내 문구·경로 설명 자리
+          return (R[0] < 0 || R[2] > W || R[1] < padT || R[3] > H - padB ? 100 : 0)   // 위 = 캡션 자리, 아래 = 안내 문구·경로 설명 자리
            + (hitRect(R) ? 10 : 0) + (hitPoly(R) ? 1 : 0);
         };
         let spot = spots[0], best = Infinity;
