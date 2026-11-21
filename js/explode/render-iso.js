@@ -5,9 +5,13 @@
 //   · 3D 좌표 → 화면 좌표 변환 (오른쪽 앞 위에서 내려다보는 시점)
 //   · 면마다 명암 (빛은 왼쪽 앞 위에서 옴: 윗면 밝게, 왼쪽 면 중간, 오른쪽 면 어둡게)
 //   · 얇은 외곽선, 윗면 모서리 하이라이트, 바닥 그림자
+//   · 재질 마감: 도장(panel) · 금속(metal·pipe: 반사 하이라이트) · 유리 · 고무(cable)
 //   · 디테일: seam(패널 이음선) · bolts(볼트) · vent(통풍구) · window(관찰창)
 //             label-plate(빈 표시판) · handle(손잡이) · holes(구멍)
+//             warning-label(노란 경고 라벨) · button(빨간 버튼) · screen(조작 화면)
+//   · 층: data의 site.floors → 점선 바닥면 (Fab floor / Sub-fab)
 //   · 색은 css/style.css 의 :root 변수(--mat-재질이름)에서 읽어 온다
+//   · 돌려주는 값: 이름표 자리(labels)·층 이름 자리(floors) → js/explode/callouts.js가 씀
 //
 // 사용법:  IsoRender.render(svg요소, window.EQUIPMENT.pecvd, window.EQUIPMENT_PLATFORMS)
 // 나중에 Three.js로 바꾸면 이 파일만 render-3d.js로 바꾸고 데이터는 그대로 쓴다.
@@ -21,6 +25,17 @@
   const VIEW = [1, -1, 1];          // 보는 사람 쪽 방향 (이 방향을 향한 면만 보임)
   const LIGHT = normalize([-0.3, -0.55, 0.78]); // 빛이 오는 방향
   const SVGNS = "http://www.w3.org/2000/svg";
+  // 반사 하이라이트 방향: 빛 방향과 보는 방향의 중간 (이 방향을 향한 금속 면이 반짝임)
+  const HALF = normalize(add(LIGHT, normalize(VIEW)));
+
+  // 재질별 마감 — 데이터에는 재질 "이름"만 있고, 어떻게 보일지는 여기서 정한다
+  //   metal: 밝은 반사띠·반사선 / glass: 어두운 유리 / rubber: 약한 광택 / paint: 도장(기본)
+  const FINISH = {
+    metal: "metal", pipe: "metal",
+    glass: "glass", screen: "glass",
+    cable: "rubber"
+  };
+  function finishOf(material) { return FINISH[material] || "paint"; }
 
   // ---------- 작은 벡터 계산 ----------
   function add(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]; }
@@ -401,9 +416,7 @@
       poly(g, rectPts(m, [a[0] - pu, a[1] - pv, a[2] + pu, a[3] + pv]),
         Object.assign({ fill: css(shade(fill, -0.12)), stroke: css(shade(fill, -0.35)), "stroke-width": 0.6 }, THIN));
       poly(g, rectPts(m, a), { fill: css(faceTone(mat("glass"), f.n)) });
-      const w = a[2] - a[0];
-      poly(g, [m(a[0] + 0.22 * w, a[3]), m(a[0] + 0.42 * w, a[3]), m(a[0] + 0.24 * w, a[1]), m(a[0] + 0.04 * w, a[1])],
-        { fill: "#ffffff", opacity: 0.16 });
+      glint(g, m, a);
     },
     // 표시판: 글자 없는 밝은 판 (로고·상표 없음)
     "label-plate"(g, f, d, fill) {
@@ -424,8 +437,51 @@
         if (f.round && Math.hypot(u - 0.5, v - 0.5) > 0.45) continue;
         poly(g, faceCircle(f, u, v, 0.05), { fill: color });
       }
+    },
+    // 경고 라벨: 작은 노란 사각형 + 가는 삼각형 테두리 (글자·로고 없음)
+    //   at = 라벨 가운데 위치 [가로, 세로] (0~1), 크기는 실제 길이 0.5u로 고정
+    "warning-label"(g, f, d, fill, faceDetails, mat) {
+      const m = mapper(f), at = d.at || [0.85, 0.8], s = (d.size || 0.5) / 2;
+      const hu = s / len(f.U), hv = s / len(f.V);
+      const a = d.area || [at[0] - hu, at[1] - hv, at[0] + hu, at[1] + hv];
+      const yellow = faceTone(mat("warning"), f.n);
+      poly(g, rectPts(m, a), Object.assign({ fill: css(yellow), stroke: css(shade(yellow, -0.4)), "stroke-width": 0.5 }, THIN));
+      const cu = (a[0] + a[2]) / 2, w = (a[2] - a[0]) * 0.32, b = a[1] + (a[3] - a[1]) * 0.24, t = a[3] - (a[3] - a[1]) * 0.22;
+      poly(g, [m(cu - w, b), m(cu + w, b), m(cu, t)],
+        Object.assign({ fill: "none", stroke: css(shade(yellow, -0.75)), "stroke-width": 0.6 }, THIN));
+    },
+    // 둥근 버튼(EMO 등): 어두운 테두리 → 빨간 버튼 → 작은 반사점
+    button(g, f, d, fill, faceDetails, mat) {
+      const at = d.at || [0.5, 0.5], r = d.r || 0.3, red = faceTone(mat("emo"), f.n);
+      poly(g, faceCircle(f, at[0], at[1], r * 1.18), { fill: css(shade(fill, -0.5)) });
+      poly(g, faceCircle(f, at[0], at[1], r), { fill: css(red) });
+      poly(g, faceCircle(f, at[0] - 0.08, at[1] + 0.1, r * 0.3), { fill: "#ffffff", opacity: 0.35 });
+    },
+    // 조작 화면: 어두운 유리 화면 + 흐린 화면 구성 선 + 얇은 반사선
+    screen(g, f, d, fill, faceDetails, mat) {
+      const m = mapper(f), a = d.area || [0.08, 0.12, 0.92, 0.88];
+      const glass = faceTone(mat("screen"), f.n);
+      poly(g, rectPts(m, a), { fill: css(glass) });
+      const lu = a[2] - a[0], lv = a[3] - a[1], ui = css(shade(glass, 0.35));
+      // 화면 안 구성(위쪽 바 1줄 + 목록 3줄) — 특정 회사 화면이 아닌 일반적인 모양
+      line(g, m(a[0] + 0.08 * lu, a[3] - 0.16 * lv), m(a[2] - 0.08 * lu, a[3] - 0.16 * lv), ui, 0.7);
+      [0.36, 0.52, 0.68].forEach((t) => line(g, m(a[0] + 0.08 * lu, a[3] - t * lv), m(a[0] + 0.55 * lu, a[3] - t * lv), ui, 0.5));
+      glint(g, m, a);
     }
   };
+
+  // 유리 반사선: 비스듬한 가는 선 2줄 (넓은 반투명 면 대신 → 깔끔한 유리 느낌)
+  function glint(g, m, a) {
+    const w = a[2] - a[0], h = a[3] - a[1];
+    line(g, m(a[0] + 0.18 * w, a[3] - 0.04 * h), m(a[0] + 0.04 * w, a[1] + 0.3 * h), "rgba(255,255,255,0.38)", 0.7);
+    line(g, m(a[0] + 0.32 * w, a[3] - 0.04 * h), m(a[0] + 0.14 * w, a[1] + 0.12 * h), "rgba(255,255,255,0.2)", 0.5);
+  }
+  // 금속 면 반사선: 면 왼쪽 위에서 비스듬히 내려오는 가는 선 2줄
+  function sheen(g, f) {
+    const m = mapper(f);
+    line(g, m(0.16, 0.96), m(0.3, 0.04), "rgba(255,255,255,0.32)", 0.8);
+    line(g, m(0.23, 0.96), m(0.34, 0.25), "rgba(255,255,255,0.16)", 0.6);
+  }
 
   // =============================================================
   // 6) 물체 하나 그리기
@@ -438,14 +494,19 @@
     const details = d.part.details || [];
     const screenPts = [];
 
+    const metal = finishOf(d.part.material) === "metal";
     visible.forEach((f) => {
       const pts = f.pts.map(project);
       screenPts.push(...pts);
-      const fill = faceTone(base, f.n);
+      let fill = faceTone(base, f.n);
+      // 금속 원기둥 옆면: 반사 방향을 향한 조각만 밝게 → 세로로 가는 반사띠가 생김
+      if (metal && f.smooth) fill = shade(fill, 0.55 * Math.pow(Math.max(0, dot(f.n, HALF)), 24));
       // 원기둥 옆면은 잘게 나눈 조각이라 테두리를 면 색과 같게 해서 이음 자국을 숨김
       poly(g, pts, Object.assign({
         fill: css(fill), stroke: f.smooth ? css(fill) : edge, "stroke-width": f.smooth ? 0.8 : 0.6
       }, THIN));
+      // 평평한 금속 옆면: 얇은 사선 반사선 2줄 (그라디언트 대신 선으로)
+      if (metal && !f.smooth && f.name !== "top" && Math.abs(f.n[2]) < 0.5) sheen(g, f);
       // 이 면에 붙은 디테일 (이음선을 먼저 그리고 그 위에 나머지)
       const own = details.filter((x) => x.face === f.name);
       own.slice().sort((x, y) => (x.type === "seam" ? -1 : 0) - (y.type === "seam" ? -1 : 0))
@@ -462,13 +523,14 @@
     }
     // 바깥 윤곽선: 면 테두리보다 조금 진하게
     poly(g, hull(screenPts), Object.assign({
-      fill: "none", stroke: css(shade(base, -0.5)), "stroke-width": 0.9
+      class: "iso-outline", fill: "none", stroke: css(shade(base, -0.5)), "stroke-width": 0.9
     }, THIN));
   }
 
   // 배관 한 마디: 테두리 → 몸통 → 위쪽 반사광 순서로 겹쳐 그림 (굵기는 그림 크기에 맞춰 커짐)
   function drawPipe(g, d, mat) {
     const base = mat(d.part.material || "pipe");
+    const finish = finishOf(d.part.material || "pipe");
     const w = ((d.part.size && d.part.size[0]) || 0.3) * K;
     const pts = d.pts3.map(project);
     const path = "M" + pts.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" L");
@@ -476,15 +538,33 @@
     const common = { d: path, fill: "none", "stroke-linejoin": "round", "stroke-linecap": "round" };
     el("path", Object.assign({ stroke: css(shade(base, -0.5)), "stroke-width": w + 2 }, common), g);
     el("path", Object.assign({ stroke: css(shade(base, -0.06)), "stroke-width": w }, common), g);
+    // 위쪽 광택선: 금속은 밝게, 고무 케이블은 아주 약하게
     el("path", Object.assign({
-      stroke: css(shade(base, 0.45)), "stroke-width": Math.max(1, w * 0.26),
+      stroke: css(shade(base, finish === "rubber" ? 0.22 : 0.5)), "stroke-width": Math.max(1, w * 0.24),
       transform: "translate(0," + (-w * 0.2).toFixed(1) + ")"
     }, common), g);
+    // 스테인리스 배관 이음부(피팅): 마디 양 끝에 조금 더 굵고 밝은 짧은 고리
+    //   → 꺾이는 곳에서는 두 마디의 고리가 만나 엘보 피팅처럼 보임
+    if (finish === "metal") {
+      const a = d.pts3[0], b = d.pts3[1], L = len(sub(b, a));
+      const t = Math.min(0.5, 0.42 / (L || 1));   // 고리 길이 0.42u (마디가 짧으면 절반까지만)
+      [[a, add(a, mul(sub(b, a), t))], [add(b, mul(sub(a, b), t)), b]].forEach((seg) => {
+        const p = seg.map(project);
+        const dd = "M" + p[0][0].toFixed(1) + " " + p[0][1].toFixed(1) + " L" + p[1][0].toFixed(1) + " " + p[1][1].toFixed(1);
+        const c = { d: dd, fill: "none", "stroke-linecap": "butt" };
+        el("path", Object.assign({ stroke: css(shade(base, -0.45)), "stroke-width": w * 1.38 + 2 }, c), g);
+        el("path", Object.assign({ stroke: css(shade(base, 0.32)), "stroke-width": w * 1.38 }, c), g);
+        el("path", Object.assign({
+          stroke: css(shade(base, 0.7)), "stroke-width": Math.max(1, w * 0.28),
+          transform: "translate(0," + (-w * 0.3).toFixed(1) + ")"
+        }, c), g);
+      });
+    }
   }
 
   // 바닥 그림자: 바닥에 닿은 물체의 밑면을 빛 반대쪽(오른쪽 뒤)으로 살짝 늘린 모양
-  function drawShadow(g, d) {
-    if (d.kind !== "solid" || d.min[2] > 0.01) return;
+  function drawShadow(g, d, floorZ) {
+    if (d.kind !== "solid" || Math.abs(d.min[2] - floorZ) > 0.01) return;
     const bottom = d.faces.find((f) => f.name === "bottom");
     if (!bottom) return;
     const shift = [0.6, 0.7, 0];
@@ -497,33 +577,106 @@
   //    options.level: 이 단계 이하의 부품만 그림 (기본 1 = 모듈 외관)
   //    options.offsets: 부품별 이동량 (분해 연출용, 2단계에서 사용)
   // =============================================================
+  // 부품마다 조상 id 목록 (자기 자신 포함) → SVG 그룹의 data-tree 속성
+  //   이름표에 마우스를 올리면 그 부품과 자식 부품만 골라 강조할 때 씀
+  function ancestry(parts) {
+    const byId = new Map(parts.map((p) => [p.id, p]));
+    const out = new Map();
+    parts.forEach((p) => {
+      const chain = [];
+      for (let q = p; q; q = q.parent ? byId.get(q.parent) : null) chain.push(q.id);
+      out.set(p.id, chain);
+    });
+    return out;
+  }
+
+  // 층 바닥면: 장비가 차지하는 바닥 범위를 둘러싼 사각형 (점선)
+  function floorRect(z, ext) {
+    return [[ext[0], ext[1], z], [ext[2], ext[1], z], [ext[2], ext[3], z], [ext[0], ext[3], z]];
+  }
+
   function render(svg, equipment, platforms, options) {
     const opt = Object.assign({ level: 1, offsets: null }, options || {});
     const mat = readMaterials();
     const parts = resolveParts(equipment, platforms).filter((p) => (p.level || 1) <= opt.level);
     const world = computeWorld(parts, opt.offsets);
+    const tree = ancestry(parts);
     const drawables = [];
     parts.forEach((p) => drawables.push(...buildDrawables(p, world.get(p.id))));
     const ordered = sortDrawables(drawables);
 
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-    const shadowLayer = el("g", { class: "iso-shadows" }, svg);
-    const partLayer = el("g", { class: "iso-parts" }, svg);
-    drawables.forEach((d) => drawShadow(shadowLayer, d));
-    ordered.forEach((d) => {
-      // 부품마다 그룹 하나 → 나중에 분해 연출 때 그룹째로 움직인다
-      const g = el("g", { "data-part": d.part.id, "data-group": d.root }, partLayer);
-      if (d.kind === "pipe") drawPipe(g, d, mat); else drawSolid(g, d, mat);
+    // 층 정보 (없으면 바닥 하나, z = 0)
+    const floors = ((equipment.site && equipment.site.floors) || [{ id: "floor", z: 0 }])
+      .slice().sort((a, b) => a.z - b.z);              // 아래층부터
+    // 물체가 어느 층에 속하나: 물체 가운데 높이보다 낮은 층 중 가장 높은 층
+    const floorOf = (d) => {
+      let k = 0;
+      floors.forEach((f, i) => { if (d.center[2] >= f.z - 0.01) k = i; });
+      return k;
+    };
+    // 바닥면 범위: 모든 물체의 x·y 범위 + 여유
+    const m = 1.6, ext = [Infinity, Infinity, -Infinity, -Infinity];
+    drawables.forEach((d) => {
+      ext[0] = Math.min(ext[0], d.min[0]); ext[1] = Math.min(ext[1], d.min[1]);
+      ext[2] = Math.max(ext[2], d.max[0]); ext[3] = Math.max(ext[3], d.max[1]);
     });
+    ext[0] -= m; ext[1] -= m; ext[2] += m; ext[3] += m;
+
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    // 그리는 순서: [아래층 바닥 → 아래층 그림자 → 아래층 물체] → [위층 바닥 → ...]
+    //   위층 바닥면은 반투명이라 아래층 물체가 바닥 "밑에" 있는 것처럼 살짝 흐려 보인다
+    const floorInfo = [];
+    const bounds = [];
+    floors.forEach((fl, k) => {
+      const layer = el("g", { class: "iso-level", "data-floor": fl.id }, svg);
+      if (floors.length > 1) {
+        const rect = floorRect(fl.z, ext).map(project);
+        bounds.push(...rect);
+        poly(layer, rect, Object.assign({ class: k === 0 ? "iso-floor iso-floor-low" : "iso-floor" }, THIN));
+        // 층 이름 자리: 바닥면에서 화면 맨 아래 꼭짓점 (장비와 이름표 기둥에서 떨어진 빈 곳)
+        const low = rect.reduce((a, b) => (b[1] > a[1] ? b : a));
+        floorInfo.push({ id: fl.id, name: fl.name || fl.id, ko: fl.ko || "", point: low });
+      }
+      const shadowLayer = el("g", { class: "iso-shadows" }, layer);
+      const partLayer = el("g", { class: "iso-parts" }, layer);
+      drawables.forEach((d) => { if (floorOf(d) === k) drawShadow(shadowLayer, d, fl.z); });
+      ordered.forEach((d) => {
+        if (floorOf(d) !== k) return;
+        // 부품마다 그룹 하나 → 나중에 분해 연출 때 그룹째로 움직인다
+        const g = el("g", {
+          "data-part": d.part.id, "data-group": d.root, "data-tree": tree.get(d.part.id).join(" ")
+        }, partLayer);
+        if (d.kind === "pipe") drawPipe(g, d, mat); else drawSolid(g, d, mat);
+      });
+    });
+
+    // 이름표 자리: label.no가 있는 부품(복사본 제외)의 "자기 + 자식" 전체 범위에서 anchor 위치
+    const labels = [];
+    parts.forEach((p) => {
+      if (!p.label || p.label.no == null || p.copyOfId) return;
+      const mine = drawables.filter((d) => tree.get(d.part.id).includes(p.id));
+      if (!mine.length) return;
+      const lo = [0, 1, 2].map((i) => Math.min(...mine.map((d) => d.min[i])));
+      const hi = [0, 1, 2].map((i) => Math.max(...mine.map((d) => d.max[i])));
+      const c = mul(add(lo, hi), 0.5);
+      const anchor = p.label.anchor || "top";
+      const pt3 = anchor === "front" ? [c[0], lo[1], c[2]]
+        : anchor === "right" ? [hi[0], c[1], c[2]]
+        : [c[0], c[1], hi[2]];
+      labels.push({ id: p.id, no: p.label.no, abbr: p.label.abbr || "", name: p.name || p.id, point: project(pt3) });
+    });
+    labels.sort((a, b) => a.no - b.no);
 
     // 그림 전체가 들어가도록 보이는 범위(viewBox)를 맞춤
     const pad = 24;
-    const x0 = Math.min(...drawables.map((d) => d.sMin[0])) - pad;
-    const y0 = Math.min(...drawables.map((d) => d.sMin[1])) - pad;
-    const x1 = Math.max(...drawables.map((d) => d.sMax[0])) + pad;
-    const y1 = Math.max(...drawables.map((d) => d.sMax[1])) + pad;
-    svg.setAttribute("viewBox", [x0, y0, x1 - x0, y1 - y0].map((v) => v.toFixed(1)).join(" "));
-    return { drawables: drawables, order: ordered };
+    drawables.forEach((d) => bounds.push(d.sMin, d.sMax));
+    const x0 = Math.min(...bounds.map((p) => p[0])) - pad;
+    const y0 = Math.min(...bounds.map((p) => p[1])) - pad;
+    const x1 = Math.max(...bounds.map((p) => p[0])) + pad;
+    const y1 = Math.max(...bounds.map((p) => p[1])) + pad;
+    const viewBox = [x0, y0, x1 - x0, y1 - y0];
+    svg.setAttribute("viewBox", viewBox.map((v) => v.toFixed(1)).join(" "));
+    return { drawables: drawables, order: ordered, labels: labels, floors: floorInfo, viewBox: viewBox };
   }
 
   window.IsoRender = { render: render, project: project, resolveParts: resolveParts };

@@ -12,12 +12,16 @@
   <!-- 장비 무대: 지금(1단계)은 외관 정지 그림. 2단계에서 스크롤 분해 연출(stage.js)이 붙는다 -->
   <section class="equip-stage" data-equipment="pecvd">
     <div class="equip-stage-copy">
-      <p class="eyebrow">Equipment</p>
+      <!-- 제목 위계: 작은 영문 라벨(고정폭) → 큰 제목 → 한 줄 설명 -->
+      <p class="equip-kicker">Equipment <span class="equip-kicker-no">01</span></p>
       <h1>PECVD 장비</h1>
-      <p class="subtitle">대표적인 300mm PECVD 장비 구성 — EFEM · 로드락 · 트랜스퍼 챔버 · 공정 챔버 4개 · 가스 박스 · RF 전원 · 펌프</p>
+      <p class="equip-lede">대표적인 300mm PECVD 장비 구성 — 웨이퍼가 지나가는 순서대로 번호를 붙였습니다.</p>
     </div>
-    <svg class="iso-view" role="img" data-iso-view
-      aria-label="PECVD 장비 외관 그림. 앞쪽에 FOUP 3개가 놓인 EFEM, 그 뒤에 로드락 2개, 가운데 육각형 트랜스퍼 챔버, 그 둘레에 공정 챔버 4개가 붙어 있다. 오른쪽에 가스 박스, RF 전원 장치, 진공 펌프와 배관이 있다."></svg>
+    <!-- 그림틀: 장비 그림(svg) + 도면식 이름표(callouts.js가 채움) -->
+    <div class="iso-figure">
+      <svg class="iso-view" role="img" data-iso-view
+        aria-label="PECVD 장비 외관 그림. 팹 바닥 위 앞쪽에 FOUP 3개가 놓인 EFEM과 그 위 시그널 타워, 오른쪽 끝에 조작 화면과 비상 정지 버튼이 있다. 그 뒤에 로드락 2개, 가운데 육각형 트랜스퍼 모듈, 그 둘레에 공정 챔버 4개가 붙어 있고, 오른쪽에 가스 박스와 RF 전원 장치가 있다. 바닥 아래층(서브팹)에는 공정 챔버마다 드라이 펌프가 1대씩 있고 배기 배관으로 연결된다."></svg>
+    </div>
     <p class="equip-stage-note">개념도 — 실제 회사 제품의 외형·비율·사양이 아닙니다.</p>
   </section>
 
@@ -93,10 +97,12 @@
   <script src="../data/platform.js"></script>
   <script src="../data/pecvd.js"></script>
   <script src="../js/explode/render-iso.js"></script>
+  <script src="../js/explode/callouts.js"></script>
   <script>
-    // 1단계 임시 시작 코드: 외관 정지 그림 한 장 (2단계에서 stage.js가 맡음)
-    IsoRender.render(document.querySelector("[data-iso-view]"),
-      window.EQUIPMENT.pecvd, window.EQUIPMENT_PLATFORMS);
+    // 임시 시작 코드: 외관 정지 그림 + 이름표 (2단계에서 stage.js가 맡음)
+    const isoSvg = document.querySelector("[data-iso-view]");
+    const isoInfo = IsoRender.render(isoSvg, window.EQUIPMENT.pecvd, window.EQUIPMENT_PLATFORMS);
+    EquipCallouts.mount(isoSvg.parentElement, isoSvg, isoInfo);
   </script>
 </body>
 </html>

@@ -15,6 +15,22 @@
   font-style: normal;
   font-display: swap; /* 글꼴을 불러오는 동안에도 글자는 먼저 보이게 */
 }
+/* 영문 이름표·번호·약어용 고정폭 글꼴: IBM Plex Mono (OFL, fonts/ibm-plex-mono-license.txt)
+   기술 도면 느낌 + 숫자 폭이 모두 같아서 번호가 세로로 반듯하게 정렬됨 */
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("../fonts/ibm-plex-mono-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("../fonts/ibm-plex-mono-medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* 바탕과 선 (본문) */
@@ -55,17 +71,27 @@
 
   /* 장비 그림 재질 색 (js/explode/render-iso.js가 --mat-이름 으로 읽어 감)
      면 밝기(윗면·옆면)는 이 색 하나에서 계산으로 만든다 */
-  --mat-panel: #DADDE0;   /* 외장 패널 (밝은 회백색 도장) */
-  --mat-metal: #B4BBC3;   /* 알루미늄 챔버 몸체 */
-  --mat-dark: #555C65;    /* 프레임·받침대 */
-  --mat-foup: #A3AEBA;    /* FOUP (반투명 플라스틱 느낌의 회청색) */
-  --mat-glass: #4F6577;   /* 관찰창 유리 */
-  --mat-pipe: #C4C9CF;    /* 스테인리스 배관 */
-  --mat-cable: #3E444C;   /* RF 케이블 */
+  --mat-panel: #E6E0D2;   /* 외장 패널 (아이보리 도장) */
+  --mat-panel-warm: #C9C2B4; /* 하부 캐비닛·펌프 (웜그레이 도장) */
+  --mat-metal: #CDD2D6;   /* 스테인리스·알루미늄 챔버와 뚜껑 (밝은 은색, 반사는 렌더러가 그림) */
+  --mat-dark: #57534C;    /* 프레임·받침대 (따뜻한 짙은 회색) */
+  --mat-foup: #B4BCC4;    /* FOUP (반투명 플라스틱 느낌의 회청색) */
+  --mat-glass: #28313A;   /* 관찰창 유리 (어두운 유리) */
+  --mat-screen: #1C2329;  /* 조작 화면 */
+  --mat-pipe: #C8CDD2;    /* 스테인리스 배관 (이음부는 렌더러가 더 밝게) */
+  --mat-cable: #1E2124;   /* RF 케이블 (검정) */
+  --mat-warning: #E2B42E; /* 경고 라벨 (노랑) */
+  --mat-emo: #C23B2E;     /* 비상 정지 버튼 (빨강) */
+  --mat-lamp-red: #B8463B;   /* 시그널 타워 등 — 켜진 불빛이 아니라 등 덮개 색 (네온 금지) */
+  --mat-lamp-amber: #D29D34;
+  --mat-lamp-green: #4F8C5C;
   --mat-ceramic: #E6E2D9; /* 세라믹 부품 (2차 분해 때 사용) */
   --mat-quartz: #DCE5EA;  /* 석영 부품 (2차 분해 때 사용) */
   --stage-bg: #F2F2EE;    /* 장비 무대 바탕 */
-  --iso-shadow: rgba(28, 32, 38, 0.09); /* 장비 바닥 그림자 */
+  --iso-shadow: rgba(40, 36, 28, 0.10); /* 장비 바닥 그림자 */
+  --iso-floor: rgba(242, 242, 238, 0.62); /* 팹 바닥면 (반투명 → 아래층 펌프가 바닥 밑에 있는 것처럼 흐려짐) */
+  --iso-floor-line: #A9A69E;              /* 바닥 점선 */
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   /* 카테고리 카드 배경색 (카드에만 진한 색, 모두 먹색 계열) */
   --card-basics: #1C2026;
@@ -792,22 +818,175 @@ footer a:hover { color: var(--ink); }
 .equip-stage {
   background: var(--stage-bg);
   border-bottom: 1px solid var(--line);
-  padding: clamp(28px, 6vh, 64px) var(--gutter) 24px;
+  padding: clamp(36px, 7vh, 72px) var(--gutter) 28px;
 }
 .equip-stage-copy { max-width: var(--max); margin: 0 auto; }
-.equip-stage-copy .subtitle { max-width: 36em; }
+
+/* 제목 영역 위계: 작은 영문 라벨 → 큰 제목 → 한 줄 설명 */
+.equip-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.equip-kicker::before {          /* 라벨 앞 가는 선: 도면 표제란 느낌 */
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: var(--ink);
+}
+.equip-kicker-no { color: var(--ink); }
+.equip-stage-copy h1 {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.04;
+}
+.equip-lede {
+  margin: 16px 0 0;
+  max-width: 48em;
+  color: var(--muted);
+  font-size: 1.0625rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.65;
+}
+
+/* 그림틀: 넓은 화면에서는 양옆에 이름표 기둥 자리를 비워 둔다 (callouts.js가 is-wide를 붙임) */
+.iso-figure {
+  --callout-col: 0px;
+  position: relative;
+  max-width: 1400px;
+  margin: 8px auto 0;
+  padding: 0 var(--callout-col);
+}
+.iso-figure.is-wide { --callout-col: 230px; }
 .iso-view {
   display: block;
   width: 100%;
-  max-width: 1100px;
   height: auto;
-  max-height: 70vh;
-  margin: 12px auto 0;
+  max-height: 78vh;
+  margin: 0 auto;
 }
 .iso-shadow { fill: var(--iso-shadow); }
+.iso-floor {
+  fill: var(--iso-floor);
+  stroke: var(--iso-floor-line);
+  stroke-width: 1;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+}
+.iso-floor-low { fill: none; opacity: 0.7; }
+/* 선택(강조)된 부품: 외곽선만 포인트 색 — 포인트 색은 여기서만 쓴다 */
+.iso-parts g .iso-outline { transition: stroke 0.15s; }
+.iso-parts g.is-hl .iso-outline { stroke: var(--accent); stroke-width: 2; }
+
+/* 이름표 겹침 층 */
+.callout-lines { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.callout-leader {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 0.75;
+  opacity: 0.55;
+}
+.callout-dot { fill: var(--ink); stroke: var(--stage-bg); stroke-width: 1.5; }
+.callout-leader.is-hl { stroke: var(--accent); stroke-width: 1.25; opacity: 1; }
+.callout-dot.is-hl { fill: var(--accent); }
+.callout-layer { position: absolute; inset: 0; pointer-events: none; }
+
+.callout {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 4px 0;
+  transform: translateY(-50%);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: right;
+  white-space: nowrap;
+  cursor: default;
+  pointer-events: auto;
+}
+.callout.is-right { justify-content: flex-start; text-align: left; flex-direction: row; }
+.callout-no, .callout-abbr {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.callout-no { color: var(--muted); font-size: 0.6875rem; font-weight: 400; letter-spacing: 0.04em; }
+.callout-abbr {
+  min-width: 6.4ch;             /* 약어 칸 폭(가장 긴 TOWER 기준)을 맞춰서 한글명이 세로로 정렬되게 */
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+.callout-name { color: var(--text); font-size: 0.8125rem; font-weight: 500; letter-spacing: -0.01em; line-height: 1; }
+/* 왼쪽 기둥은 오른쪽 맞춤: 순서를 [한글명 약어 번호]로 보여 지시선 쪽에 번호가 오게 */
+.callout:not(.is-right) .callout-no { order: 3; }
+.callout:not(.is-right) .callout-abbr { order: 2; text-align: right; }
+.callout:not(.is-right) .callout-name { order: 1; }
+.callout:hover .callout-abbr, .callout.is-hl .callout-abbr { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+
+/* 층 이름표 (FAB FLOOR / SUB-FAB): 바닥면 왼쪽 끝 꼭짓점 바로 위 */
+.floor-tag {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transform: translate(14px, -6px);    /* 아래 꼭짓점의 오른쪽 아래 → 바닥 선과 겹치지 않게 */
+  color: var(--muted);
+  white-space: nowrap;
+}
+.floor-tag-en { font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; }
+.floor-tag-ko { font-size: 0.6875rem; }
+
+/* 좁은 화면: 번호 점 + 아래 목록 */
+.iso-figure:not(.is-wide) .callout {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  justify-content: center;
+  align-items: center;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--stage-bg);
+}
+.iso-figure:not(.is-wide) .callout .callout-no { color: inherit; font-size: 0.625rem; order: 0; }
+.iso-figure:not(.is-wide) .callout .callout-abbr,
+.iso-figure:not(.is-wide) .callout .callout-name { display: none; }
+.iso-figure:not(.is-wide) .callout.is-hl { background: var(--accent); }
+.callout-legend {
+  max-width: var(--max);
+  margin: 16px auto 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px 20px;
+}
+.callout-legend li { display: flex; align-items: baseline; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+.iso-figure.is-wide + .callout-legend { display: none; }
+/* 좁은 화면: 층 이름표는 영문 한 줄만 (두 층 이름표끼리 겹치지 않게), 목록은 조금 띄움 */
+.iso-figure:not(.is-wide) .floor-tag-ko { display: none; }
+.iso-figure:not(.is-wide) .floor-tag { transform: translate(10px, -2px); }
+.iso-figure:not(.is-wide) .floor-tag-en { font-size: 0.625rem; }
+.iso-figure:not(.is-wide) + .callout-legend { margin-top: 36px; }
+
 .equip-stage-note {
   max-width: var(--max);
-  margin: 8px auto 0;
+  margin: 12px auto 0;
   color: var(--muted);
   font-size: 0.8125rem;
 }

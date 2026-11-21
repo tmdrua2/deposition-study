@@ -20,11 +20,11 @@
 ```
 index.html            메인: 전체 목차 + 검색창
 css/style.css         공통 스타일 (색상은 :root 변수에서만 바꾼다)
-fonts/                Pretendard 글꼴 파일(woff2) + 라이선스 — 외부 CDN 대신 직접 넣어 둠
+fonts/                Pretendard(한글) + IBM Plex Mono(영문 약어·번호) woff2 + 라이선스 — CDN 대신 직접 넣어 둠
 js/pages.js           ★ 전체 페이지 목록 — 목차·메뉴·검색이 모두 여기서 만들어짐
 js/main.js            공통 동작: 헤더 메뉴, 목차, 검색, 페이지 안 목차
 js/sim/               공정 모션: sim-core.js(공용) + 공정별 장면(pvd.js 등)
-js/explode/           장비 분해 연출: render-iso.js(그리기) · stage.js(스크롤) · panel.js(부품 패널)
+js/explode/           장비 분해 연출: render-iso.js(그리기) · callouts.js(이름표) · stage.js(스크롤) · panel.js(부품 패널)
 data/                 장비 데이터: platform.js(공통 플랫폼) · pecvd.js · ald.js
 docs/                 설계서 (equipment-redesign-plan.md)
 vendor/gsap/          GSAP 라이브러리 파일 + LICENSE.txt
