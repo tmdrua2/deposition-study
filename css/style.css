@@ -68,6 +68,7 @@
   --cream: #F4EDE0;
   --on-navy: #F4EDE0;     /* 남색 위 큰 글씨 */
   --on-navy-muted: #A9B1C2; /* 남색 위 작은 설명 글 */
+  --on-navy-soft: #C9CED9;  /* 남색 위 설명 글 중 코랄 빛 위에 놓일 수 있는 것 (섹션 머리 설명) */
   --on-navy-faint: #7F8AA1; /* 남색 위 아주 옅은 글자 (번호) */
 
   /* 공정 첫 화면 (어두운 도면) */
@@ -871,6 +872,9 @@ footer a:hover { color: var(--ink); }
 }
 .page-stage .logo { color: var(--hdr-ink, var(--hdr-dark-ink)); }
 .page-stage .menu-btn span { background: var(--hdr-ink, var(--hdr-dark-ink)); }
+/* 하위 페이지 스크롤 전환 중 헤더 배경이 중간 밝기일 때만 글자 둘레 후광 (sections.js가 --hdr-halo) */
+.sec-page .logo { text-shadow: var(--hdr-halo, none); }
+.sec-page .menu-btn span { box-shadow: var(--hdr-halo, none); }
 /* 헤더의 남색 단계 값 (크림 단계 값 = 이 페이지의 --bg·--ink·--line) */
 .page-stage {
   --hdr-dark-bg: var(--navy-deep);
@@ -1819,9 +1823,88 @@ main.sec-hub-main { max-width: var(--max); padding: 24px var(--gutter) 88px; }
 .sec-card-art .a-wafer { fill: var(--sim-wafer); }
 .sec-card-art .a-heater { fill: rgba(201, 194, 180, 0.42); }
 
-/* ---------- 섹션 하위 페이지: 머리 (남색 + 큰 제목) ---------- */
-.sec-hero { position: relative; isolation: isolate; overflow: hidden; padding: clamp(22px, 4vw, 44px) 0 0; background: var(--navy); color: var(--on-navy); }
-.sec-hero-glow { right: -14%; bottom: -60%; width: 70%; height: 150%; }
+/* ---------- 섹션 하위 페이지: 머리 (남색 + 큰 제목) ----------
+   머리 → 본문은 끊김 없는 한 면: 머리 아래쪽 --sky-fade 높이만큼이 남색 → 코랄 빛 → 크림으로 번지는 자리.
+   - 정지 화면(기본, 움직임 줄이기·?still=1): 아래 ::after 그라데이션이 그대로 보임
+   - 스크롤 연출(sections.js가 body에 .sec-live): 배경은 화면에 고정, 크림 면(.sec-sky-cover)이 아래에서 차오름 */
+.sec-page { --sky-fade: clamp(170px, 26vh, 280px); }
+/* 머리 아래 번짐 자리가 곧 여백 → 본문 첫 제목·준비 중 상자의 위 여백은 짧게 */
+.sec-page .sec-read > h2:first-child, .sec-page .sec-read > .sec-soon:first-child { margin-top: clamp(8px, 2vw, 24px); }
+.sec-hero { position: relative; isolation: isolate; overflow: hidden; padding: clamp(22px, 4vw, 44px) 0 var(--sky-fade); background: var(--navy); color: var(--on-navy); }
+.sec-hero-glow { right: -16%; top: -12%; width: 62%; height: 96%; opacity: 0.6; }   /* 정지 화면: 오른쪽 위, 탭·설명 글 대비를 해치지 않게 옅게 */
+/* 정지 화면의 번짐: 투명 → 옅은 코랄 → 크림 (본문 바탕과 같은 색으로 끝남 → 경계선 없음) */
+.sec-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--sky-fade) + 40px);
+  background: linear-gradient(180deg,
+    rgba(255, 128, 104, 0) 0%,
+    rgba(255, 128, 104, 0.26) 38%,
+    rgba(244, 237, 224, 0.9) 78%,
+    var(--cream) 100%);
+}
+/* 크림 쪽 골유리: 같은 13px 간격의 아주 옅은 먹색 줄 → 줄무늬가 크림 속으로 이어지다 사라짐 */
+.sec-hero::before, .sec-sky-cover::after {
+  content: "";
+  position: absolute;
+  background-image: repeating-linear-gradient(90deg,
+    rgba(28, 32, 38, 0.05) 0 1px,
+    rgba(28, 32, 38, 0) 1px 8px,
+    rgba(28, 32, 38, 0.03) 8px 12px,
+    rgba(28, 32, 38, 0) 12px 13px);
+  pointer-events: none;
+}
+.sec-hero::before {
+  z-index: -1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--sky-fade);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 55%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 55%, transparent 100%);
+}
+/* 스크롤 연출: 머리 배경(남색·코랄 빛·골유리)을 화면 뒤에 고정 → 본문(main)은 그 위로 지나감
+   isolation을 풀어야 고정 배경(z-index -1)이 본문 글자 뒤로 깔림 */
+.sec-live .sec-hero { isolation: auto; overflow: visible; background: transparent; }
+.sec-live .sec-hero::before, .sec-live .sec-hero::after { display: none; }
+.sec-live .sec-hero-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100lvh;          /* 휴대폰 주소창이 줄어들어도 아래가 비지 않게 */
+  background: var(--navy);
+}
+.sec-live .sec-hero-glow { right: -14%; top: 36%; width: 72%; height: 92%; opacity: 1; }
+/* 크림 면: 윗부분 --sky-f(번짐 높이) = 투명 → 코랄 빛 → 크림, 그 아래는 크림.
+   sections.js가 스크롤에 맞춰 translate3d만 바꿈 (다시 그리기 없음 → 휴대폰도 가벼움) */
+.sec-sky-cover {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(var(--sky-f, 300px) + 100lvh + 80px);
+  background: linear-gradient(180deg,
+    rgba(255, 128, 104, 0) 0,
+    rgba(255, 128, 104, 0.30) calc(var(--sky-f, 300px) * 0.4),
+    rgba(244, 237, 224, 0.92) calc(var(--sky-f, 300px) * 0.8),
+    var(--cream) var(--sky-f, 300px));
+  transform: translate3d(0, 100lvh, 0);
+  will-change: transform;
+}
+.sec-sky-cover::after {   /* 크림 쪽 옅은 줄: 번짐 경계 근처에만, 다 밝아지면 사라짐(--sky-reed) */
+  inset: 0;
+  opacity: var(--sky-reed, 1);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--sky-f, 300px) * 0.6), transparent calc(var(--sky-f, 300px) * 1.6));
+  mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--sky-f, 300px) * 0.6), transparent calc(var(--sky-f, 300px) * 1.6));
+}
+/* 큰 제목·설명: 크림이 다가오면 살짝 올라가며 사라짐 (sections.js가 opacity·transform) */
+.sec-live .sec-back, .sec-live .sec-kicker, .sec-live .sec-title, .sec-live .sec-lede { will-change: opacity, transform; }
 .sec-hero-inner {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
@@ -1871,16 +1954,27 @@ main.sec-hub-main { max-width: var(--max); padding: 24px var(--gutter) 88px; }
   letter-spacing: -0.065em;
   line-height: 0.98;
 }
-.sec-lede { grid-area: lede; margin: 0 0 1.1em; color: var(--on-navy-muted); font-size: var(--fs-md); line-height: 1.7; }
-/* 7칸 진행 표시 (지금 섹션 = 청록 윗선) */
-.sec-rail-wrap { max-width: var(--max); margin: clamp(28px, 4vw, 52px) auto 0; padding: 0 var(--gutter); }
+.sec-lede { grid-area: lede; margin: 0 0 1.1em; color: var(--on-navy-soft); font-size: var(--fs-md); line-height: 1.7; }
+/* 7칸 진행 표시 (지금 섹션 = 청록 윗선)
+   --rail-* = 탭 색. 기본은 남색 위 값, 스크롤 연출에서는 sections.js가 뒤 배경 밝기에 맞춰 바꿈
+   (흰색 계열 ↔ 먹색, 글자 대비 4.5 이상이 되는 색만 고름) */
+.sec-rail-wrap {
+  --rail-ink: var(--on-navy);
+  --rail-muted: var(--on-navy-muted);
+  --rail-line: rgba(244, 237, 224, 0.16);
+  --rail-hover: rgba(244, 237, 224, 0.4);
+  --rail-accent: var(--c-cvd-bright);
+  max-width: var(--max);
+  margin: clamp(28px, 4vw, 52px) auto 0;
+  padding: 0 var(--gutter);
+}
 .sec-rail {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid rgba(244, 237, 224, 0.16);
+  border-top: 1px solid var(--rail-line);
 }
 .sec-rail li { margin: 0; }
 .sec-rail a {
@@ -1889,16 +1983,21 @@ main.sec-hub-main { max-width: var(--max); padding: 24px var(--gutter) 88px; }
   flex-direction: column;
   gap: 2px;
   padding: 12px 10px 18px 0;
-  color: var(--on-navy-faint);
+  color: var(--rail-muted);
   font-size: var(--fs-xs);
   line-height: 1.35;
   text-decoration: none;
 }
 .sec-rail a::before { content: ""; position: absolute; top: -1px; left: 0; right: 10px; height: 2px; background: transparent; transition: background 0.2s; }
-.sec-rail a:hover { color: var(--on-navy); }
-.sec-rail a:hover::before { background: rgba(244, 237, 224, 0.4); }
-.sec-rail .is-current a { color: var(--on-navy); font-weight: 600; }
-.sec-rail .is-current a::before { background: var(--c-cvd-bright); }
+.sec-rail a:hover { color: var(--rail-ink); }
+.sec-rail a:hover::before { background: var(--rail-hover); }
+.sec-rail .is-current a { color: var(--rail-ink); font-weight: 600; }
+.sec-rail .is-current a::before { background: var(--rail-accent); }
+.sec-rail a:focus-visible { outline-color: var(--rail-accent); }
+/* 스크롤 연출 중: 번호·이름 줄마다 sections.js가 고른 색(--span-*). 값이 없으면(정지 화면) 위의 a 색을 그대로 씀
+   후광(--span-halo)은 경계 한가운데를 지날 때만 */
+.sec-rail a > span { color: var(--span-c, inherit); text-shadow: var(--span-halo, none); }
+.sec-rail a:hover > span { color: var(--span-hover, inherit); }
 .sec-rail-no { font-family: var(--font-mono); font-weight: 400; }
 
 /* ---------- 섹션 하위 페이지: 본문 (크림) ---------- */
