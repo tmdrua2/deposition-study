@@ -387,7 +387,10 @@
       const asmW = ab[2] - ab[0], asmH = ab[3] - ab[1];
       // 큰 제목의 위·아래 (무대 기준). 정지 화면은 그림틀을 제목 아래로 내림
       const word = heroWord && heroWord.offsetHeight ? { top: topIn(heroWord, pin), h: heroWord.offsetHeight } : null;
-      let heroEdge = word ? word.top + word.h * HERO_OVERLAP : 0;   // 첫 화면 장비가 올라올 수 있는 가장 높은 곳
+      // 첫 화면 장비가 올라올 수 있는 가장 높은 곳
+      //   스크롤 연출: 제목 아랫부분이 장비 뒤로 들어가게 일부(HERO_OVERLAP)만 비움
+      //   정지 화면: 분해된 그림이 제목과 겹치지 않게 제목 아래 끝 + 여유 12px까지 비움
+      let heroEdge = !word ? 0 : isStatic ? word.top + word.h + 12 : word.top + word.h * HERO_OVERLAP;
       // 휴대폰처럼 설명이 큰 제목 아래에 놓이면 → 설명 아래부터
       if (word && heroMeta) {
         const mt = topIn(heroMeta, pin);
