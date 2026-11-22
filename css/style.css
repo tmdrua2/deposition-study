@@ -902,6 +902,7 @@ footer a:hover { color: var(--ink); }
   --st-bg: var(--navy);              --st-bg-light: #F4EDE0;
   --st-accent: var(--c-cvd-bright);  --st-accent-light: #2F8C84;
   --st-shadow: rgba(4, 8, 18, 0.34); --st-shadow-light: rgba(40, 36, 28, 0.10);
+  --st-lift-shadow: rgba(2, 6, 16, 0.55); --st-lift-shadow-light: rgba(40, 36, 28, 0.30);   /* 마우스 올린 모듈의 떠오른 그림자 */
   --st-floor: rgba(12, 21, 41, 0.52);       --st-floor-light: rgba(244, 237, 224, 0.62);
   --st-floor-line: rgba(244, 237, 224, 0.30); --st-floor-line-light: #A9A69E;
   --ink: var(--st-ink);
@@ -1357,8 +1358,23 @@ footer a:hover { color: var(--ink); }
 .callout { cursor: pointer; }
 .callout:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
 /* 모듈 그림: 층 상자(빈 곳 포함)가 아니라 실제로 칠해진 도형만 클릭을 받음 → 옆 모듈을 잘못 누르지 않게 */
-.iso-layer-module { pointer-events: none; }
+/*   모든 그림 층(바닥·배관·고정 부품·모듈)은 빈 곳까지 통째로 클릭을 가로채지 않게 통과시킴
+     → 예전에는 배관 층이 TM 위를, 위층 바닥면이 서브팹 펌프 위를 덮어 그 그림이 안 눌렸음 */
+.iso-layer { pointer-events: none; }
 .iso-scene.is-exploded .iso-layer-module svg * { pointer-events: visiblePainted; cursor: pointer; }
+.iso-scene.is-exploded .iso-layer-module.is-unlabeled svg * { pointer-events: none; cursor: auto; }   /* 이름표 없는 모듈(케이블 트레이) */
+/* 마우스를 올리면(또는 이름표에 키보드 초점) 그 모듈이 제자리에서 살짝 확대 + 떠오른 그림자
+   - 층(div)은 GSAP가 분해 이동(transform)을 쓰므로, 확대는 안쪽 svg에만 → 이동과 섞이지 않고 제자리에서 커짐
+   - transform만 바뀜(다시 그리기 없음). 배율 --lift는 stage.js가 이름표·화면 끝에 안 닿게 정함
+   - 마우스가 있는 기기 + 움직임 줄이기 아님 + 정지 화면 아님일 때만 (나머지는 외곽선·흐림만) */
+.iso-layer-module > svg { transform-origin: 50% 50%; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .equip-stage:not(.is-static) .iso-layer-module > svg { transition: transform 0.22s ease-out; will-change: transform; }
+  .equip-stage:not(.is-static) .iso-layer-module.is-lift > svg {
+    transform: scale(var(--lift, 1.04));
+    filter: drop-shadow(0 10px 12px var(--st-lift-shadow, rgba(0, 0, 0, 0.3)));
+  }
+}
 .callout-legend-btn {
   display: grid;
   grid-template-columns: 2.2ch 5.4ch minmax(0, 1fr);

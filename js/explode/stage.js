@@ -53,7 +53,7 @@
   const BRAKE_ABS = 4000;      //   관성이든 뭐든 이 시간(ms)이 지나면 무조건 풀어 줌
   const BRAKE_TOL = 3;         // 멈춘 자리 ± 이 px 안에서 출발하면 브레이크 없이 통과
   // 무대 안 글자·선 색 이름 (CSS .equip-stage-pin의 --st-* / --st-*-light 짝)
-  const ST_VARS = ["ink", "muted", "faint", "rule", "rule-strong", "bg", "accent", "shadow", "floor", "floor-line"];
+  const ST_VARS = ["ink", "muted", "faint", "rule", "rule-strong", "bg", "accent", "shadow", "floor", "floor-line", "lift-shadow"];
   // 웨이퍼가 지나가는 부품 순서 (FOUP는 가운데 로드포트의 것)
   const WAFER_PATH = ["loadport-2.foup", "efem", "loadlock", "tm", "pm"];
 
@@ -135,6 +135,35 @@
       const L = layerById.get(T.layer), d = L && L.module ? L.module.disp : [0, 0];
       return { point: [T.point[0] + d[0], T.point[1] + d[1]], text: T.text, place: T.place };
     });
+    // 마우스를 올린 모듈 그림의 층 (이름표에 올리거나 키보드 초점일 때는 null → 그 이름표의 모듈 전부 확대)
+    let hoverLayer = null, hoverLid = null, hoverOffT = 0;
+    // 확대 배율: 기본 1.04, 커진 그림이 화면(헤더 아래 보이는 그림틀) 밖이나 이름표 상자에 닿으면 그만큼 줄임
+    //   (확대 직전에 위치를 한 번 잴 뿐, 그림은 다시 그리지 않음)
+    function liftScale(L) {
+      const MAX = 1.04, EDGE = 4;
+      const parts = L.el.querySelector(".iso-parts");
+      const r = parts && parts.getBoundingClientRect();
+      if (!r || !r.width || !r.height) return MAX;
+      const fr = figure.getBoundingClientRect();
+      const hh = (document.getElementById("site-header") || { offsetHeight: 0 }).offsetHeight;
+      const lim = { l: Math.max(fr.left, 0) + EDGE, r: Math.min(fr.right, window.innerWidth) - EDGE,
+        t: Math.max(fr.top, hh) + EDGE, b: Math.min(fr.bottom, window.innerHeight) - EDGE };
+      const cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2, hw = r.width / 2, hh2 = r.height / 2;
+      let s = Math.min(MAX, (cx - lim.l) / hw, (lim.r - cx) / hw, (cy - lim.t) / hh2, (lim.b - cy) / hh2);
+      // 이름표: 원래는 안 닿는데 커지면 닿는 배율을 넘지 않게 (가로·세로 둘 다 겹쳐야 겹침)
+      callouts.items.forEach((it) => {
+        const cs = getComputedStyle(it.el);
+        if (cs.visibility === "hidden" || parseFloat(cs.opacity) < 0.1) return;
+        const c = it.el.getBoundingClientRect();
+        const need = (lo, hi, c0, half, from, to) =>      // 이 축에서 겹치기 시작하는 배율 (이미 겹치면 0)
+          to <= lo ? (c0 - to) / half : from >= hi ? (from - c0) / half : 0;
+        const sx = need(r.left, r.right, cx, hw, c.left, c.right);
+        const sy = need(r.top, r.bottom, cy, hh2, c.top, c.bottom);
+        if (sx === 0 && sy === 0) return;                  // 원래부터 겹친 상자(지시선 끝 쪽) → 확대 탓이 아님
+        s = Math.min(s, Math.max(sx, sy));
+      });
+      return Math.max(1, s).toFixed(3);
+    }
     const callouts = EquipCallouts.mount(figure, stack, Object.assign({}, info, { tags: [] }), {
       tagBlocks: tagBlocks,
       // 이름표에 마우스를 올리면 그 모듈 층만 또렷하게, 나머지는 살짝 흐리게
@@ -143,8 +172,12 @@
         scene.classList.toggle("is-focus", !!key);
         info.layers.forEach((L) => {
           const on = !!key && !!L.module && L.module.key === key;
-          L.el.classList.toggle("is-focus-on", on);
-          if (L.carrier) L.carrier.classList.toggle("is-focus-on", on);
+          // 그림에 마우스를 올린 때는 그 복사본 하나만(예: PM3), 이름표면 그 이름표의 모듈 전부(PM1~PM4)
+          const lit = on && (!hoverLayer || hoverLayer === L);
+          L.el.classList.toggle("is-focus-on", lit);
+          if (L.carrier) L.carrier.classList.toggle("is-focus-on", lit);
+          if (lit && !L.el.classList.contains("is-lift")) L.el.style.setProperty("--lift", liftScale(L));
+          L.el.classList.toggle("is-lift", lit);
         });
       },
       onSelect: (id, btn) => select(id, btn)
@@ -224,14 +257,55 @@
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       gsap.to(figure, Object.assign({ transformOrigin: "0 0", duration: instant || reduce ? 0 : 0.45, ease: "power2.out", overwrite: true }, to));
     }
-    // 분해된 모듈 그림을 직접 눌러도 열림 (그 모듈의 대표 이름표 = 모듈 id와 같은 이름표, 없으면 그 모듈의 첫 이름표)
-    scene.addEventListener("click", (e) => {
-      const layerEl = e.target.closest && e.target.closest(".iso-layer-module");
-      const L = layerEl && layerById.get(layerEl.dataset.layer);
-      if (!L || !L.module) return;
+    // 분해된 모듈 그림을 직접 눌러도 열림: 누른 도형에서 가장 가까운 "이름표 있는 부품"
+    //   (예: EFEM 위 시그널 타워를 누르면 TOWER, EFEM 몸통이면 EFEM). 없으면 그 모듈의 대표 이름표
+    const labelOfLayer = (L) => {
       const key = L.module.key;
       const lab = info.labels.find((x) => x.id === key) || info.labels.find((x) => x.key === key);
-      if (lab) select(lab.id);
+      return lab ? lab.id : null;
+    };
+    function labelAt(target, L) {
+      const g = target.closest && target.closest("[data-src-tree]");   // data-src-tree = 자기 → 부모 → … (원본 id)
+      const ids = g ? g.getAttribute("data-src-tree").split(" ") : [];
+      return ids.find((id) => labelById.has(id)) || labelOfLayer(L);
+    }
+    const layerAt = (target) => {
+      const layerEl = target.closest && target.closest(".iso-layer-module");
+      const L = layerEl && layerById.get(layerEl.dataset.layer);
+      return L && L.module ? L : null;
+    };
+    // 이름표가 없는 모듈(케이블 트레이)은 눌러도 열 패널이 없으므로 클릭·손가락 커서를 받지 않음
+    info.layers.forEach((L) => { if (L.module && !labelOfLayer(L)) L.el.classList.add("is-unlabeled"); });
+    scene.addEventListener("click", (e) => {
+      const L = layerAt(e.target);
+      const lid = L && labelAt(e.target, L);
+      if (lid) select(lid);
+    });
+    // 분해된 모듈 그림에 마우스를 올리면: 그 부품 강조(청록 외곽선, 나머지 흐림) + 그 모듈이 제자리에서 살짝 확대
+    //   터치는 마우스 올림이 없으므로 무시 (탭 = 위의 click → 패널). 패널이 열려 있으면 강조가 고정돼 안 바뀜
+    scene.addEventListener("pointerover", (e) => {
+      if (e.pointerType === "touch") return;
+      const L = layerAt(e.target);
+      if (!L || !scene.classList.contains("is-exploded")) return;
+      clearTimeout(hoverOffT);
+      const lid = labelAt(e.target, L);
+      if (!lid || !arrived(lid)) return;
+      if (hoverLayer === L && hoverLid === lid && L.el.classList.contains("is-lift")) return;
+      if (hoverLid && (hoverLayer !== L || hoverLid !== lid)) callouts.highlight(hoverLid, false);
+      hoverLayer = L; hoverLid = lid;
+      callouts.highlight(lid, true);
+    });
+    scene.addEventListener("pointerout", (e) => {
+      if (e.pointerType === "touch" || !hoverLayer) return;
+      const to = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".iso-layer-module");
+      if (to === hoverLayer.el) return;
+      // 부품 사이 작은 틈을 지날 때 깜빡이지 않게 조금 기다렸다가 끔
+      clearTimeout(hoverOffT);
+      hoverOffT = setTimeout(() => {
+        const lid = hoverLid;
+        hoverLayer = null; hoverLid = null;
+        if (lid) callouts.highlight(lid, false);
+      }, 80);
     });
 
     const legendItems = [...callouts.legend.children];
