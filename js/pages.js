@@ -37,6 +37,9 @@ const PAGES = [
   // PECVD: 장비 분해 페이지 (예전 cvd-pecvd.html은 이 페이지로 옮겼다는 안내만 남김)
   { section: "equipment", title: "PECVD 장비 (플라즈마 화학 기상 증착)", short: "PECVD", desc: "플라즈마 화학 기상 증착", path: "equipment/pecvd.html",
     keywords: "pecvd cvd 화학기상증착 플라즈마 plasma 장비 분해 공정 챔버 샤워헤드 showerhead efem 로드락 트랜스퍼 rps 시즈닝" },
+  // PECVD 섹션 하위 페이지 (hidden: 목차·메뉴엔 안 보이고 검색에만. 목록·이전/다음은 js/sections.js)
+  { section: "equipment", title: "PECVD 원리 (플라즈마 분해·라디칼·막 성장)", path: "equipment/pecvd/principle.html", hidden: true,
+    keywords: "pecvd 원리 플라즈마 라디칼 radical 전자 충돌 분해 흡착 탈착 막 성장 저온 열 예산 질화막 산화막 sih4 nh3 n2o teos sin sio2 ccp" },
   { section: "equipment", title: "ALD (원자층 증착)", short: "ALD", desc: "원자층 증착", path: "equipment/ald.html",
     keywords: "ald atomic layer deposition 원자층 self-limiting 자기제한 purge 퍼지" },
   { section: "equipment", title: "Epi (에피택시)", short: "Epi", desc: "에피택시", path: "equipment/epi.html",

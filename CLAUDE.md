@@ -27,7 +27,9 @@ js/motion-pref.js     정지 화면 판정(움직임 줄이기·데이터 절약
 js/sim/               공정 모션: sim-core.js(공용) + 공정별 장면(pvd.js 등)
 js/explode/           장비 분해 연출: render-iso.js(그리기) · callouts.js(이름표) · stage.js(스크롤) · panel.js(부품 패널)
 data/                 장비 데이터: platform.js(공통 플랫폼) · pecvd.js · ald.js
-docs/                 설계서 (equipment-redesign-plan.md)
+docs/                 설계서·작업 계획 (equipment-redesign-plan.md, pecvd-sections-plan.md)
+js/sections.js        장비 섹션 하위 페이지 목록 (이전/다음·진행 표시)
+equipment/pecvd/      PECVD 섹션 하위 페이지 7개 (principle.html 등, data-root="../../")
 vendor/gsap/          GSAP 라이브러리 파일 + LICENSE.txt
 basics/               기초: 진공, 플라즈마, 박막 성장 원리
   _template.html      기초 페이지 틀
@@ -59,6 +61,7 @@ lab/index.html        내 실습 기록
 7. **출처** (`#sources`)
 
 섹션을 빼거나 순서를 바꾸지 않는다. 내용이 없으면 "작성 예정"으로 둔다.
+PECVD는 본문을 **섹션 카드 7개 + 하위 페이지**(`equipment/pecvd/<id>.html`, id는 위 괄호와 같음)로 나눴다 — 순서·id는 그대로.
 장비 페이지는 이 7섹션 **위에** 분해 연출 무대(외관 → 모듈 분해 → 챔버 분해)를 둔다.
 
 ## 장비 데이터 규칙 (자세한 것은 `docs/equipment-redesign-plan.md`)
@@ -102,7 +105,17 @@ lab/index.html        내 실습 기록
 - 그 밖의 새 브랜치는 사용자가 요청할 때만 만든다.
 
 ## 작업 진행 규칙
-- **큰 작업**(여러 파일 수정, 새 기능, 디자인 변경)은 코드를 쓰기 전에 **계획부터 보여주고 승인**을 받는다.
+- **계획 → 실행 → 자체 점검 → 커밋·push까지 승인 없이 스스로 진행**한다. 큰 작업은 계획을 `docs/`에 짧게 남기고,
+  아래 "자체 검토 체크리스트"로 점검한 뒤 진행한다. 끝나면 한 일과 남은 일을 짧게 보고한다.
+- 단, **반드시 먼저 물어본다**: 프로젝트 임시 폴더 밖의 파일·브랜치 삭제, 새 스킬·패키지 설치, git 강제 push·기록 덮어쓰기.
+- **자체 검토 체크리스트**
+  - 진공 쪽(TM·LL·PM)과 대기 쪽(EFEM·FOUP) 설명이 섞이지 않았는가
+  - 동작 원리를 단계로 나눠 썼는가
+  - 문제마다 점검 순서(한 곳만인지 → 갑자기인지 → 원인 나누기 → 조치)가 있는가
+  - CS 모범 답변이 현장 점검 흐름을 따르는가
+  - 관련 패널·페이지와 서로 연결했는가
+  - 출처는 실제로 연 것만, 수치 없음, 확실하지 않으면 [검증 필요]
+  - `?still=1`과 넓은 화면·휴대폰 캡처로 화면 점검
 - 한 번에 **한 페이지, 한 기능씩** 작업한다.
 - 부품 패널 내용을 쓰면 `?still=1#part=부품id` 주소로 넓은 화면·휴대폰 화면을 캡처해 직접 보고 점검한다.
 - 작업이 끝날 때마다: ① 브라우저로 열어 보여주고 ② 커밋하고 ③ `PROGRESS.md`를 최신 상태로 고친다.

@@ -19,8 +19,9 @@ const ARROW = `<svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d
 const CHEVRON = `<svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 // 섹션에 속한 페이지 목록
+// (hidden: true 인 페이지 = 하위 페이지 → 목차·메뉴에는 안 보이고 검색에만 나옴)
 function pagesOf(sectionId) {
-  return PAGES.filter((p) => p.section === sectionId);
+  return PAGES.filter((p) => p.section === sectionId && !p.hidden);
 }
 
 // ---------- 1) 헤더 + 전체 화면 메뉴 ----------
@@ -364,6 +365,8 @@ function setupReveal() {
   if (REDUCE_MOTION || !("IntersectionObserver" in window)) return;
   const main = document.querySelector("main");
   if (!main) return;
+  // 섹션 카드·섹션 하위 페이지는 자체 디자인이라 나타나기 효과를 쓰지 않음
+  if (main.matches(".sec-hub-main, .sec-main")) return;
 
   const targets = main.classList.contains("home")
     ? main.querySelectorAll(".home-section > .eyebrow, .home-section > h2, .cat-card, .equip-item")

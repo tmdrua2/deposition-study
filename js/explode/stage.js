@@ -883,13 +883,25 @@
       const it = itemFor(labelIdFor(id));
       panel.open(id, it ? it.el : null);
     }
+    // 주소 #sections 같은 보통 이름(#part= 아님)으로 열면: 고정 구간 길이가 정해진 뒤 그 요소로 다시 이동
+    //   (처음 이동은 분해 무대 높이가 계산되기 전이라 엉뚱한 곳에 멈춤 — 하위 페이지의 "장비 페이지로" 버튼이 #sections로 옴)
+    function scrollToPlainHash() {
+      const m = /^#([\w-]+)$/.exec(window.location.hash);
+      if (!m) return;
+      const t = document.getElementById(m[1]);
+      if (!t || t.closest(".equip-stage")) return;
+      const hh = (document.getElementById("site-header") || { offsetHeight: 0 }).offsetHeight;
+      window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - hh - 16, behavior: "instant" });
+    }
+    if (/^#[\w-]+$/.test(window.location.hash) && "scrollRestoration" in history) history.scrollRestoration = "manual";
+
     // 브라우저가 예전 스크롤 위치로 되돌리지 않게 (#part= 위치가 우선)
     if (/^#part=/.test(window.location.hash) && "scrollRestoration" in history) history.scrollRestoration = "manual";
     window.addEventListener("hashchange", openFromHash);
 
     // 글꼴이 늦게 들어오면 제목 높이가 바뀜 → 고정 위치 다시 계산 → 그다음 #part= 처리
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fit(); ScrollTrigger.refresh(); openFromHash(); });
-    else setTimeout(openFromHash, 300);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fit(); ScrollTrigger.refresh(); openFromHash(); scrollToPlainHash(); });
+    else setTimeout(() => { openFromHash(); scrollToPlainHash(); }, 300);
 
     return { info: info, callouts: callouts, panel: panel };
   }
