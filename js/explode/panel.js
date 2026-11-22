@@ -145,7 +145,10 @@
             const dt = el("dt", "", [el("span", "pp-part-name", c.name), c.en ? el("span", "pp-part-en", c.en) : ""]);
             const dd = el("dd", "", rich(c.desc));
             if (c.part && byId.has(c.part)) {
-              const go = el("button", "pp-link", ["내부 부품 · ", c.name, " 보기 →"]);
+              // 링크 대상에 자기 이름표(번호)가 있으면 옆에 붙은 "관련 모듈"(예: 시그널 타워),
+              // 없으면 챔버 안쪽 "내부 부품"(예: 샤워헤드)
+              const kind = labelOf(byId.get(c.part)) ? "관련 모듈 · " : "내부 부품 · ";
+              const go = el("button", "pp-link", [kind, c.name, " 보기 →"]);
               go.type = "button";
               go.addEventListener("click", () => { history.push(current); fill(c.part); closeBtn.focus(); });
               dd.append(el("span", "pp-link-row", go));
