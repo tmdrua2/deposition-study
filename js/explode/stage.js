@@ -3,7 +3,8 @@
 //
 // 흐름: 화면 고정(pin) → 스크롤 양에 따라 타임라인 하나가 앞뒤로 재생(scrub)
 //   ① 외관 (살짝 확대된 상태) → ② 모듈이 차례로 벌어짐 + 도착할 때 이름표 등장
-//   → ③ 웨이퍼 경로 점선 → 잠깐 머문 뒤 고정이 풀리고 아래 본문으로
+//   → ③ 웨이퍼 경로 점선 → 크림 배경으로 바뀐 장면에서 스크롤이 한 번 멈춤(브레이크, 6-1)
+//   → 다시 스크롤하면 고정이 풀리고 아래 본문으로 (위로 올라올 때도 같은 장면에서 한 번 멈춤)
 //   위로 스크롤하면 같은 타임라인이 거꾸로 재생 = 정확히 거꾸로 조립
 //   분해되어 도착한 모듈(그림이나 이름표)을 누르면 부품 정보 패널이 열림 (panel.js)
 //
@@ -45,6 +46,12 @@
   const HOLD_SCREENS = 0.65;   // 웨이퍼 경로를 다 그린 뒤 머무는 스크롤 길이 = 화면 높이 × 이 값
   const CREAM_DUR = 1.0;       // 크림 전환 길이
   const END_HOLD = 0.5;        // 크림 화면에서 잠깐 머문 뒤 고정이 풀림
+  // 브레이크: 크림 + 분해 완료 장면에서 스크롤이 한 번 멈춤 (위·아래 어느 쪽으로 지나가도). 다시 스크롤하면 통과
+  const BRAKE_AFTER = 0.05;    // 멈추는 시각 = 크림 전환 + 이름표가 다시 다 보인 직후 + 이 값 (END_HOLD 안쪽)
+  const BRAKE_GAP = 200;       // 휠 입력이 이 시간(ms) 끊기면 "새 스크롤" → 통과
+  const BRAKE_MAX = 1600;      // 이 시간(ms)이 지난 뒤 휠을 줄지 않는 세기로 계속 굴리고 있으면 풀어 줌 (가두지 않기)
+  const BRAKE_ABS = 4000;      //   관성이든 뭐든 이 시간(ms)이 지나면 무조건 풀어 줌
+  const BRAKE_TOL = 3;         // 멈춘 자리 ± 이 px 안에서 출발하면 브레이크 없이 통과
   // 무대 안 글자·선 색 이름 (CSS .equip-stage-pin의 --st-* / --st-*-light 짝)
   const ST_VARS = ["ink", "muted", "faint", "rule", "rule-strong", "bg", "accent", "shadow", "floor", "floor-line"];
   // 웨이퍼가 지나가는 부품 순서 (FOUP는 가운데 로드포트의 것)
@@ -404,6 +411,7 @@
     let tl = null;
     let baseDur = 1;   // buildTimeline()이 정함
     let lightAt = Infinity;   // 이 시각부터 "크림 단계" → 부품 패널도 밝은 유리 (buildTimeline()이 정함)
+    let brakeAt = null;       // 브레이크 시각 (buildTimeline()이 정함, 정지 화면이면 없음)
     function apply(force) {
       const now = {};
       seq.forEach((m) => { now[m.id] = prog[m.id].p; });
@@ -546,10 +554,12 @@
           creamAt + CREAM_DUR * 0.6);
       }
       tl.to(overlays, { opacity: 1, duration: 0.3, ease: "none" }, creamAt + CREAM_DUR - 0.15);
+      // 브레이크 시각: 이름표가 크림 위에 다시 다 나타난 직후 (그 뒤 END_HOLD가 남아 있어 조금 지나쳐도 화면은 그대로)
+      brakeAt = creamAt + CREAM_DUR + 0.15 + BRAKE_AFTER;
       // 크림 화면에서 잠깐 머문 뒤 고정이 풀림
       tl.to({}, { duration: END_HOLD });
       // 점검용 시각표 (헤드리스 검사가 이 시각들로 캡처)
-      stageEl._marks = { firstEnd: firstEnd, moveEnd: moveEnd, flowAt: flowAt, creamAt: creamAt, dur: tl.duration() };
+      stageEl._marks = { firstEnd: firstEnd, moveEnd: moveEnd, flowAt: flowAt, creamAt: creamAt, brakeAt: brakeAt, dur: tl.duration() };
       return tl;
     }
 
@@ -578,6 +588,147 @@
       }
       n.hidden = false;
     }
+    // ---------- 6-1) 브레이크: 크림 + 분해 완료 장면에서 한 번 "덜컥" 멈춤 ----------
+    //   아래로든 위로든 이 장면을 지나가려는 스크롤을 한 번 막고, 스크롤 위치를 장면에 딱 맞춘다.
+    //   화면은 고정(pin) + scrub 상태라 위치를 맞춰도 그림이 튀지 않고 부드럽게 따라와 멈춤.
+    //   가두지 않기: 멈춘 뒤 "새로" 스크롤하면(휠을 잠깐 멈췄다 다시 / 키를 다시 누름 / 다시 터치) 그대로 통과.
+    //   휠: 지나가는 입력을 막음 → 남은 트랙패드 관성은 흘려 버림 → 입력이 끊기거나 새로 쓸어 올리면 풀림
+    //   키: 스페이스·방향키·PageUp/Down만 (Home/End는 일부러 멀리 가는 키라 그대로). 꾹 누른 반복 입력은 무시
+    //   터치: 손가락으로 끌다 지나가면 그 동작을 멈춤. 튕겨서 미끄러지다 지나가면 스크롤 이벤트로 잡아 되돌림
+    //   끄는 경우: 부품 패널이 열려 있을 때, 스크롤바 끌기·목차 링크·#part= 자동 이동(사용자 휠·키·터치가 아님),
+    //             정지 화면(움직임 줄이기 등 — 고정 자체가 없음)
+    function setupBrake() {
+      if (brakeAt == null || !trigger) return () => {};
+      const now = () => performance.now();
+      // 멈추는 스크롤 위치 (px). 화면 크기가 바뀌면 trigger.start/end가 바뀌므로 매번 계산
+      const brakeY = () => Math.round(trigger.start + (trigger.end - trigger.start) * (brakeAt / tl.duration()));
+      const blocked = () => !trigger || (panel && panel.isOpen());
+      let hold = null;                      // 멈춰 있는 중: { src: 입력 종류, dir: 1 아래 / -1 위, since, lastT, lastD }
+      let lastInput = { src: null, t: -1e9 }; // 마지막 사용자 스크롤 입력 (스크롤바·링크 이동과 구별)
+      let lastY = window.scrollY;
+      let touch = null, touchEndT = -1e9;
+      stageEl._brakes = 0;                  // 점검용: 몇 번 멈췄나
+      // from → to 움직임이 멈춤 자리를 지나가면 방향(1 / -1), 아니면 0. 멈춘 자리 바로 옆에서 출발하면 0(= 통과)
+      const crosses = (from, to) => {
+        const b = brakeY();
+        if (from < b - BRAKE_TOL && to >= b) return 1;
+        if (from > b + BRAKE_TOL && to <= b) return -1;
+        return 0;
+      };
+      const engage = (src, dir) => {
+        const t = now();
+        hold = { src: src, dir: dir, since: t, lastT: t, lastD: Infinity, hist: [] };   // hist: 최근 휠 세기 기록 [시각, 세기]
+        stageEl._brakes++;
+        window.scrollTo({ top: brakeY(), behavior: "instant" });
+        lastY = window.scrollY;
+      };
+      // 멈춤이 아직 "살아 있나" (이 시간 안의 같은 입력만 계속 막음 → 그 뒤 스크롤바 끌기 등은 자유)
+      const live = (t) => !!hold && (hold.src === "wheel" ? t - hold.lastT < BRAKE_GAP
+        : hold.src === "key" ? t - hold.since < 500
+        : t - hold.since < 4000 && (!!touch || t - touchEndT < 2500));
+
+      function onWheel(e) {
+        if (e.ctrlKey || e.defaultPrevented || blocked()) return;   // ctrl+휠 = 확대
+        const d = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1);
+        if (!d) return;
+        const t = now(), dir = d > 0 ? 1 : -1, ad = Math.abs(d);
+        lastInput = { src: "wheel", t: t };
+        if (hold) {
+          // 새 스크롤로 보는 경우: 다른 입력이었음 / 반대 방향 / 입력이 끊겼다 다시 / 너무 오래 /
+          //   관성으로 줄어들던 값이 갑자기 커짐(= 손가락으로 새로 쓸어 올림)
+          const old = hold.hist && hold.hist.length && t - hold.hist[0][0] >= 250 ? hold.hist[0] : null;
+          const fresh = hold.src !== "wheel" || dir !== hold.dir || t - hold.lastT > BRAKE_GAP ||
+            t - hold.since > BRAKE_ABS || (t - hold.since > 350 && ad > Math.max(12, hold.lastD * 1.8)) ||
+            // 오래 굴렸는데 세기가 줄지 않음 = 관성이 아니라 사용자가 계속 굴리는 중 (줄어드는 관성 끝자락은 계속 흘려 버림)
+            //   (0.25초 전 세기와 비교: 관성은 그 사이 눈에 띄게 줄고, 계속 굴리면 그대로)
+            (t - hold.since > BRAKE_MAX && !!old && ad >= Math.max(8, old[1] * 0.8));
+          if (!fresh) {
+            e.preventDefault(); hold.lastT = t; hold.lastD = ad;
+            hold.hist.push([t, ad]);
+            while (hold.hist.length > 1 && t - hold.hist[1][0] >= 250) hold.hist.shift();   // 0.25초 이상 지난 것 중 가장 최근 하나만 남김
+            return;
+          }
+          hold = null;
+        }
+        const c = crosses(window.scrollY, window.scrollY + d);
+        if (c) { e.preventDefault(); engage("wheel", c); hold.lastD = ad; }
+      }
+
+      const KEY_DIR = { PageDown: 1, PageUp: -1, ArrowDown: 1, ArrowUp: -1, " ": 1 };
+      function onKey(e) {
+        if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || blocked()) return;
+        let dir = KEY_DIR[e.key];
+        if (!dir) return;
+        if (e.key === " " && e.shiftKey) dir = -1;
+        const tg = e.target && e.target.closest ? e.target : null;
+        // 글 입력 칸에서는 키가 스크롤이 아님. 버튼·링크 위 스페이스도 "누르기"라 스크롤이 아님
+        if (tg && tg.closest("input, textarea, select, [contenteditable]:not([contenteditable='false'])")) return;
+        if (e.key === " " && tg && tg.closest("button, a[href], summary, [role='button']")) return;
+        lastInput = { src: "key", t: now() };
+        if (hold) {
+          if (hold.src === "key" && e.repeat && dir === hold.dir) { e.preventDefault(); return; }
+          hold = null;   // 다시 누름 → 통과
+        }
+        const step = e.key === "ArrowDown" || e.key === "ArrowUp" ? 40 : window.innerHeight * 0.85;
+        const c = crosses(window.scrollY, window.scrollY + dir * step);
+        if (c) { e.preventDefault(); engage("key", c); }
+      }
+
+      function onTouchStart(e) {
+        lastInput = { src: "touch", t: now() };
+        hold = null;     // 새 터치 = 새 스크롤 → 통과
+        touch = e.touches.length === 1 ? { y: e.touches[0].clientY, sy: window.scrollY, held: false } : null;
+      }
+      function onTouchMove(e) {
+        if (!touch || blocked()) return;
+        lastInput = { src: "touch", t: now() };
+        if (touch.held) { if (e.cancelable) e.preventDefault(); return; }
+        const c = crosses(window.scrollY, touch.sy + (touch.y - e.touches[0].clientY));
+        if (c) { if (e.cancelable) e.preventDefault(); touch.held = true; engage("touch", c); }
+      }
+      function onTouchEnd() {
+        touchEndT = now();
+        lastInput = { src: "touch", t: touchEndT };
+        touch = null;
+      }
+
+      // 입력을 미리 못 막은 경우의 안전망 (터치 관성, 부드러운 휠 스크롤이 한 번에 지나간 경우)
+      function onScroll() {
+        const y = window.scrollY, prev = lastY;
+        lastY = y;
+        if (blocked()) return;
+        const t = now(), b = brakeY();
+        if (hold) {
+          // 멈춤이 살아 있는 동안 그 방향으로 밀려 나가면 다시 그 자리로
+          if (live(t) && (y - b) * hold.dir > BRAKE_TOL) { window.scrollTo({ top: b, behavior: "instant" }); lastY = window.scrollY; }
+          return;
+        }
+        const recent = lastInput.src === "touch" ? (!!touch || t - touchEndT < 2500) : t - lastInput.t < 250;
+        if (!lastInput.src || !recent) return;
+        const c = crosses(prev, y);
+        if (c) { engage(lastInput.src, c); if (lastInput.src === "wheel") hold.lastT = lastInput.t; if (touch) touch.held = true; }
+      }
+
+      const nonPassive = { passive: false }, passive = { passive: true };
+      window.addEventListener("wheel", onWheel, nonPassive);
+      window.addEventListener("keydown", onKey);
+      window.addEventListener("touchstart", onTouchStart, passive);
+      window.addEventListener("touchmove", onTouchMove, nonPassive);
+      window.addEventListener("touchend", onTouchEnd, passive);
+      window.addEventListener("touchcancel", onTouchEnd, passive);
+      window.addEventListener("scroll", onScroll, passive);
+      stageEl._brakeY = brakeY;             // 점검용
+      return () => {
+        window.removeEventListener("wheel", onWheel, nonPassive);
+        window.removeEventListener("keydown", onKey);
+        window.removeEventListener("touchstart", onTouchStart, passive);
+        window.removeEventListener("touchmove", onTouchMove, nonPassive);
+        window.removeEventListener("touchend", onTouchEnd, passive);
+        window.removeEventListener("touchcancel", onTouchEnd, passive);
+        window.removeEventListener("scroll", onScroll, passive);
+      };
+    }
+
     let trigger = null;   // 스크롤 연출의 ScrollTrigger (#part= 바로 열기에서 씀)
     gsap.registerPlugin(ScrollTrigger);
     const mm = gsap.matchMedia();
@@ -621,8 +772,10 @@
         anticipatePin: 1,
         invalidateOnRefresh: true
       });
+      const offBrake = setupBrake();
       // 정리: 설정이 바뀌면(움직임 줄이기 켬/끔) GSAP이 타임라인을 되돌리고, 여기서 층 위치도 처음으로
       return () => {
+        offBrake();
         trigger = null;
         seq.forEach((m) => { prog[m.id].p = 0; });
         apply(true);
