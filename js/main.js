@@ -15,9 +15,6 @@ const REDUCE_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matc
 
 // 화살표 아이콘 (→) — 카드·버튼에서 같이 씀
 const ARROW = `<svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-// 펼침 아이콘 (⌄)
-const CHEVRON = `<svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-
 // 섹션에 속한 페이지 목록
 // (hidden: true 인 페이지 = 하위 페이지 → 목차·메뉴에는 안 보이고 검색에만 나옴)
 function pagesOf(sectionId) {
@@ -25,6 +22,48 @@ function pagesOf(sectionId) {
 }
 
 // ---------- 1) 헤더 + 전체 화면 메뉴 ----------
+// 메뉴 전용 목록: 분류 → 항목. 제목은 PAGES(js/pages.js)에서 path로 찾아 씀.
+//   en    : 항목 옆 작은 영문 라벨
+//   desc  : 넓은 화면 유리 카드에 나오는 한 줄 설명
+//   status: done(완성) / wip(작성 중) / soon(준비 중) — 페이지를 채우면 여기 값을 바꾼다
+const MENU_GROUPS = [
+  { label: "Fundamentals", title: "기초", items: [
+    { path: "basics/vacuum.html", name: "진공", en: "Vacuum", status: "wip",
+      desc: "압력 단위, 평균자유행로, 펌프 종류 — 증착이 왜 진공에서 일어나는지" },
+    { path: "basics/plasma.html", name: "플라즈마", en: "Plasma", status: "soon",
+      desc: "전자·이온·라디칼과 쉬스 — PECVD·스퍼터의 바탕 개념" },
+    { path: "basics/thin-film-growth.html", name: "박막 성장 원리", en: "Thin-film Growth", status: "soon",
+      desc: "흡착·확산·핵생성, 그리고 단차 피복(step coverage)" },
+  ]},
+  { label: "Deposition Equipment", title: "증착 장비", items: [
+    { path: "equipment/pecvd.html", name: "PECVD", en: "Plasma-Enhanced CVD", status: "done",
+      desc: "장비 분해 연출과 원리부터 면접 질문까지 7개 섹션" },
+    { path: "equipment/ald.html", name: "ALD", en: "Atomic Layer Deposition", status: "soon",
+      desc: "자기제한 반응으로 한 층씩 쌓는 원자층 증착" },
+    { path: "equipment/pvd.html", name: "PVD", en: "Physical Vapor Deposition", status: "wip",
+      desc: "스퍼터링 공정 모션 — 본문은 채우는 중" },
+    { path: "equipment/epi.html", name: "Epi", en: "Epitaxy", status: "soon",
+      desc: "기판 결정을 이어 단결정 막을 키우는 에피택시" },
+    { path: "equipment/ecd.html", name: "전기도금", en: "ECD", status: "soon",
+      desc: "구리 배선을 채우는 전기화학 도금" },
+  ]},
+  { label: "More", title: "더보기", items: [
+    { path: "companies/index.html", name: "증착 장비사", en: "Companies", status: "soon",
+      desc: "해외·국내 증착 장비 회사 정리" },
+    { path: "lab/index.html", name: "내 실습 기록", en: "Lab Notes", status: "soon",
+      desc: "직접 해본 공정과 배운 점" },
+  ]},
+];
+const STATUS_TEXT = { done: "완성", wip: "작성 중", soon: "준비 중" };
+
+// 지금 보고 있는 페이지인지 (PECVD 하위 페이지 equipment/pecvd/*.html도 PECVD로 봄)
+function isCurrentPage(path) {
+  const here = location.pathname.replace(/\/$/, "/index.html");
+  const target = new URL(ROOT + path, location.href).pathname;
+  if (here === target) return true;
+  return path.endsWith(".html") && here.startsWith(target.replace(/\.html$/, "/"));
+}
+
 function renderHeader() {
   const header = document.getElementById("site-header");
   if (!header) return;
@@ -37,21 +76,33 @@ function renderHeader() {
       </button>
     </div>`;
 
-  // 메뉴 안 항목: 실습 기록을 뺀 섹션은 ⌄로 펼치는 목록
-  const groups = SECTIONS.filter((s) => s.id !== "lab").map((sec, i) => {
-    const links = pagesOf(sec.id)
-      .map((p) => `<li><a href="${ROOT + p.path}">${p.title}</a></li>`)
-      .join("");
+  // 항목 HTML: 번호 · 큰 한글 · 작은 영문 · 상태 · 화살표
+  let no = 0;   // 전체 번호 01, 02 …
+  let row = 0;  // 나타나는 순서 (위에서부터 한 줄씩)
+  const groups = MENU_GROUPS.map((g) => {
+    const items = g.items.map((it) => {
+      no += 1;
+      const cur = isCurrentPage(it.path);
+      const num = String(no).padStart(2, "0");
+      return `
+        <li class="mi-row" style="--i:${++row}">
+          <a class="mi${cur ? " is-current" : ""}" href="${ROOT + it.path}"${cur ? ' aria-current="page"' : ""}
+             data-no="${num}" data-en="${it.en}" data-name="${it.name}" data-desc="${it.desc}" data-status="${it.status}">
+            <span class="mi-no">${num}</span>
+            <span class="mi-name">${it.name}</span>
+            <span class="mi-en">${it.en}</span>
+            <span class="mi-status is-${it.status}">${cur ? "보는 중 · " : ""}${STATUS_TEXT[it.status]}</span>
+            ${ARROW}
+          </a>
+        </li>`;
+    }).join("");
     return `
-      <li class="menu-group">
-        <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="menu-panel-${i}">
-          <span>${sec.title}<small>${sec.en}</small></span>${CHEVRON}
-        </button>
-        <div class="menu-panel" id="menu-panel-${i}"><ul>${links}</ul></div>
+      <li class="mg" style="--i:${++row}">
+        <p class="mg-label">${g.label}<span>${g.title}</span></p>
+        <ul class="mg-items">${items}</ul>
       </li>`;
   }).join("");
 
-  const lab = pagesOf("lab")[0];
   const menu = document.createElement("div");
   menu.id = "site-menu";
   menu.className = "site-menu";
@@ -59,50 +110,80 @@ function renderHeader() {
   menu.setAttribute("aria-modal", "true");
   menu.setAttribute("aria-label", "전체 메뉴");
   menu.innerHTML = `
-    <div class="menu-top">
-      <a class="logo" href="${ROOT}index.html">증착 공정 노트</a>
-      <button class="menu-close" type="button" aria-label="메뉴 닫기">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-    <ul class="menu-list">${groups}</ul>
-    <div class="menu-bars">
-      ${lab ? `<a class="menu-bar is-accent" href="${ROOT + lab.path}">내 실습 기록${ARROW}</a>` : ""}
-      <a class="menu-bar" href="${ROOT}index.html#toc">전체 목차 보기${ARROW}</a>
+    <div class="menu-bg" aria-hidden="true"></div>
+    <div class="menu-inner">
+      <div class="menu-top">
+        <span class="menu-kicker">Index</span>
+        <button class="menu-close" type="button" aria-label="메뉴 닫기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="menu-body">
+        <ul class="menu-groups">${groups}</ul>
+        <aside class="menu-card" aria-hidden="true">
+          <p class="mc-top"><span class="mc-no"></span><span class="mc-en"></span></p>
+          <p class="mc-name"></p>
+          <p class="mc-desc"></p>
+          <p class="mc-status"><i></i><span></span></p>
+        </aside>
+      </div>
+      <div class="menu-foot" style="--i:${++row}">
+        <strong>증착 공정 노트</strong>
+        <span>반도체 증착 장비를 원리·장비 구성·점검 순서로 정리하는 학습 노트</span>
+      </div>
     </div>`;
   document.body.appendChild(menu);
 
   const openBtn = header.querySelector(".menu-btn");
   const closeBtn = menu.querySelector(".menu-close");
+  const card = menu.querySelector(".menu-card");
+  const links = [...menu.querySelectorAll(".mi")];
 
-  function setOpen(open) {
+  // 유리 카드 내용 바꾸기 (넓은 화면에서만 보임 — 화면 읽기 프로그램은 항목 글자를 그대로 읽음)
+  function showCard(a) {
+    if (!a) return;
+    card.querySelector(".mc-no").textContent = a.dataset.no;
+    card.querySelector(".mc-en").textContent = a.dataset.en;
+    card.querySelector(".mc-name").textContent = a.dataset.name;
+    card.querySelector(".mc-desc").textContent = a.dataset.desc;
+    card.querySelector(".mc-status span").textContent = STATUS_TEXT[a.dataset.status];
+    card.dataset.status = a.dataset.status;
+    card.classList.remove("is-swap");
+    void card.offsetWidth;          // 같은 애니메이션을 다시 틀기 위한 한 줄
+    card.classList.add("is-swap");
+  }
+  const defaultLink = links.find((a) => a.classList.contains("is-current")) || links[0];
+  showCard(defaultLink);
+  links.forEach((a) => {
+    a.addEventListener("mouseenter", () => showCard(a));
+    a.addEventListener("focus", () => showCard(a));
+  });
+
+  function setOpen(open, returnFocus = true) {
     menu.classList.toggle("is-open", open);
     document.body.classList.toggle("menu-open", open); // 뒤쪽 페이지 스크롤 막기
     openBtn.setAttribute("aria-expanded", String(open));
-    if (open) closeBtn.focus();
-    else openBtn.focus();
+    if (open) {
+      showCard(defaultLink);
+      closeBtn.focus();
+    } else if (returnFocus) openBtn.focus();       // 닫으면 ☰ 버튼으로 초점 복귀
   }
   openBtn.addEventListener("click", () => setOpen(true));
   closeBtn.addEventListener("click", () => setOpen(false));
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && menu.classList.contains("is-open")) setOpen(false);
+    if (!menu.classList.contains("is-open")) return;
+    if (e.key === "Escape") setOpen(false);
+    // Tab 초점이 메뉴 밖으로 나가지 않게: 처음 ↔ 끝에서 돌아감
+    if (e.key === "Tab") {
+      const f = [closeBtn, ...links];
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      else if (!menu.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    }
   });
   // 메뉴 안 링크를 누르면 메뉴 닫기 (같은 페이지 안 #이동일 때 필요)
-  menu.querySelectorAll("a").forEach((a) =>
-    a.addEventListener("click", () => {
-      menu.classList.remove("is-open");
-      document.body.classList.remove("menu-open");
-      openBtn.setAttribute("aria-expanded", "false");
-    })
-  );
-  // ⌄ 누르면 하위 페이지 펼치기/접기
-  menu.querySelectorAll(".menu-toggle").forEach((btn) =>
-    btn.addEventListener("click", () => {
-      const open = btn.getAttribute("aria-expanded") !== "true";
-      btn.setAttribute("aria-expanded", String(open));
-      btn.parentElement.classList.toggle("is-open", open);
-    })
-  );
+  links.forEach((a) => a.addEventListener("click", () => setOpen(false, false)));
 }
 
 // ---------- 2) 메인 페이지 카테고리 카드 ----------

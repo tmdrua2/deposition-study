@@ -13,6 +13,13 @@
 - Node.js 설치 + `find-skills` 스킬 설치 (Vercel Labs, 컴퓨터 전체 `~/.claude/skills/`에 설치)
 
 ## 진행 중
+- 오른쪽 위 메뉴(☰) 개편 (2026-11-23, `js/main.js` renderHeader · `css/style.css` 전체 화면 메뉴)
+  - 분류: 기초(진공·플라즈마·박막 성장) / 증착 장비(PECVD·ALD·PVD·Epi·전기도금) / 더보기(장비사·실습 기록)
+  - 메뉴 목록·한 줄 설명·진행 상태는 `main.js`의 `MENU_GROUPS` (페이지를 채우면 `status`를 done/wip/soon으로 바꾼다)
+    현재: PECVD 완성 · 진공(검증 남음)·PVD(모션만) 작성 중 · 나머지 준비 중
+  - 남색→코랄 빛 + 골유리 배경, 큰 한글 + 영문 라벨 + 번호, 넓은 화면은 오른쪽 유리 카드, 현재 페이지 청록
+  - 점검: 1440×900·390×844 캡처, Tab 순환·Esc 닫기·☰ 초점 복귀 확인, 스크립트 오류 0
+
 - **장비 중심 개편** — 설계서: `docs/equipment-redesign-plan.md`
   - 2026-11-21: 4단계까지 `main`에 합침(빨리 감기), 합친 뒤 `equipment-redesign`·`redesign` 브랜치 삭제 (커밋은 모두 `main`에 있음).
     합친 뒤 점검: 모든 페이지 스크립트 오류 0·못 불러온 파일 0·메인 링크 깨짐 0, PECVD 무대·패널 검사 통과
