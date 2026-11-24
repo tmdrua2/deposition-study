@@ -506,8 +506,26 @@ function setupToTop() {
     const r = p.getBoundingClientRect();
     return r.top < window.innerHeight * 0.5 && r.bottom > window.innerHeight - 4;
   });
-  const update = () => btn.classList.toggle("is-shown", window.scrollY > 400 && !stageFills());
+  // 버튼 바로 밑에 누를 수 있는 것(버튼·링크·입력칸)이 겹쳐 있으면 잠깐 숨김
+  //   (휴대폰에서 면접 연습 카드의 "다시 볼 것"·"다음" 버튼 끝을 가리던 문제)
+  const TAPPABLE = "main a, main button, main input, main select, main summary, main label";
+  const coversSomething = () => {
+    const b = btn.getBoundingClientRect();
+    const pad = 8;
+    const box = { l: b.left - pad, r: b.right + pad, t: b.top - pad, b: b.bottom + pad };
+    return [...document.querySelectorAll(TAPPABLE)].some((el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.right > box.l && r.left < box.r && r.bottom > box.t && r.top < box.b;
+    });
+  };
+  let raf = 0;
+  const update = () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() =>
+      btn.classList.toggle("is-shown", window.scrollY > 400 && !stageFills() && !coversSomething()));
+  };
   window.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update);
   update();
 }
 

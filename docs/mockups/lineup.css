@@ -1,0 +1,49 @@
+/* 시안 공용: 장비 카드 겉모양 (색 톤 그라데이션 + 세로 골유리 + 빛 번짐 + 실루엣)
+   시안을 고르면 이 내용이 css/style.css로 옮겨진다 */
+.cover { background: var(--cover-bg); transition: background-color 0.9s ease; }
+/* 카드에 마우스(또는 키보드 초점)가 오면 표지 바탕이 그 장비 색으로 서서히 물듦 — CSS만 */
+.cover:has(.lineup-card[data-tone="pecvd"]:is(:hover, :focus-visible)) { background-color: var(--tone-pecvd-tint); }
+.cover:has(.lineup-card[data-tone="ald"]:hover)   { background-color: var(--tone-ald-tint); }
+.cover:has(.lineup-card[data-tone="pvd"]:hover)   { background-color: var(--tone-pvd-tint); }
+.cover:has(.lineup-card[data-tone="epi"]:hover)   { background-color: var(--tone-epi-tint); }
+.cover:has(.lineup-card[data-tone="ecd"]:hover)   { background-color: var(--tone-ecd-tint); }
+
+.lineup-card {
+  --top: var(--tone-pecvd-top); --low: var(--tone-pecvd-low); --glow: var(--tone-pecvd-glow);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 16px;
+  color: #fff;
+  text-decoration: none;
+  background:
+    radial-gradient(70% 55% at 50% 88%, color-mix(in srgb, var(--glow) 42%, transparent) 0%, transparent 70%),
+    linear-gradient(172deg, var(--top) 0%, var(--top) 30%, var(--low) 100%);
+  outline: 1px solid transparent;
+  outline-offset: 4px;
+  transition: transform 0.35s cubic-bezier(.2,.7,.2,1), outline-color 0.35s;
+}
+/* 세로 골유리 질감 (그림 파일 없이 줄무늬만) */
+.lineup-card::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: repeating-linear-gradient(90deg,
+    rgba(255,255,255,0.08) 0 1px, rgba(255,255,255,0.02) 1px 4px, rgba(255,255,255,0) 4px 8px,
+    rgba(0,0,0,0.14) 8px 12px, rgba(0,0,0,0.04) 12px 13px);
+}
+.lineup-card[data-tone="ald"] { --top: var(--tone-ald-top); --low: var(--tone-ald-low); --glow: var(--tone-ald-glow); }
+.lineup-card[data-tone="pvd"] { --top: var(--tone-pvd-top); --low: var(--tone-pvd-low); --glow: var(--tone-pvd-glow); }
+.lineup-card[data-tone="epi"] { --top: var(--tone-epi-top); --low: var(--tone-epi-low); --glow: var(--tone-epi-glow); }
+.lineup-card[data-tone="ecd"] { --top: var(--tone-ecd-top); --low: var(--tone-ecd-low); --glow: var(--tone-ecd-glow); }
+.lineup-card:hover, .lineup-card:focus-visible { transform: scale(1.025); outline-color: var(--top); }
+
+.lineup-fig { position: absolute; overflow: hidden; }
+.lineup-scene { position: absolute; }
+.lineup-fig .iso-floor { display: none; }
+/* 준비 중: 한 가지 색(흰색) 실루엣 */
+.lineup-card.is-soon .lineup-scene { filter: grayscale(1) contrast(0.75) brightness(1.15); mix-blend-mode: screen; opacity: 0.7; }
+.lineup-card.is-soon .iso-shadows { display: none; }
+
+.lineup-abbr { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.02em; }
+.lineup-status { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-xs); }
+.lineup-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.lineup-card.is-soon .lineup-status::before { background: transparent; border: 1px solid currentColor; }

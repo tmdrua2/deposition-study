@@ -3,49 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#FAFAF8">
-  <title>증착 공정 노트</title>
+  <meta name="theme-color" content="#ECEBE6">
+  <title>LAYER BY LAYER | 증착 공정 노트</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body data-root="">
+<body data-root="" class="is-cover">
   <header id="site-header"></header>
 
-  <main class="home">
-    <!-- 첫 화면: 왼쪽 제목·검색, 오른쪽 점·선 네트워크 구 (js/main.js가 그림) -->
-    <section class="hero">
-      <div class="hero-text">
-        <p class="eyebrow">Deposition Study Notes</p>
-        <h1 class="dot-title">증착 공정 학습 노트</h1>
-        <p class="subtitle">증착 장비사 취업 준비를 위한 개인 학습 사이트</p>
-
-        <div class="search-box">
-          <input id="search" type="search" placeholder="검색: 예) ALD, 스퍼터, 플라즈마" autocomplete="off" aria-label="페이지 검색">
+  <main class="cover">
+    <!-- 첫 화면: 위 줄(소개 + 검색) → 장비들이 나란히 선 무대 -->
+    <section class="cover-hero" aria-labelledby="cover-title">
+      <div class="cover-bar">
+        <p class="cover-intro">반도체 증착 장비를 원리, 장비 구성, 점검 순서로 정리하는 학습 노트입니다.</p>
+        <div class="search-box cover-search">
+          <input id="search" type="search" placeholder="검색: 예) ALD, 스퍼터, 플라즈마, 샤워헤드" autocomplete="off" aria-label="페이지 검색">
           <ul id="search-results"></ul>
         </div>
       </div>
 
-      <!-- 장식용 그림이라 화면 읽기 프로그램은 건너뜀 -->
-      <div id="sphere" class="sphere" aria-hidden="true"></div>
+      <!-- 무대: 뒤에서 앞으로 ① 장비별 색 톤 바탕 ② 큰 이름 글자 ③ 장비(js/home.js가 MENU_GROUPS로 채움) -->
+      <div class="cover-stage">
+        <div class="cs-tones" aria-hidden="true"></div>
+        <div class="cs-tint" aria-hidden="true"></div>
+        <h1 class="cs-word" id="cover-title">
+          <span class="cs-word-en">LAYER BY LAYER</span>
+          <span class="cs-word-ko">증착 공정 노트</span>
+        </h1>
+        <div class="cs-floor" aria-hidden="true"></div>
+        <ul class="cs-lineup" id="lineup" aria-label="증착 장비"></ul>
+      </div>
     </section>
 
-    <!-- 카테고리 카드: js/pages.js 목록을 바탕으로 자동 생성 -->
-    <section class="home-section">
-      <p class="eyebrow">Study Map</p>
-      <h2 class="dot-title">학습 목차</h2>
-      <div id="toc"></div>
+    <!-- 아래로 이어지는 목차: 기초 → 장비사·실습 기록 → 사이트 소개 -->
+    <section class="cover-sec">
+      <h2 id="basics">기초</h2>
+      <p class="cover-sec-lead">장비를 이해하기 전에 알아 둘 세 가지. 장비 페이지에서도 이 페이지로 이어집니다.</p>
+      <ul class="cover-index" id="index-basics"></ul>
     </section>
 
-    <!-- 장비 목록: 공정·장비 페이지마다 그림 하나씩 자동 생성 -->
-    <section class="home-section">
-      <p class="eyebrow">Equipment</p>
-      <h2 class="dot-title">공정·장비</h2>
-      <ul id="equip-list" class="equip-list"></ul>
+    <section class="cover-sec">
+      <h2 id="more">장비사 · 실습 기록</h2>
+      <p class="cover-sec-lead">어떤 회사가 증착 장비를 만드는지, 그리고 직접 해 본 공정 기록.</p>
+      <ul class="cover-index" id="index-more"></ul>
+    </section>
+
+    <section class="cover-sec cover-about">
+      <h2 id="about">사이트 소개</h2>
+      <div class="about-body">
+        <p>증착(Deposition) 장비사 취업을 준비하면서 공부한 내용을 정리하는 개인 학습 노트입니다.
+          장비마다 분해 연출로 전체 구성을 먼저 보고, 원리 → 장비 구성 → 공정 흐름 → 공정변수 → 문제와 점검 → 면접 질문 → 출처
+          순서로 읽도록 짰습니다.</p>
+        <p>사실 정보에는 출처를 답니다. 직접 열어 확인한 자료만 주소와 확인 날짜를 적고, 장비나 조건에 따라 달라지거나
+          확실하지 않은 내용에는 <span class="verify-tag">검증 필요</span> 표시를 붙였습니다.
+          특정 회사 장비의 사양이나 구체적인 수치는 싣지 않고, 그림은 대표적인 300mm 장비 구성을 단순하게 그린 것입니다.</p>
+      </div>
     </section>
   </main>
 
-  <footer>개인 학습용 · 내용은 직접 정리한 것이며 출처를 각 페이지에 표기합니다.</footer>
+  <footer>LAYER BY LAYER · 증착 공정 노트 — 개인 학습용. 내용은 직접 정리했고 출처는 각 페이지에 표기합니다.</footer>
 
   <script src="js/pages.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/motion-pref.js"></script>  <!-- 정지 화면 판정 (움직임 줄이기·?still=1) -->
+  <script src="data/platform.js"></script>
+  <script src="data/pecvd.js"></script>
+  <script src="data/lineup.js"></script>
+  <script src="js/explode/render-iso.js"></script>
+  <script src="js/home.js"></script>        <!-- 표지 장비 진열·깊이감·아래 목차 -->
 </body>
 </html>

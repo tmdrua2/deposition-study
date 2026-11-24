@@ -71,6 +71,15 @@
   --on-navy-soft: #C9CED9;  /* 남색 위 설명 글 중 코랄 빛 위에 놓일 수 있는 것 (섹션 머리 설명) */
   --on-navy-faint: #7F8AA1; /* 남색 위 아주 옅은 글자 (번호) */
 
+  /* 장비별 색 톤 (표지 장비 카드·앞으로 만들 장비 페이지 무대)
+     -top: 카드 위쪽(진한 색, 글자가 놓임) / -low: 카드 아래쪽 / -glow: 빛 번짐 / -tint: 표지 바탕이 물드는 색 */
+  --cover-bg: #ECEBE6;      /* 표지 바탕: 중립 크림·연회색 */
+  --tone-pecvd-top: #14213D; --tone-pecvd-low: #1E2C4E; --tone-pecvd-glow: #FF6B5B; --tone-pecvd-tint: #D8DBE3; /* 남색 + 코랄 */
+  --tone-ald-top: #2C6A99;   --tone-ald-low: #6EA9D2;   --tone-ald-glow: #CDE8F7;   --tone-ald-tint: #DAE7F0;   /* 하늘 */
+  --tone-pvd-top: #5F5B38;   --tone-pvd-low: #A39A68;   --tone-pvd-glow: #E8DDAE;   --tone-pvd-tint: #E4E1D1;   /* 카키 */
+  --tone-epi-top: #35685F;   --tone-epi-low: #84B3A5;   --tone-epi-glow: #D3EBE0;   --tone-epi-tint: #DCE6E1;   /* 청자(셀라돈) */
+  --tone-ecd-top: #643626;   --tone-ecd-low: #B07A56;   --tone-ecd-glow: #F0CDAF;   --tone-ecd-tint: #EADDD3;   /* 구리 */
+
   /* 공정 첫 화면 (어두운 도면) */
   --hero-bg: #161B21;
   --hero-line: #3A414B;   /* 얇은 도면 선 */
@@ -2975,4 +2984,244 @@ a.src-title:hover { text-decoration-color: var(--c-cvd); }
   .iv-chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 calc(-1 * var(--gutter)); padding: 2px var(--gutter) 6px; scrollbar-width: none; }
   .iv-chips::-webkit-scrollbar { display: none; }
   .iv-chips button { flex: none; }
+}
+
+/* =============================================================
+   표지 (index.html) — "LAYER BY LAYER" 장비 진열 무대
+   뒤에서 앞으로: 색 톤 바탕(.cs-tones) → 물드는 막(.cs-tint) → 큰 이름 글자(.cs-word)
+                 → 바닥선(.cs-floor) → 장비(.slot: 빛 번짐 · 바닥 그림자 · 그림 · 바닥 반사 · 이름)
+   카드 테두리 없이 장비별 색이 옆 장비 쪽으로 섞여 하나의 무대가 된다.
+   깊이감: js/home.js가 마우스 위치를 --px·--py(-1~1)로 넣고, 층마다 다른 거리만큼 움직인다.
+   ============================================================= */
+body.is-cover { --cover-max: 1360px; background: var(--cover-bg); transition: background-color 0.9s ease; }
+.is-cover #site-header { background: inherit; border-bottom-color: transparent; }
+.is-cover .header-inner { max-width: var(--cover-max); }
+.is-cover footer { max-width: var(--cover-max); border-top-color: var(--line-strong); }
+main.cover { max-width: none; padding: 0; }
+
+/* 장비별 색 톤을 변수 하나로: --top(진한) · --low(밝은) · --glow(빛) · --edge(마우스를 올렸을 때 외곽선) */
+.slot { --top: var(--tone-pecvd-top); --low: var(--tone-pecvd-low); --glow: var(--tone-pecvd-glow); --edge: var(--c-cvd-bright); }
+.slot[data-tone="ald"] { --top: var(--tone-ald-top); --low: var(--tone-ald-low); --glow: var(--tone-ald-glow); --edge: var(--tone-ald-glow); }
+.slot[data-tone="pvd"] { --top: var(--tone-pvd-top); --low: var(--tone-pvd-low); --glow: var(--tone-pvd-glow); --edge: var(--tone-pvd-glow); }
+.slot[data-tone="epi"] { --top: var(--tone-epi-top); --low: var(--tone-epi-low); --glow: var(--tone-epi-glow); --edge: var(--tone-epi-glow); }
+.slot[data-tone="ecd"] { --top: var(--tone-ecd-top); --low: var(--tone-ecd-low); --glow: var(--tone-ecd-glow); --edge: var(--tone-ecd-glow); }
+
+/* ---------- 위 줄: 소개 + 큰 검색창 ---------- */
+.cover-bar {
+  position: relative; z-index: 30;          /* 검색 결과 목록이 무대 위로 펼쳐지게 */
+  max-width: var(--cover-max); margin: 0 auto;
+  padding: 20px var(--gutter) 28px;
+  display: flex; align-items: center; justify-content: space-between; gap: 32px;
+}
+.cover-intro { margin: 0; max-width: 26em; color: var(--muted); font-size: var(--fs-md); line-height: 1.6; }
+.cover-search { flex: 0 1 600px; max-width: 600px; }
+.cover-search input { padding: 18px 26px; font-size: var(--fs-lg); background: rgba(255, 255, 255, 0.7); }
+
+/* ---------- 무대 ---------- */
+.cover-stage {
+  --stage-h: clamp(560px, calc(100svh - 72px - 112px), 880px);
+  --edge-x: max(var(--gutter), calc((100% - var(--cover-max)) / 2 + var(--gutter)));  /* 글·장비가 서는 좌우 여백 */
+  --px: 0; --py: 0;
+  position: relative;
+  height: var(--stage-h);
+  overflow: hidden;
+  /* 위·아래 가장자리는 크림 바탕으로 서서히 녹아듦 → 네모난 띠로 보이지 않게 */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 88px, #000 calc(100% - 36px), transparent 100%);
+          mask-image: linear-gradient(180deg, transparent 0, #000 88px, #000 calc(100% - 36px), transparent 100%);
+}
+/* 색 톤 바탕: 장비가 서는 자리마다 그 장비 색, 사이는 서로 섞임 + 장비 뒤 빛 번짐 */
+.cs-tones {
+  position: absolute; inset: -30px;
+  background:
+    linear-gradient(180deg, rgba(8, 12, 24, 0.22) 0%, rgba(8, 12, 24, 0) 38%, rgba(255, 255, 255, 0.07) 74%, rgba(8, 12, 24, 0.16) 100%),
+    radial-gradient(30% 48% at 27% 70%, color-mix(in srgb, var(--tone-pecvd-glow) 34%, transparent) 0%, transparent 100%),
+    radial-gradient(9% 26% at 55% 76%, color-mix(in srgb, var(--tone-ald-glow) 40%, transparent) 0%, transparent 100%),
+    radial-gradient(9% 26% at 67.5% 76%, color-mix(in srgb, var(--tone-pvd-glow) 36%, transparent) 0%, transparent 100%),
+    radial-gradient(9% 26% at 80% 76%, color-mix(in srgb, var(--tone-epi-glow) 36%, transparent) 0%, transparent 100%),
+    radial-gradient(9% 26% at 92.5% 76%, color-mix(in srgb, var(--tone-ecd-glow) 36%, transparent) 0%, transparent 100%),
+    linear-gradient(90deg, var(--tone-pecvd-top) 0%, var(--tone-pecvd-low) 36%, var(--tone-ald-top) 52%,
+      var(--tone-pvd-top) 66%, var(--tone-epi-top) 79%, var(--tone-ecd-top) 94%);
+  transform: translate3d(calc(var(--px) * -6px), calc(var(--py) * -4px), 0);
+}
+/* 세로 골유리 질감 */
+.cs-tones::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(90deg,
+    rgba(255, 255, 255, 0.07) 0 1px, rgba(255, 255, 255, 0.02) 1px 4px, rgba(255, 255, 255, 0) 4px 8px,
+    rgba(6, 10, 24, 0.16) 8px 12px, rgba(6, 10, 24, 0.05) 12px 13px);
+}
+/* 마우스를 올린 장비 색으로 무대 전체가 물드는 막 */
+.cs-tint { position: absolute; inset: 0; background-color: transparent; transition: background-color 0.9s ease; pointer-events: none; }
+
+/* 큰 이름 글자: 장비 뒤에 깔리고 PECVD 윗부분이 글자를 가림 */
+.cs-word {
+  position: absolute; z-index: 1;
+  left: var(--edge-x); right: var(--edge-x); top: 70px;
+  margin: 0; display: grid; color: var(--cream);
+  transform: translate3d(calc(var(--px) * -12px), calc(var(--py) * -6px), 0);
+  pointer-events: none;
+}
+.cs-word-en {
+  font-size: clamp(3rem, 10.2vw, 11rem); font-weight: 800; line-height: 0.86;
+  letter-spacing: -0.045em; white-space: nowrap; opacity: 0.94;
+}
+.cs-word-ko {
+  justify-self: end; margin-top: 0.5em;
+  font-size: var(--fs-2xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;
+}
+/* 바닥선: 장비들이 함께 서는 바닥 — 위는 무대, 아래는 살짝 밝은 광택 바닥 */
+.cs-floor {
+  position: absolute; z-index: 2; left: 0; right: 0;
+  bottom: 0; height: 132px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0, rgba(255, 255, 255, 0.03) 30%, rgba(8, 12, 24, 0.12) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  transform: translate3d(calc(var(--px) * -9px), 0, 0);
+}
+
+/* ---------- 장비 진열 ---------- */
+.cs-lineup {
+  position: absolute; z-index: 3;
+  left: var(--edge-x); right: var(--edge-x); bottom: 0; height: 100%;
+  margin: 0; padding: 0; list-style: none;
+  display: grid; grid-template-columns: 44fr repeat(4, 12.5fr); align-items: end;
+}
+.cs-lineup .slot { margin: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
+.slot-link { display: block; color: var(--cream); text-decoration: none; border-radius: 12px; }
+.slot-link:hover { color: var(--cream); }
+.slot.is-soon .slot-link { cursor: default; }
+.slot.is-ready { transform: translate3d(calc(var(--px) * -26px), calc(var(--py) * -10px), 0); }   /* 앞 장비: 가장 많이 */
+.slot.is-soon  { transform: translate3d(calc(var(--px) * -17px), calc(var(--py) * -7px), 0); }    /* 뒤 장비 */
+
+/* 그림 자리: 아래 끝 = 바닥선 (이름표 높이만큼 위) */
+.slot-depth { position: relative; display: block; height: calc(var(--stage-h) * 0.25); margin: 0 6%;
+  transition: transform 0.45s var(--ease); transform-origin: 50% 100%; }
+.slot.is-ready .slot-depth { height: calc(var(--stage-h) * 0.6); margin: 0 4% 0 0; }
+.slot-fig, .slot-reflect { position: absolute; inset: 0; display: block; }
+.slot-fig { z-index: 2; transition: filter 0.45s; }
+.lineup-scene { position: absolute; }
+/* 바닥 반사: 그림 복사본을 바닥선 기준으로 뒤집고, 바닥에 가까운 쪽만 아주 옅게 */
+.slot-reflect {
+  z-index: 1; transform: scaleY(-1); transform-origin: 50% 100%; opacity: 0.16; filter: blur(1.5px);
+  -webkit-mask-image: linear-gradient(0deg, #000 0%, transparent 34%);
+          mask-image: linear-gradient(0deg, #000 0%, transparent 34%);
+}
+/* 바닥 그림자: 장비 발밑의 넓고 부드러운 어둠 (렌더러가 그린 각진 그림자 바깥으로 번짐) */
+.slot-shadow {
+  position: absolute; z-index: 1; left: 2%; right: 2%; bottom: -16px; height: 34px;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(6, 10, 22, 0.42) 0%, rgba(6, 10, 22, 0) 100%);
+}
+/* 장비 뒤 빛 번짐: 장비 색의 빛이 장비 뒤에서 바탕으로 이어짐 */
+.slot-glow {
+  position: absolute; z-index: 0; left: -30%; right: -30%; bottom: -10%; height: 90%;
+  background: radial-gradient(50% 60% at 50% 72%, color-mix(in srgb, var(--glow) 30%, transparent) 0%, transparent 100%);
+  pointer-events: none;
+}
+.slot.is-ready .slot-glow { background: radial-gradient(50% 55% at 50% 75%, color-mix(in srgb, var(--tone-pecvd-glow) 26%, transparent) 0%, transparent 100%); }
+/* 준비 중: 같은 바닥·조명 + 안개 (색을 빼고 바탕색 안개가 아래에서 감쌈) */
+.slot.is-soon .lineup-scene { filter: saturate(0.4) contrast(0.78) brightness(1.04); opacity: 0.82; }
+.slot.is-soon .slot-depth::after {
+  content: ""; position: absolute; z-index: 3; left: -18%; right: -18%; top: -10%; bottom: -14px; pointer-events: none;
+  background: radial-gradient(62% 70% at 50% 100%, color-mix(in srgb, var(--low) 62%, transparent) 0%,
+    color-mix(in srgb, var(--low) 24%, transparent) 55%, transparent 100%);
+}
+
+/* 이름: 바닥 위에 적힌 글 */
+.slot-label { display: grid; gap: 2px; height: 132px; padding: 22px 0 0; align-content: start; }
+.slot-abbr { font-family: var(--font-mono); font-weight: 500; font-size: var(--fs-xl); line-height: 1.2; }
+.slot.is-ready .slot-abbr { font-size: var(--fs-3xl); }
+.slot-ko { font-size: var(--fs-sm); color: color-mix(in srgb, var(--cream) 78%, transparent); line-height: 1.4; }
+.slot-status { display: inline-flex; align-items: center; gap: 8px; margin-top: 6px; font-size: var(--fs-xs); line-height: 1.4;
+  color: color-mix(in srgb, var(--cream) 70%, transparent); }
+.slot-status::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; }
+.slot-status.is-done { color: var(--cream); }
+.slot-status.is-done::before { background: var(--c-cvd-bright); border-color: var(--c-cvd-bright); }
+
+/* ---------- 마우스를 올리면(키보드 초점 포함): 바탕이 그 장비 색으로 물들고, 장비는 살짝 커지며 외곽선 ---------- */
+.slot-link:hover .slot-depth, .slot-link:focus-visible .slot-depth { transform: scale(1.035); }
+.slot-link:hover .slot-fig, .slot-link:focus-visible .slot-fig {
+  filter: drop-shadow(0 0 1px var(--edge)) drop-shadow(0 0 1px var(--edge));
+}
+.slot-link:focus-visible { outline: 2px solid var(--c-cvd-bright); outline-offset: 6px; }
+.slot.is-soon .slot-link:hover .slot-depth::after { opacity: 0.7; }
+body:has(.slot[data-tone="pecvd"] .slot-link:is(:hover, :focus-visible)) { background-color: var(--tone-pecvd-tint); }
+body:has(.slot[data-tone="ald"] .slot-link:hover) { background-color: var(--tone-ald-tint); }
+body:has(.slot[data-tone="pvd"] .slot-link:hover) { background-color: var(--tone-pvd-tint); }
+body:has(.slot[data-tone="epi"] .slot-link:hover) { background-color: var(--tone-epi-tint); }
+body:has(.slot[data-tone="ecd"] .slot-link:hover) { background-color: var(--tone-ecd-tint); }
+.cover-stage:has(.slot[data-tone="pecvd"] .slot-link:is(:hover, :focus-visible)) .cs-tint { background-color: color-mix(in srgb, var(--tone-pecvd-top) 55%, transparent); }
+.cover-stage:has(.slot[data-tone="ald"] .slot-link:hover) .cs-tint { background-color: color-mix(in srgb, var(--tone-ald-top) 50%, transparent); }
+.cover-stage:has(.slot[data-tone="pvd"] .slot-link:hover) .cs-tint { background-color: color-mix(in srgb, var(--tone-pvd-top) 50%, transparent); }
+.cover-stage:has(.slot[data-tone="epi"] .slot-link:hover) .cs-tint { background-color: color-mix(in srgb, var(--tone-epi-top) 50%, transparent); }
+.cover-stage:has(.slot[data-tone="ecd"] .slot-link:hover) .cs-tint { background-color: color-mix(in srgb, var(--tone-ecd-top) 50%, transparent); }
+
+/* ---------- 아래 목차: 기초 → 장비사·실습 기록 → 사이트 소개 ---------- */
+.cover-sec {
+  max-width: var(--cover-max); margin: 0 auto;
+  padding: 88px var(--gutter) 0;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr); column-gap: 48px; align-items: start;
+}
+.cover-sec > h2 { grid-column: 1; margin: 0; font-size: var(--fs-2xl); letter-spacing: -0.02em; scroll-margin-top: 96px; }
+.cover-sec-lead { grid-column: 1; margin: 10px 0 0; color: var(--muted); font-size: var(--fs-sm); line-height: 1.6; max-width: 22em; }
+.cover-index, .about-body { grid-column: 2; grid-row: 1 / span 2; }
+.cover-index { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line-strong); }
+.cover-index li { margin: 0; border-bottom: 1px solid var(--line-strong); }
+.ix-row {
+  display: grid; grid-template-columns: minmax(7em, 1.1fr) minmax(0, 2.4fr) auto; column-gap: 24px; align-items: baseline;
+  padding: 20px 4px; color: var(--text); text-decoration: none; transition: background-color 0.2s;
+}
+.ix-row:hover { color: var(--ink); background: rgba(255, 255, 255, 0.45); }
+.ix-name { grid-row: 1; font-size: var(--fs-xl); font-weight: 700; color: var(--ink); line-height: 1.3; }
+.ix-en { grid-column: 1; grid-row: 2; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--faint); }
+.ix-desc { grid-column: 2; grid-row: 1 / span 2; color: var(--muted); font-size: var(--fs-sm); line-height: 1.6; }
+.ix-status { grid-column: 3; grid-row: 1; font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; }
+.ix-status.is-done { color: var(--ink); }
+.ix-status.is-wip { color: var(--todo); }
+.cover-about { padding-bottom: 120px; }
+.about-body p { margin: 0 0 1em; max-width: 40em; line-height: 1.85; }
+
+/* ---------- 휴대폰·좁은 화면: 큰 글자 → PECVD → 준비 중 장비 4대가 한 줄 ---------- */
+@media (max-width: 900px) {
+  .cover-bar { flex-direction: column; align-items: stretch; gap: 14px; padding-top: 12px; }
+  .cover-search { flex: none; max-width: none; }
+  .cover-search input { padding: 15px 20px; font-size: var(--fs-md); }
+  .cover-stage {
+    height: auto; padding: 64px 0 28px;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 56px, #000 calc(100% - 20px), transparent 100%);
+            mask-image: linear-gradient(180deg, transparent 0, #000 56px, #000 calc(100% - 20px), transparent 100%);
+  }
+  .cs-tones {
+    background:
+      radial-gradient(60% 26% at 50% 44%, color-mix(in srgb, var(--tone-pecvd-glow) 30%, transparent) 0%, transparent 100%),
+      linear-gradient(180deg, var(--tone-pecvd-top) 0%, var(--tone-pecvd-low) 56%, rgba(30, 44, 78, 0) 74%),
+      linear-gradient(90deg, var(--tone-ald-top) 6%, var(--tone-pvd-top) 36%, var(--tone-epi-top) 64%, var(--tone-ecd-top) 94%);
+  }
+  .cs-word { position: relative; top: auto; left: auto; right: auto; padding: 0 var(--gutter); }
+  .cs-word-en { font-size: 10.4vw; }
+  .cs-word-ko { font-size: var(--fs-lg); }
+  .cs-floor { display: none; }
+  .cs-lineup { position: relative; left: auto; right: auto; height: auto; margin-top: -4vw; padding: 0 var(--gutter);
+    grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 8px; }
+  .cs-lineup .slot { height: auto; }
+  .slot.is-ready { grid-column: 1 / -1; margin-bottom: 8px; }
+  .slot.is-ready .slot-depth { height: min(78vw, 360px); margin: 0 4%; }
+  .slot-depth { height: 22vw; margin: 0 2%; }
+  .slot-label { height: auto; padding: 14px 0 0; }
+  .slot.is-ready .slot-label { padding-top: 18px; }
+  .slot.is-soon .slot-ko { display: none; }
+  .slot.is-soon .slot-abbr { font-size: var(--fs-md); }
+  .slot.is-soon .slot-status { margin-top: 2px; font-size: var(--fs-2xs); gap: 5px; }
+  .slot.is-ready .slot-abbr { font-size: var(--fs-2xl); }
+  .cover-sec { grid-template-columns: 1fr; padding-top: 64px; }
+  .cover-index, .about-body { grid-column: 1; grid-row: auto; margin-top: 20px; }
+  .ix-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; padding: 16px 2px; }
+  .ix-desc { grid-column: 1 / -1; grid-row: 3; margin-top: 6px; }
+  .ix-status { grid-column: 2; }
+}
+
+/* ---------- 움직임 줄이기 · 정지 화면(?still=1): 깊이감 이동·물드는 전환 없음 ---------- */
+.cover-stage.is-still .cs-tones, .cover-stage.is-still .cs-word, .cover-stage.is-still .cs-floor,
+.cover-stage.is-still .slot { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  body.is-cover, .cs-tint, .slot-depth, .slot-fig { transition: none; }
+  .slot-link:hover .slot-depth, .slot-link:focus-visible .slot-depth { transform: none; }
 }
