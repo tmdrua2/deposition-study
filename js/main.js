@@ -36,7 +36,8 @@ const MENU_GROUPS = [
       desc: "흡착·확산·핵생성, 그리고 단차 피복(step coverage)" },
   ]},
   { label: "Deposition Equipment", title: "증착 장비", items: [
-    { path: "equipment/pecvd.html", name: "PECVD", en: "Plasma-Enhanced CVD", status: "done",
+    // sections: 이 장비의 섹션 목록(js/pages.js EQUIP_SECTIONS) → 상태·설명을 완성 섹션 수로 자동 계산 (아래 menuState)
+    { path: "equipment/pecvd.html", name: "PECVD", en: "Plasma-Enhanced CVD", sections: "pecvd",
       desc: "장비 분해 연출과 원리부터 면접 질문까지 7개 섹션" },
     { path: "equipment/ald.html", name: "ALD", en: "Atomic Layer Deposition", status: "soon",
       desc: "자기제한 반응으로 한 층씩 쌓는 원자층 증착" },
@@ -55,6 +56,17 @@ const MENU_GROUPS = [
   ]},
 ];
 const STATUS_TEXT = { done: "완성", wip: "작성 중", soon: "준비 중" };
+
+// 메뉴 항목의 상태·설명: sections가 있으면 섹션 완성 수로 정함
+//   전부 완성 → "완성" + 원래 설명 / 일부만 → "작성 중" + "7개 섹션 중 3개 완성 (원리·장비 구성·공정 흐름)"
+function menuState(it) {
+  const eq = it.sections && typeof EQUIP_SECTIONS === "object" ? EQUIP_SECTIONS[it.sections] : null;
+  if (!eq) return { status: it.status, desc: it.desc };
+  const done = eq.list.filter((s) => s.ready);
+  if (done.length === eq.list.length) return { status: "done", desc: it.desc };
+  if (!done.length) return { status: "soon", desc: it.desc };
+  return { status: "wip", desc: `장비 분해 연출 + ${eq.list.length}개 섹션 중 ${done.length}개 완성 (${done.map((s) => s.title).join("·")})` };
+}
 
 // 지금 보고 있는 페이지인지 (PECVD 하위 페이지 equipment/pecvd/*.html도 PECVD로 봄)
 function isCurrentPage(path) {
@@ -83,15 +95,16 @@ function renderHeader() {
     const items = g.items.map((it) => {
       no += 1;
       const cur = isCurrentPage(it.path);
+      const st = menuState(it);
       const num = String(no).padStart(2, "0");
       return `
         <li class="mi-row" style="--i:${++row}">
           <a class="mi${cur ? " is-current" : ""}" href="${ROOT + it.path}"${cur ? ' aria-current="page"' : ""}
-             data-no="${num}" data-en="${it.en}" data-name="${it.name}" data-desc="${it.desc}" data-status="${it.status}">
+             data-no="${num}" data-en="${it.en}" data-name="${it.name}" data-desc="${st.desc}" data-status="${st.status}">
             <span class="mi-no">${num}</span>
             <span class="mi-name">${it.name}</span>
             <span class="mi-en">${it.en}</span>
-            <span class="mi-status is-${it.status}">${cur ? "보는 중 · " : ""}${STATUS_TEXT[it.status]}</span>
+            <span class="mi-status is-${st.status}">${cur ? "보는 중 · " : ""}${STATUS_TEXT[st.status]}</span>
             ${ARROW}
           </a>
         </li>`;

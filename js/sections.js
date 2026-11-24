@@ -2,8 +2,8 @@
 // 장비 섹션 하위 페이지 목록 + 공통 길잡이 (이전/다음, 진행 표시)
 //
 // 장비 페이지 본문은 섹션 카드 7개 → 각 섹션은 따로 된 하위 페이지 (equipment/pecvd/principle.html 등)
-// 순서는 CLAUDE.md "장비 페이지 틀"과 같다. 섹션 이름·설명을 바꾸면 여기만 고치면 된다
-// (장비 페이지의 카드 글은 HTML에 직접 있음 — 같이 고칠 것)
+// 순서는 CLAUDE.md "장비 페이지 틀"과 같다. 섹션 목록·완성 여부(ready)는 js/pages.js의 EQUIP_SECTIONS 한 곳
+// (장비 페이지 카드의 제목·설명 글은 HTML에 직접 있음, 카드 아래 상태 줄은 여기서 자동으로 채움)
 //
 // 하위 페이지 HTML 약속
 //   <body data-equip="pecvd" data-section="principle">
@@ -12,22 +12,6 @@
 //   ready: false 인 섹션은 "준비 중"으로 표시
 // main.js 다음에 불러온다 (ROOT 값을 씀)
 // =============================================================
-const EQUIP_SECTIONS = {
-  pecvd: {
-    name: "PECVD",
-    home: "equipment/pecvd.html",      // 사이트 맨 위 기준 경로
-    folder: "equipment/pecvd/",
-    list: [
-      { id: "principle",       title: "원리",       en: "Principle",       ready: true },
-      { id: "hardware",        title: "장비 구성",   en: "Hardware",        ready: false },
-      { id: "flow",            title: "공정 흐름",   en: "Process flow",    ready: false },
-      { id: "parameters",      title: "공정변수",    en: "Parameters",      ready: false },
-      { id: "troubleshooting", title: "문제와 점검", en: "Troubleshooting", ready: false },
-      { id: "interview",       title: "면접 질문",   en: "Interview",       ready: false },
-      { id: "sources",         title: "출처",       en: "Sources",         ready: false },
-    ],
-  },
-};
 
 (function () {
   const body = document.body;
@@ -36,8 +20,16 @@ const EQUIP_SECTIONS = {
   const setHeaderH = () => { if (header) document.documentElement.style.setProperty("--header-h", header.offsetHeight + "px"); };
   setHeaderH();
   window.addEventListener("resize", setHeaderH);
-  const eq = EQUIP_SECTIONS[body.dataset.equip];
-  if (!eq || !body.dataset.section) return;
+  const eq = typeof EQUIP_SECTIONS === "object" ? EQUIP_SECTIONS[body.dataset.equip] : null;
+  if (!eq) return;
+  // 장비 페이지(pecvd.html)의 섹션 카드: 아래 상태 줄을 완성 여부에 맞춤 (카드 li의 id = 섹션 id)
+  eq.list.forEach((s) => {
+    const state = document.querySelector(`.sec-card#${s.id} .sec-card-state`);
+    if (!state) return;
+    state.textContent = s.ready ? (s.card || "읽기") : "준비 중";
+    state.classList.toggle("is-soon", !s.ready);
+  });
+  if (!body.dataset.section) return;
   const root = typeof ROOT === "string" ? ROOT : (body.dataset.root || "");
   const idx = eq.list.findIndex((s) => s.id === body.dataset.section);
   if (idx < 0) return;

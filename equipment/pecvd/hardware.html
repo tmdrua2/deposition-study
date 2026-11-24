@@ -6,7 +6,8 @@
   <title>장비 구성 | PECVD 장비 | 증착 공정 노트</title>
   <link rel="stylesheet" href="../../css/style.css">
 </head>
-<!-- PECVD 섹션 하위 페이지 (02 장비 구성). 공통 틀: 남색 머리(큰 제목) → 크림 본문 → 이전/다음 (js/sections.js) -->
+<!-- PECVD 섹션 하위 페이지 (02 장비 구성). 공통 틀: 남색 머리(큰 제목) → 크림 본문 → 이전/다음 (js/sections.js)
+     이 페이지 역할 = 장비 전체 "지도". 부품 하나하나의 자세한 설명은 장비 페이지의 부품 패널(#part=)로 보냄 (중복 금지) -->
 <body data-root="../../" data-process="cvd" class="page-stage sec-page" data-equip="pecvd" data-section="hardware">
   <header id="site-header"></header>
 
@@ -17,25 +18,103 @@
       <a class="sec-back" href="../pecvd.html#sections">PECVD 장비로 돌아가기</a>
       <p class="sec-kicker"><span class="sec-kicker-no">02</span><span class="sec-kicker-of">/ 07</span><span class="sec-kicker-en">Hardware</span></p>
       <h1 class="sec-title">장비 구성</h1>
-      <p class="sec-lede">챔버 안 부품과 장비 전체 모듈이 각각 하는 일을 정리할 자리입니다.</p>
+      <p class="sec-lede">PECVD 장비는 가스·RF·배기·웨이퍼, 네 개의 길로 나눠 보면 한눈에 들어옵니다. 네 길은 모두 공정 챔버에서 만납니다.</p>
     </div>
     <nav class="sec-rail-wrap" aria-label="PECVD 섹션"><ol class="sec-rail" data-sec-rail></ol></nav>
   </section>
 
   <main class="sec-main">
+    <!-- 1) 들어가며 (크림 바탕, 읽기 폭) -->
     <div class="sec-read">
-      <!-- 준비 중: 2·3단계에서 채움. 아래 틀(장비 페이지 틀의 형식)은 그대로 두고 내용만 바꾼다 -->
-      <div class="sec-soon">
-        <p class="sec-soon-tag">준비 중</p>
-        <p>이 섹션은 아직 작성 전입니다. 들어갈 내용은 다음과 같습니다.</p>
-        <ul>
-          <li>공정 챔버 안 부품: 샤워헤드, 히터·서셉터, 리프트 핀, 펌핑 링, 슬릿 밸브</li>
-          <li>장비 전체: 진공 쪽(TM·LL·PM)과 대기 쪽(EFEM·FOUP) 나눠 보기</li>
-          <li>부품 패널과 연결</li>
-        </ul>
+      <h2 id="overview">네 개의 길로 보는 장비</h2>
+      <p>장비 페이지의 분해 그림은 부품이 <em>어디에</em> 있는지 보여 줍니다. 이 페이지는 부품들이 <em>무엇으로 이어져</em> 있는지를 봅니다. 장비 안에는 네 가지가 흐릅니다.</p>
+      <ul class="sys-list">
+        <li><span class="sys-key is-gas" aria-hidden="true"></span><strong>가스</strong> — 원료 가스가 정해진 양만큼 챔버로 들어가는 길</li>
+        <li><span class="sys-key is-rf" aria-hidden="true"></span><strong>RF</strong> — 전력이 플라즈마로 들어가는 길</li>
+        <li><span class="sys-key is-exh" aria-hidden="true"></span><strong>배기</strong> — 남은 가스와 부산물이 빠져나가며 압력을 맞추는 길</li>
+        <li><span class="sys-key is-wafer" aria-hidden="true"></span><strong>웨이퍼</strong> — 웨이퍼가 대기에서 진공 챔버까지 오가는 길</li>
+      </ul>
+      <p>현장에서 문제가 생겼을 때도 "어느 길에서 생긴 문제인가"부터 나누면 점검할 곳이 좁혀집니다. 아래 계통도는 대표적인 300mm 장비 구성을 단순하게 그린 것이고, 실제 연결은 장비마다 다를 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+    </div>
+
+    <!-- 2) 계통도 (남색 띠, 원리 페이지의 단면 애니메이션 구간과 같은 배경). 그림: js/figs/hardware-map.js -->
+    <section class="sec-band" aria-labelledby="map">
+      <div class="sec-scrolly-bg" aria-hidden="true"><div class="sec-scrolly-glow"></div><div class="stage-reed"></div></div>
+      <div class="sec-band-inner">
+        <div class="sec-scrolly-head">
+          <h2 id="map">계통도</h2>
+          <p>계통 버튼이나 선·모듈에 마우스를 올리면 그 길만 또렷해집니다(휴대폰은 버튼을 누르세요). 모듈을 누르면 장비 페이지에서 그 부품 패널이 열립니다.</p>
+        </div>
+        <figure class="hm" data-hw-map data-part-base="../pecvd.html#part=">
+          <div class="hm-legend" role="group" aria-label="계통 골라 보기">
+            <button type="button" data-sys="gas" aria-pressed="false"><i class="sys-key is-gas" aria-hidden="true"></i>가스</button>
+            <button type="button" data-sys="rf" aria-pressed="false"><i class="sys-key is-rf" aria-hidden="true"></i>RF</button>
+            <button type="button" data-sys="exh" aria-pressed="false"><i class="sys-key is-exh" aria-hidden="true"></i>배기</button>
+            <button type="button" data-sys="wafer" aria-pressed="false"><i class="sys-key is-wafer" aria-hidden="true"></i>웨이퍼</button>
+          </div>
+          <div class="hm-svg"></div>
+          <p class="hm-info" aria-live="polite">모듈에 마우스를 올리면 여기에 하는 일이 나옵니다.</p>
+          <figcaption class="hm-note">개념도 — 위치·크기는 실제 비율이 아니며, 화살표는 흐르는 방향(웨이퍼는 오가므로 양쪽)입니다.</figcaption>
+        </figure>
       </div>
-      <h2 id="hardware">장비 구성</h2>
-      <p class="todo">작성 예정</p>
+    </section>
+
+    <!-- 3) 계통별 한두 문장 + 부품 패널 연결 (자세한 내용은 패널에) -->
+    <div class="sec-read">
+      <h2 id="systems">계통마다 하는 일</h2>
+      <div class="sys-cards">
+        <article class="sys-card is-gas">
+          <h3><span class="sys-key is-gas" aria-hidden="true"></span>가스 계통</h3>
+          <p><strong>가스 박스</strong> 안에서 가스마다 MFC(질량 유량 제어기, 흐르는 가스의 양을 재며 맞추는 장치)와 밸브가 레시피대로 유량을 맞춥니다. 가스는 <strong>가스 라인</strong>을 지나 <strong>샤워헤드</strong>에서 웨이퍼 위로 고르게 퍼집니다.</p>
+          <p>챔버를 세정할 때는 <strong>RPS</strong>(원격 플라즈마 소스)에서 NF<sub>3</sub>를 분해해 만든 불소 라디칼이 챔버로 들어갑니다. RPS가 어디에 이어지는지는 장비마다 다릅니다 <span class="verify-tag">검증 필요</span>.</p>
+          <p class="sys-links"><a href="../pecvd.html#part=gas-box">가스 박스 패널</a><a href="../pecvd.html#part=showerhead">샤워헤드 패널</a><a href="../pecvd.html#part=pm">RPS (공정 챔버 패널)</a></p>
+        </article>
+        <article class="sys-card is-rf">
+          <h3><span class="sys-key is-rf" aria-hidden="true"></span>RF 계통</h3>
+          <p><strong>RF 제너레이터</strong>가 만든 고주파 전력이 <strong>매칭</strong>을 거쳐 샤워헤드(위 전극)로 들어가고, 접지된 히터(아래 전극)와의 사이에서 <a href="../../basics/plasma.html">플라즈마</a>가 켜집니다.</p>
+          <p>매칭은 전원과 플라즈마의 임피던스(교류에서 전류를 막는 정도)를 맞춰, 전력이 되돌아오지(반사) 않고 플라즈마로 들어가게 합니다.</p>
+          <p class="sys-links"><a href="../pecvd.html#part=rf-generator">RF 전원 장치 패널</a><a href="principle.html#steps">원리: 플라즈마 속 분해</a></p>
+        </article>
+        <article class="sys-card is-exh">
+          <h3><span class="sys-key is-exh" aria-hidden="true"></span>배기 계통</h3>
+          <p>히터 둘레의 <strong>펌핑 링</strong>이 가스를 모든 방향으로 고르게 빨아내고, <strong>스로틀 밸브</strong>가 열림 정도를 바꿔 챔버 압력을 목표값에 맞춥니다.</p>
+          <p>가스는 <strong>포어라인</strong>(챔버와 펌프를 잇는 배관)을 따라 아래층의 <strong>드라이 펌프</strong>로 가고, 마지막으로 <strong>스크러버</strong>에서 독성·가연성 가스가 처리됩니다. <a href="../../basics/vacuum.html">진공</a>을 만드는 것도, 압력을 맞추는 것도 이 길입니다.</p>
+          <p class="sys-links"><a href="../pecvd.html#part=pump">드라이 펌프 패널 (포어라인·스크러버)</a><a href="../pecvd.html#part=pm">펌핑 링·스로틀 밸브 (공정 챔버 패널)</a></p>
+        </article>
+        <article class="sys-card is-wafer">
+          <h3><span class="sys-key is-wafer" aria-hidden="true"></span>웨이퍼 계통</h3>
+          <p><strong>대기 쪽</strong>: FOUP(웨이퍼 운반 용기)와 EFEM(장비 전방 모듈)은 대기압입니다. EFEM의 대기 로봇이 웨이퍼를 꺼내 얼라이너로 방향을 맞춥니다.</p>
+          <p><strong>진공 쪽</strong>: LL(로드락)이 공기를 빼고 넣으며 대기와 진공을 잇는 문 역할을 하고, TM(트랜스퍼 모듈)의 진공 로봇이 웨이퍼를 PM(공정 챔버)에 넣습니다. PM 안에서는 리프트 핀이 웨이퍼를 받아 히터 위에 내려놓습니다.</p>
+          <p class="sys-links"><a href="../pecvd.html#part=foup">FOUP 패널</a><a href="../pecvd.html#part=efem">EFEM 패널</a><a href="../pecvd.html#part=loadlock">로드락 패널</a><a href="../pecvd.html#part=tm">트랜스퍼 모듈 패널</a></p>
+        </article>
+      </div>
+
+      <h2 id="meet">네 길이 만나는 곳: 공정 챔버</h2>
+      <p>공정 챔버(PM) 하나를 위에서 아래로 보면 네 길이 겹칩니다. <strong>위</strong>에서는 가스(샤워헤드 구멍)와 RF(위 전극)가 같은 판으로 들어오고, <strong>옆</strong>의 슬릿 밸브로 웨이퍼가 들어와 <strong>아래</strong> 히터에 놓이며, 남은 가스는 히터 <strong>둘레</strong>를 돌아 아래 배기구로 빠집니다. 원리 페이지의 단면 그림이 바로 이 배치입니다.</p>
+      <p>그래서 막 두께가 웨이퍼 안에서 고르지 않을 때도 가스 분포(샤워헤드), 플라즈마 분포(RF·전극 간격), 배기 쏠림(펌핑 링), 웨이퍼 위치·온도(히터·리프트 핀) 중 어느 길의 문제인지 나눠 볼 수 있습니다 <span class="verify-tag">검증 필요</span>. 점검 순서는 "문제와 점검" 섹션에서 다룹니다.</p>
+
+      <h2 id="related">자세히 보기: 부품 패널</h2>
+      <p>장비 페이지의 분해 그림에서 해당 부품 설명 패널이 열린 채로 시작합니다.</p>
+      <ul class="related-links">
+        <li><a href="../pecvd.html#part=pm"><span class="related-name">공정 챔버 (PM)</span><span class="related-desc">히터·리프트 핀·펌핑 링·스로틀 밸브·RPS</span></a></li>
+        <li><a href="../pecvd.html#part=showerhead"><span class="related-name">샤워헤드</span><span class="related-desc">가스 분배판이자 위쪽 RF 전극</span></a></li>
+        <li><a href="../pecvd.html#part=gas-box"><span class="related-name">가스 박스</span><span class="related-desc">MFC·밸브로 가스 유량 제어</span></a></li>
+        <li><a href="../pecvd.html#part=rf-generator"><span class="related-name">RF 전원 장치</span><span class="related-desc">고주파 전력과 매칭</span></a></li>
+        <li><a href="../pecvd.html#part=pump"><span class="related-name">드라이 펌프</span><span class="related-desc">포어라인·스크러버까지 배기의 끝</span></a></li>
+        <li><a href="../pecvd.html#part=loadlock"><span class="related-name">로드락 (LL)</span><span class="related-desc">대기와 진공을 잇는 압력 전환 방</span></a></li>
+        <li><a href="../pecvd.html#part=tm"><span class="related-name">트랜스퍼 모듈 (TM)</span><span class="related-desc">진공 로봇과 슬릿 밸브</span></a></li>
+        <li><a href="../pecvd.html#part=efem"><span class="related-name">EFEM</span><span class="related-desc">대기 로봇·얼라이너</span></a></li>
+      </ul>
+      <p>웨이퍼가 이 길들을 어떤 순서로 지나는지는 다음 섹션 <a href="flow.html">공정 흐름</a>에서 애니메이션으로 봅니다.</p>
+
+      <h2 id="page-sources">이 페이지의 출처</h2>
+      <ul class="source-list">
+        <li>Wikipedia, "Plasma-enhanced chemical vapor deposition" —
+          <a href="https://en.wikipedia.org/wiki/Plasma-enhanced_chemical_vapor_deposition">https://en.wikipedia.org/wiki/Plasma-enhanced_chemical_vapor_deposition</a>
+          (2026-11-22 확인, 원리 페이지와 같은 자료). 확인한 내용: 평행판 전극 사이에서 플라즈마를 만드는 구성.</li>
+        <li>일반 교과서 내용 — MFC 유량 제어, 임피던스 매칭, 스로틀 밸브 압력 제어, 로드락의 역할</li>
+        <li>이 사이트의 부품 패널 내용 — 공정 챔버·샤워헤드·가스 박스·RF 전원 장치·드라이 펌프·FOUP·EFEM·로드락·트랜스퍼 모듈 (각 패널의 출처 칸 참고)</li>
+      </ul>
     </div>
   </main>
 
@@ -47,5 +126,6 @@
   <script src="../../js/pages.js"></script>
   <script src="../../js/main.js"></script>
   <script src="../../js/sections.js"></script>
+  <script src="../../js/figs/hardware-map.js"></script>  <!-- 계통도 그리기·강조 -->
 </body>
 </html>

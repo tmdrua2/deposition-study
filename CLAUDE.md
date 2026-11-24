@@ -24,11 +24,12 @@ fonts/                Pretendard(한글) + IBM Plex Mono(영문 약어·번호) 
 js/pages.js           ★ 전체 페이지 목록 — 목차·메뉴·검색이 모두 여기서 만들어짐
 js/main.js            공통 동작: 헤더 메뉴, 목차, 검색, 페이지 안 목차
 js/motion-pref.js     정지 화면 판정(움직임 줄이기·데이터 절약·저사양) — 공정 모션·장비 무대가 함께 씀
-js/sim/               공정 모션: sim-core.js(공용) + 공정별 장면(pvd.js 등)
+js/sim/               공정 모션: sim-core.js(공용) + 공정별 장면(pvd.js 등) + scrolly.js(글 단계↔그림)
+js/figs/              하위 페이지 인터랙티브 그림: hardware-map.js(계통도) · wafer-route.js(웨이퍼 경로)
 js/explode/           장비 분해 연출: render-iso.js(그리기) · callouts.js(이름표) · stage.js(스크롤) · panel.js(부품 패널)
 data/                 장비 데이터: platform.js(공통 플랫폼) · pecvd.js · ald.js
 docs/                 설계서·작업 계획 (equipment-redesign-plan.md, pecvd-sections-plan.md)
-js/sections.js        장비 섹션 하위 페이지 목록 (이전/다음·진행 표시)
+js/sections.js        장비 섹션 하위 페이지 이전/다음·진행 표시 (섹션 목록·완성 여부는 pages.js의 EQUIP_SECTIONS)
 equipment/pecvd/      PECVD 섹션 하위 페이지 7개 (principle.html 등, data-root="../../")
 vendor/gsap/          GSAP 라이브러리 파일 + LICENSE.txt
 basics/               기초: 진공, 플라즈마, 박막 성장 원리
@@ -117,6 +118,7 @@ PECVD는 본문을 **섹션 카드 7개 + 하위 페이지**(`equipment/pecvd/<i
   - 출처는 실제로 연 것만, 수치 없음, 확실하지 않으면 [검증 필요]
   - `?still=1`과 넓은 화면·휴대폰 캡처로 화면 점검
 - 한 번에 **한 페이지, 한 기능씩** 작업한다.
+- 자체 점검에서 **같은 문제를 2번 고쳐도 기준을 못 넘으면** 더 다듬지 말고 현재 상태로 커밋한 뒤 남은 문제로 보고한다.
 - 부품 패널 내용을 쓰면 `?still=1#part=부품id` 주소로 넓은 화면·휴대폰 화면을 캡처해 직접 보고 점검한다.
 - 작업이 끝날 때마다: ① 브라우저로 열어 보여주고 ② 커밋하고 ③ `PROGRESS.md`를 최신 상태로 고친다.
 - 커밋하면 GitHub에도 올린다: `git push origin main` (백업 + 공개 사이트 갱신).
