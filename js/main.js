@@ -58,12 +58,12 @@ const MENU_GROUPS = [
 const STATUS_TEXT = { done: "완성", wip: "작성 중", soon: "준비 중" };
 
 // 메뉴 항목의 상태·설명: sections가 있으면 섹션 완성 수로 정함
-//   전부 완성 → "완성" + 원래 설명 / 일부만 → "작성 중" + "7개 섹션 중 3개 완성 (원리·장비 구성·공정 흐름)"
+//   전부 완성 → "완성" + "장비 분해 연출 + 7개 섹션 완성" / 일부만 → "작성 중" + "7개 섹션 중 3개 완성 (원리·장비 구성·공정 흐름)"
 function menuState(it) {
   const eq = it.sections && typeof EQUIP_SECTIONS === "object" ? EQUIP_SECTIONS[it.sections] : null;
   if (!eq) return { status: it.status, desc: it.desc };
   const done = eq.list.filter((s) => s.ready);
-  if (done.length === eq.list.length) return { status: "done", desc: it.desc };
+  if (done.length === eq.list.length) return { status: "done", desc: `장비 분해 연출 + ${eq.list.length}개 섹션 완성 (원리부터 면접 질문·출처까지)` };
   if (!done.length) return { status: "soon", desc: it.desc };
   return { status: "wip", desc: `장비 분해 연출 + ${eq.list.length}개 섹션 중 ${done.length}개 완성 (${done.map((s) => s.title).join("·")})` };
 }

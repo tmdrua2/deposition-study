@@ -17,27 +17,43 @@
       <a class="sec-back" href="../pecvd.html#sections">PECVD 장비로 돌아가기</a>
       <p class="sec-kicker"><span class="sec-kicker-no">06</span><span class="sec-kicker-of">/ 07</span><span class="sec-kicker-en">Interview</span></p>
       <h1 class="sec-title">면접 질문</h1>
-      <p class="sec-lede">장비사 면접에서 직접 설명해 보는 질문과 30초 답변을 정리할 자리입니다.</p>
+      <p class="sec-lede">부품 패널의 면접 질문을 한곳에 모아, 한 장씩 넘기며 30초 답변을 연습합니다.</p>
     </div>
     <nav class="sec-rail-wrap" aria-label="PECVD 섹션"><ol class="sec-rail" data-sec-rail></ol></nav>
   </section>
 
   <main class="sec-main">
+    <!-- 1) 들어가며 -->
     <div class="sec-read">
-      <!-- 준비 중: 2·3단계에서 채움. 아래 틀(장비 페이지 틀의 형식)은 그대로 두고 내용만 바꾼다 -->
-      <div class="sec-soon">
-        <p class="sec-soon-tag">준비 중</p>
-        <p>이 섹션은 아직 작성 전입니다. 들어갈 내용은 다음과 같습니다.</p>
-        <ul>
-          <li>질문 5개 + 질문마다 30초 분량 답변</li>
-          <li>그중 1개 이상은 CS 엔지니어 관점(문제가 생기면 무엇부터 점검하나)</li>
-        </ul>
+      <h2 id="how">질문은 부품 패널에서 모았습니다</h2>
+      <p>이 페이지의 질문과 모범 답변은 장비 페이지의 <strong>부품 패널</strong>(분해 그림에서 부품을 누르면 열리는 설명)에 있는 면접 질문을 그대로 모은 것입니다. 패널에 질문이 추가되면 여기에도 저절로 늘어납니다. 지금은 <strong data-iv-total>여러</strong>개, 그중 <strong>CS 엔지니어 관점</strong>(문제가 생겼을 때 무엇부터 점검하나) 질문이 <strong data-iv-cs>몇</strong>개입니다.</p>
+      <p>연습 방법: 질문을 읽고 → (선택) 30초 동안 생각한 뒤 소리 내어 답해 보고 → 모범 답변과 비교합니다. 스스로 "답했음" 또는 "다시 볼 것"을 표시해 두면 이 브라우저에 저장되어 다음에 다시 볼 것만 골라 연습할 수 있습니다.</p>
+    </div>
+
+    <!-- 2) 연습 모드 (남색 띠). 질문 카드·걸러 보기·타이머: js/figs/interview-practice.js -->
+    <section class="sec-band" aria-labelledby="practice">
+      <div class="sec-scrolly-bg" aria-hidden="true"><div class="sec-scrolly-glow"></div><div class="stage-reed"></div></div>
+      <div class="sec-band-inner">
+        <div class="sec-scrolly-head">
+          <h2 id="practice">연습 모드</h2>
+          <p>모듈이나 <strong>CS 질문만</strong>으로 걸러서 한 장씩 넘겨 봅니다. 키보드 ← → 로도 넘길 수 있습니다.</p>
+        </div>
+        <div class="iv" data-interview data-equip="pecvd">
+          <noscript><p class="iv-noscript">연습 모드는 스크립트가 켜져 있어야 동작합니다.</p></noscript>
+        </div>
       </div>
-      <h2 id="interview">면접 질문</h2>
-      <details>
-        <summary>질문</summary>
-        <p class="todo">내 답변 작성 예정</p>
-      </details>
+    </section>
+
+    <!-- 3) 전체 목록 (장비 페이지 틀: 질문 하나당 details 하나, summary = 질문, 본문 = 답변) -->
+    <div class="sec-read">
+      <h2 id="interview">면접 질문 전체 목록</h2>
+      <p>모듈별로 모은 전체 질문입니다. 질문을 누르면 모범 답변이 펼쳐지고, 오른쪽 표시는 연습 모드에서 고른 "답했음 / 다시 볼 것"과 같습니다.</p>
+      <div class="iv-list" data-iv-list></div>
+
+      <h2 id="page-sources">이 페이지의 출처</h2>
+      <ul class="source-list">
+        <li>이 사이트의 부품 패널 내용 — 질문과 답변은 각 패널의 면접 질문 칸을 그대로 모은 것입니다. 각 답변의 근거 자료는 다음 섹션 <a href="sources.html">출처</a>에 모아 두었습니다.</li>
+      </ul>
     </div>
   </main>
 
@@ -49,5 +65,10 @@
   <script src="../../js/pages.js"></script>
   <script src="../../js/main.js"></script>
   <script src="../../js/sections.js"></script>
+  <script src="../../data/platform.js"></script>     <!-- 부품 데이터 (질문을 여기서 읽음) -->
+  <script src="../../data/pecvd.js"></script>
+  <script src="../../data/pecvd-pages.js"></script>  <!-- 하위 페이지에서 뽑은 글 (tools/collect-pages.js) -->
+  <script src="../../js/figs/collect.js"></script>   <!-- 질문·출처 모으기 -->
+  <script src="../../js/figs/interview-practice.js"></script>  <!-- 연습 모드 -->
 </body>
 </html>

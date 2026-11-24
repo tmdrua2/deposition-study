@@ -17,25 +17,42 @@
       <a class="sec-back" href="../pecvd.html#sections">PECVD 장비로 돌아가기</a>
       <p class="sec-kicker"><span class="sec-kicker-no">07</span><span class="sec-kicker-of">/ 07</span><span class="sec-kicker-en">Sources</span></p>
       <h1 class="sec-title">출처</h1>
-      <p class="sec-lede">PECVD 섹션 전체에서 실제로 열어 확인한 자료를 모을 자리입니다.</p>
+      <p class="sec-lede">부품 패널과 섹션 페이지의 출처를 한곳에 모으고, [검증 필요] 문장을 교과서와 대조할 수 있게 정리했습니다.</p>
     </div>
     <nav class="sec-rail-wrap" aria-label="PECVD 섹션"><ol class="sec-rail" data-sec-rail></ol></nav>
   </section>
 
   <main class="sec-main">
+    <!-- 1) 들어가며 -->
     <div class="sec-read">
-      <!-- 준비 중: 2·3단계에서 채움. 아래 틀(장비 페이지 틀의 형식)은 그대로 두고 내용만 바꾼다 -->
-      <div class="sec-soon">
-        <p class="sec-soon-tag">준비 중</p>
-        <p>이 섹션은 아직 작성 전입니다. 들어갈 내용은 다음과 같습니다.</p>
-        <ul>
-          <li>URL·특허번호·확인 날짜와 함께, 확인하지 않은 것은 종류만</li>
+      <h2 id="about">이 페이지는 자동으로 모입니다</h2>
+      <p>PECVD 장비의 <strong>부품 패널</strong>과 <strong>섹션 페이지</strong>(원리~문제와 점검), 그리고 기초 페이지에 적은 출처를 한곳에 모아 같은 자료는 하나로 합쳤습니다. 각 자료 아래에는 그 자료를 <em>어느 패널·페이지에서</em> 썼는지가 붙어 있어 눌러서 바로 갈 수 있습니다.</p>
+      <p>출처 규칙: 실제로 열어 보고 확인한 자료만 주소와 확인 날짜를 적고, 확인하지 않은 일반 지식은 종류만 적었습니다(예: "일반 교과서 내용"). 확실하지 않은 문장에는 <span class="verify-tag">검증 필요</span>를 붙였고, 아래 <a href="#verify">[검증 필요] 모음</a>에서 교과서와 대조하며 하나씩 확인할 수 있습니다.</p>
+    </div>
+
+    <!-- 2) 한눈에 보기 (남색 띠). 숫자는 js/figs/sources-index.js가 채움 -->
+    <section class="sec-band" aria-labelledby="at-a-glance">
+      <div class="sec-scrolly-bg" aria-hidden="true"><div class="sec-scrolly-glow"></div><div class="stage-reed"></div></div>
+      <div class="sec-band-inner">
+        <div class="sec-scrolly-head">
+          <h2 id="at-a-glance">한눈에 보기</h2>
+          <p>숫자를 누르면 그 목록으로 이동합니다.</p>
+        </div>
+        <ul class="src-stats" data-src-stats>
+          <noscript><li>목록은 스크립트가 켜져 있어야 만들어집니다.</li></noscript>
         </ul>
       </div>
+    </section>
+
+    <!-- 3) 출처 목록 (종류별) + 4) [검증 필요] 모음 — 모두 js/figs/sources-index.js가 데이터에서 만듦 -->
+    <div class="sec-read">
       <h2 id="sources">출처</h2>
-      <ul>
-        <li class="todo">작성 예정</li>
-      </ul>
+      <p>종류별로 나눴습니다. <strong>공개 특허</strong>는 Google Patents에서 직접 열어 본 것, <strong>일반 교과서</strong>는 확인하지 않은 교과서 수준 지식의 주제, <strong>기타</strong>는 위키백과·시험기관 공개 글·일반 현장 지식입니다.</p>
+      <div class="src-list" data-src-list></div>
+
+      <h2 id="verify">[검증 필요] 모음</h2>
+      <p>사이트 전체에서 <span class="verify-tag">검증 필요</span>를 붙인 문장을 모듈·페이지별로 모았습니다. 교과서와 대조해 확인했으면 "대조함"에 표시해 두세요(이 브라우저에 저장). 확인이 끝난 문장은 원래 위치에서 표시를 떼면 이 목록에서도 사라집니다.</p>
+      <div class="vf" data-verify-list></div>
     </div>
   </main>
 
@@ -47,5 +64,10 @@
   <script src="../../js/pages.js"></script>
   <script src="../../js/main.js"></script>
   <script src="../../js/sections.js"></script>
+  <script src="../../data/platform.js"></script>     <!-- 부품 데이터 (출처·[검증 필요]를 여기서 읽음) -->
+  <script src="../../data/pecvd.js"></script>
+  <script src="../../data/pecvd-pages.js"></script>  <!-- 하위·기초 페이지에서 뽑은 글 (tools/collect-pages.js) -->
+  <script src="../../js/figs/collect.js"></script>   <!-- 모으기 -->
+  <script src="../../js/figs/sources-index.js"></script>  <!-- 출처 목록·[검증 필요] 모음 그리기 -->
 </body>
 </html>

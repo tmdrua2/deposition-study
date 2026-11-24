@@ -38,6 +38,19 @@
       <span class="tf-key">${key}</span><span class="tf-pick-name">${name}</span><span class="tf-pick-hint">${hint}</span></button>`;
   }).join("");
   const buttons = [...pick.querySelectorAll("button")];
+
+  // ---------- 흐름도 끝 "다른 증상 보기" (위로 올라가지 않고 바로 다른 증상으로) ----------
+  //   각 증상 details 맨 아래에 나머지 증상 버튼을 작게 붙임. 누르면 위 증상 버튼과 똑같이 동작
+  items.forEach(d => {
+    const body = d.querySelector(".tf-body") || d;
+    const box = document.createElement("div");
+    box.className = "tf-switch";
+    box.innerHTML = `<p class="tf-switch-title">다른 증상 보기</p><div class="tf-switch-row">` +
+      items.filter(o => o !== d).map(o =>
+        `<button type="button" data-tf-open="${o.id}" aria-controls="${o.id}"><span class="tf-key">${o.querySelector(".tf-key").textContent}</span>${o.querySelector(".tf-sum-name").textContent}</button>`
+      ).join("") + `</div>`;
+    body.appendChild(box);
+  });
   const hint = document.createElement("p");
   hint.className = "tf-hint";
   hint.textContent = "위에서 증상을 하나 고르면 점검 흐름도가 여기에 펼쳐집니다.";
@@ -73,6 +86,12 @@
     if (b) openOnly(b.dataset.tfOpen, true);
   });
   root.addEventListener("click", ev => {
+    const sw = ev.target.closest(".tf-switch [data-tf-open]");
+    if (sw) {
+      openOnly(sw.dataset.tfOpen, true);
+      try { history.replaceState(null, "", "#" + sw.dataset.tfOpen); } catch (e) { /* 무시 */ }
+      return;
+    }
     const a = ev.target.closest("[data-tf-go]");
     if (!a) return;
     ev.preventDefault();
