@@ -6,7 +6,8 @@
   <title>공정변수 | PECVD 장비 | 증착 공정 노트</title>
   <link rel="stylesheet" href="../../css/style.css">
 </head>
-<!-- PECVD 섹션 하위 페이지 (04 공정변수). 공통 틀: 남색 머리(큰 제목) → 크림 본문 → 이전/다음 (js/sections.js) -->
+<!-- PECVD 섹션 하위 페이지 (04 공정변수). 공통 틀: 남색 머리(큰 제목) → 크림 본문 → 이전/다음 (js/sections.js)
+     가운데 "직접 조절해 보기"는 js/figs/param-lab.js가 그림. 같은 내용을 아래 표로도 적어 둠(정지 화면·스크립트 없이도 다 보이게) -->
 <body data-root="../../" data-process="cvd" class="page-stage sec-page" data-equip="pecvd" data-section="parameters">
   <header id="site-header"></header>
 
@@ -17,33 +18,126 @@
       <a class="sec-back" href="../pecvd.html#sections">PECVD 장비로 돌아가기</a>
       <p class="sec-kicker"><span class="sec-kicker-no">04</span><span class="sec-kicker-of">/ 07</span><span class="sec-kicker-en">Parameters</span></p>
       <h1 class="sec-title">공정변수</h1>
-      <p class="sec-lede">온도·압력·RF·가스 유량 같은 변수를 바꾸면 막이 어떻게 달라지는지 경향만 정리할 자리입니다.</p>
+      <p class="sec-lede">온도·압력·RF 전력·가스 비율·전극 간격을 올리고 내리면 막이 어느 쪽으로 달라지는지, 직접 바꿔 보며 경향을 익힙니다.</p>
     </div>
     <nav class="sec-rail-wrap" aria-label="PECVD 섹션"><ol class="sec-rail" data-sec-rail></ol></nav>
   </section>
 
   <main class="sec-main">
+    <!-- 1) 들어가며 -->
     <div class="sec-read">
-      <!-- 준비 중: 2·3단계에서 채움. 아래 틀(장비 페이지 틀의 형식)은 그대로 두고 내용만 바꾼다 -->
-      <div class="sec-soon">
-        <p class="sec-soon-tag">준비 중</p>
-        <p>이 섹션은 아직 작성 전입니다. 들어갈 내용은 다음과 같습니다.</p>
-        <ul>
-          <li>변수마다 올리면 / 내리면 / 트레이드오프 (수치 없이 경향만)</li>
-          <li>원리 섹션의 '낮은 온도 ↔ 막 속 수소' 트레이드오프 이어서</li>
-        </ul>
+      <h2 id="knobs">다섯 개의 손잡이</h2>
+      <p>레시피(공정 조건표)에서 엔지니어가 주로 만지는 변수는 다섯 가지입니다. <strong>히터 온도</strong>, <strong>챔버 압력</strong>, <strong>RF 전력</strong>, <strong>가스 비율</strong>, <strong>샤워헤드–히터 간격</strong>. 이 페이지는 실리콘 질화막(SiN, SiH<sub>4</sub>와 NH<sub>3</sub>로 만드는 막)을 기준으로 각 변수가 막을 어느 쪽으로 움직이는지 <em>경향만</em> 정리합니다.</p>
+      <p>원리 페이지에서 본 것처럼, PECVD는 열 대신 <a href="../../basics/plasma.html">플라즈마</a>가 가스를 쪼개 줍니다. 그래서 온도는 증착 속도보다 막의 <em>질</em>(밀도·수소)에 더 크게 영향을 주고, RF 전력은 분해량과 이온 충돌(이온이 막 표면을 두드리는 것)을 함께 바꿉니다 <span class="verify-tag">검증 필요</span>.</p>
+      <p>경향의 세기와 방향은 장비·막 종류·시작 조건에 따라 달라질 수 있습니다. 수치는 넣지 않았고, 확실하지 않은 경향에는 <span class="verify-tag">검증 필요</span>를 붙였습니다.</p>
+    </div>
+
+    <!-- 2) 직접 조절해 보기 (남색 띠). 그림: js/figs/param-lab.js -->
+    <section class="sec-band" aria-labelledby="lab">
+      <div class="sec-scrolly-bg" aria-hidden="true"><div class="sec-scrolly-glow"></div><div class="stage-reed"></div></div>
+      <div class="sec-band-inner">
+        <div class="sec-scrolly-head">
+          <h2 id="lab">직접 조절해 보기</h2>
+          <p>왼쪽(휴대폰은 위) 변수를 <strong>내림 · 기준 · 올림</strong>으로 바꾸면 오른쪽 결과 막대가 그 방향으로 움직이고, 막대 아래에 이유가 한 줄 나옵니다. 여러 변수를 함께 바꾸면 효과가 서로 부딪히는 곳이 "엇갈림"으로 보입니다.</p>
+        </div>
+        <div class="pl" data-param-lab data-part-base="../pecvd.html#part=">
+          <div class="pl-panel pl-controls">
+            <div class="pl-panel-head">
+              <p class="pl-panel-title">변수</p>
+              <button type="button" class="pl-reset" data-pl-reset>모두 기준으로</button>
+            </div>
+            <div class="pl-vars"></div>
+          </div>
+          <div class="pl-panel pl-results">
+            <div class="pl-panel-head">
+              <p class="pl-panel-title">막이 달라지는 방향</p>
+              <p class="pl-summary" aria-live="polite"></p>
+            </div>
+            <ol class="pl-res-list"></ol>
+          </div>
+          <noscript><p class="pl-noscript">이 그림은 스크립트가 켜져 있어야 움직입니다. 같은 내용은 아래 "공정변수 표"에 있습니다.</p></noscript>
+        </div>
+        <p class="pl-note">개념 모형 — 막대 길이는 "얼마나"가 아니라 "어느 쪽으로"만 보여 줍니다. 실제 크기와 방향은 조건마다 다릅니다.</p>
       </div>
+    </section>
+
+    <!-- 3) 변수끼리 얽혀 있다 -->
+    <div class="sec-read">
+      <h2 id="tradeoff">변수는 서로 얽혀 있다</h2>
+      <p>위 그림에서 한 변수만 바꿔도 결과 막대가 여러 개 움직였습니다. 현실에서는 반대로, <strong>원하는 결과 하나를 얻으려고 여러 변수를 함께</strong> 움직입니다. 대표적인 얽힘 세 가지입니다.</p>
+      <ol class="pl-tangles">
+        <li><strong>수소를 줄이고 싶은데 온도를 못 올릴 때</strong> — 온도를 올리면 막 속 수소가 줄고 치밀해지지만, 웨이퍼 아래에 이미 만든 소자가 견딜 수 있는 열(열 예산)에 막힙니다. 그래서 RF 전력이나 저주파 비율로 이온 충돌을 늘려 막을 치밀하게 하는 쪽을 함께 보는데, 그러면 응력이 압축 쪽으로 움직입니다 <span class="verify-tag">검증 필요</span>.</li>
+        <li><strong>증착 속도를 올리고 싶을 때</strong> — RF 전력이나 압력, 원료 비율을 올리면 빨라지지만, 기체 속에서 먼저 반응해 생기는 파티클 위험과 응력·굴절률 변화가 따라옵니다. 처리량(시간당 웨이퍼 수)과 막질·결함 사이의 트레이드오프입니다.</li>
+        <li><strong>압력 하나만 바꿔도</strong> — 스로틀 밸브 열림이 바뀌면서 가스가 챔버에 머무는 시간, 이온이 부딪히는 횟수, 플라즈마가 퍼지는 모양이 함께 바뀝니다. 그래서 두께 균일도 모양까지 달라질 수 있습니다 <span class="verify-tag">검증 필요</span>.</li>
+      </ol>
+      <p>그래서 레시피를 새로 잡을 때는 두께·균일도·굴절률·응력 같은 목표를 한꺼번에 보면서, 여러 변수를 계획적으로 조합해 시험하는 실험 계획법(DOE, 적은 횟수의 실험으로 변수들의 영향을 나눠 보는 방법)을 많이 씁니다 <span class="verify-tag">검증 필요</span>. 바꾼 뒤에는 테스트 웨이퍼로 결과를 확인합니다.</p>
+
+      <h2 id="dual-freq">단일 주파수와 이중 주파수</h2>
+      <p>RF를 한 가지 주파수(고주파, HF)만 거는 <strong>단일 주파수</strong> 구성에서는 RF 전력 하나가 가스 분해와 이온 충돌을 함께 정합니다. 그래서 "증착 속도는 그대로 두고 응력만 바꾸기"가 어렵습니다. <strong>이중 주파수</strong> 구성은 고주파(HF)에 저주파(LF)를 더해 겁니다. 이온은 무거워서 빠르게 바뀌는 고주파 전기장은 잘 따라가지 못하지만, 천천히 바뀌는 저주파 전기장에서는 더 크게 가속되어 웨이퍼를 세게 두드립니다. 그래서 보통 HF는 플라즈마 밀도·가스 분해에, LF는 이온 충돌(막 밀도·응력)에 더 크게 영향을 준다고 설명하고, LF 비율을 올리면 막이 치밀해지고 응력이 압축 쪽으로 움직이는 경향이 있어 응력 조절 손잡이로 씁니다 <span class="verify-tag">검증 필요</span>. 주파수마다 제너레이터와 매칭을 따로 두는 구성은 <a href="../pecvd.html#part=rf-generator">RF 전원 장치 패널</a>의 동작 원리 ⑤에 있습니다.</p>
+    </div>
+
+    <!-- 4) 장비 페이지 틀의 공정변수 표 (정지 화면에서도 이 표로 내용이 다 보임) -->
+    <div class="sec-read">
       <h2 id="parameters">공정변수 표</h2>
+      <p class="pl-table-note">실리콘 질화막 기준 대표 경향. 수치 없이 방향만 적었습니다.</p>
       <div class="table-wrap">
         <table>
           <thead>
             <tr><th>변수</th><th>올리면</th><th>내리면</th><th>트레이드오프</th></tr>
           </thead>
           <tbody>
-            <tr><td class="todo">작성 예정</td><td></td><td></td><td></td></tr>
+            <tr>
+              <td><strong>히터(웨이퍼) 온도</strong></td>
+              <td>표면 반응·원자 이동이 활발해져 막이 치밀해지고 막 속 수소가 줄어드는 경향. 굴절률이 조금 오를 수 있음 <span class="verify-tag">검증 필요</span></td>
+              <td>아래 소자에 주는 열 부담이 줄지만, 수소가 많고 성긴 막이 되기 쉬움</td>
+              <td>막질 ↔ 열 예산</td>
+            </tr>
+            <tr>
+              <td><strong>챔버 압력</strong></td>
+              <td>기체 밀도가 높아져 증착 속도가 오르는 경향, 기체 속 반응으로 파티클 위험이 커짐. 이온 충돌이 약해져 응력이 인장 쪽으로 움직이는 경향 <span class="verify-tag">검증 필요</span></td>
+              <td>분자가 덜 부딪혀 기체 속 반응이 줄고, 이온이 더 세게 부딪힘. 증착 속도가 줄 수 있음 <span class="verify-tag">검증 필요</span></td>
+              <td>증착 속도·균일도 ↔ 파티클</td>
+            </tr>
+            <tr>
+              <td><strong>RF 전력</strong></td>
+              <td>가스 분해가 늘어 증착 속도가 빨라지고, 이온 충돌이 늘어 막이 치밀해지며 응력이 압축 쪽으로 <span class="verify-tag">검증 필요</span></td>
+              <td>증착 속도가 느려지고, 너무 낮으면 플라즈마가 켜지지 않거나 불안정해짐</td>
+              <td>증착 속도 ↔ 플라즈마 손상·파티클·아킹 위험</td>
+            </tr>
+            <tr>
+              <td><strong>가스 비율</strong> (SiH<sub>4</sub> : NH<sub>3</sub>, 올리면 = 실리콘 원료를 늘리면)</td>
+              <td>실리콘이 많은 막이 되어 굴절률이 오름. 증착 속도가 오르고, Si–H 형태의 수소와 파티클 위험이 늘 수 있음 <span class="verify-tag">검증 필요</span></td>
+              <td>질소가 많은 막이 되어 굴절률이 내려감. 증착 속도가 줄 수 있음 <span class="verify-tag">검증 필요</span></td>
+              <td>증착 속도 ↔ 막 조성(굴절률)</td>
+            </tr>
+            <tr>
+              <td><strong>샤워헤드–히터 간격</strong> (올리면 = 넓히면)</td>
+              <td>플라즈마 공간이 넓어지고 같은 전력에서 전기장이 약해져 증착 속도가 줄어드는 경향. 가스가 웨이퍼에 닿기 전 더 퍼짐 <span class="verify-tag">검증 필요</span></td>
+              <td>플라즈마가 웨이퍼 가까이 모여 빨라지지만, 구멍 흔적과 간격 편차(평행)에 더 민감해짐 <span class="verify-tag">검증 필요</span></td>
+              <td>증착 속도 ↔ 균일도·플라즈마 안정성</td>
+            </tr>
           </tbody>
         </table>
       </div>
+
+      <h2 id="related">자세히 보기: 부품 패널</h2>
+      <p>변수를 실제로 만드는 부품입니다. 장비 페이지의 분해 그림에서 해당 부품 설명 패널이 열린 채로 시작합니다.</p>
+      <ul class="related-links">
+        <li><a href="../pecvd.html#part=pm"><span class="related-name">히터 · 스로틀 밸브 (공정 챔버)</span><span class="related-desc">웨이퍼 온도와 챔버 압력을 만드는 곳</span></a></li>
+        <li><a href="../pecvd.html#part=rf-generator"><span class="related-name">RF 전원 장치</span><span class="related-desc">RF 전력, 단일·이중 주파수, 매칭</span></a></li>
+        <li><a href="../pecvd.html#part=gas-box"><span class="related-name">가스 박스</span><span class="related-desc">MFC로 가스 유량·비율을 맞춤</span></a></li>
+        <li><a href="../pecvd.html#part=showerhead"><span class="related-name">샤워헤드</span><span class="related-desc">전극 간격, 가스 분배와 균일도</span></a></li>
+      </ul>
+      <p>변수가 레시피 안에서 언제 켜지고 꺼지는지는 <a href="flow.html#recipe">공정 흐름</a>에서, 결과가 목표에서 벗어났을 때 무엇부터 보는지는 다음 섹션 <a href="troubleshooting.html">문제와 점검</a>에서 다룹니다.</p>
+
+      <h2 id="page-sources">이 페이지의 출처</h2>
+      <ul class="source-list">
+        <li>Wikipedia, "Silicon nitride" —
+          <a href="https://en.wikipedia.org/wiki/Silicon_nitride">https://en.wikipedia.org/wiki/Silicon_nitride</a>
+          (2026-11-24 확인). 확인한 내용: 질화막과 실리콘의 격자 상수가 달라 증착 공정에 따라 응력이 생기고, PECVD에서는 증착 조건을 바꿔 이 응력을 줄일 수 있다는 설명. 어떤 변수가 어느 방향으로 움직이는지는 이 자료에서 확인하지 못함.</li>
+        <li>일반 교과서 내용 — 온도와 막 속 수소·밀도, 압력과 기체 속 반응, RF 전력과 분해·이온 충돌, 원료 비율과 막 조성·굴절률, 이중 주파수에서 저주파의 역할, 실험 계획법</li>
+        <li>이 사이트의 부품 패널 내용 — 공정 챔버·샤워헤드·가스 박스·RF 전원 장치의 공정변수 표 (각 패널의 출처 칸 참고)</li>
+      </ul>
     </div>
   </main>
 
@@ -55,5 +149,6 @@
   <script src="../../js/pages.js"></script>
   <script src="../../js/main.js"></script>
   <script src="../../js/sections.js"></script>
+  <script src="../../js/figs/param-lab.js"></script>  <!-- 직접 조절해 보기 -->
 </body>
 </html>

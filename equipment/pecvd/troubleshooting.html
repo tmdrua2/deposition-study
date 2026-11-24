@@ -6,7 +6,10 @@
   <title>문제와 점검 | PECVD 장비 | 증착 공정 노트</title>
   <link rel="stylesheet" href="../../css/style.css">
 </head>
-<!-- PECVD 섹션 하위 페이지 (05 문제와 점검). 공통 틀: 남색 머리(큰 제목) → 크림 본문 → 이전/다음 (js/sections.js) -->
+<!-- PECVD 섹션 하위 페이지 (05 문제와 점검). 공통 틀: 남색 머리(큰 제목) → 크림 본문 → 이전/다음 (js/sections.js)
+     장비 페이지 틀 규칙: 문제 하나당 <details> 하나, 안에 점검 순서 <ol>.
+     js/figs/trouble-flow.js가 위쪽에 "증상 고르기" 버튼을 만들고, 고른 증상의 흐름도만 펼침 (정지 화면이면 모두 펼침)
+     원인 후보의 "확인" 문장은 부품 패널(data/pecvd.js · data/platform.js의 issues)과 같게 유지할 것 -->
 <body data-root="../../" data-process="cvd" class="page-stage sec-page" data-equip="pecvd" data-section="troubleshooting">
   <header id="site-header"></header>
 
@@ -17,29 +20,338 @@
       <a class="sec-back" href="../pecvd.html#sections">PECVD 장비로 돌아가기</a>
       <p class="sec-kicker"><span class="sec-kicker-no">05</span><span class="sec-kicker-of">/ 07</span><span class="sec-kicker-en">Troubleshooting</span></p>
       <h1 class="sec-title">문제와 점검</h1>
-      <p class="sec-lede">문제가 생겼을 때 무엇부터 점검하는지 순서대로 정리할 자리입니다.</p>
+      <p class="sec-lede">증상에서 출발해 범위 → 시점 → 원인 후보 → 확인 → 조치 순서로 좁혀 갑니다. 현장 CS 엔지니어가 머릿속으로 그리는 점검 흐름도입니다.</p>
     </div>
     <nav class="sec-rail-wrap" aria-label="PECVD 섹션"><ol class="sec-rail" data-sec-rail></ol></nav>
   </section>
 
   <main class="sec-main">
+    <!-- 1) 공통 점검 틀 -->
     <div class="sec-read">
-      <!-- 준비 중: 2·3단계에서 채움. 아래 틀(장비 페이지 틀의 형식)은 그대로 두고 내용만 바꾼다 -->
-      <div class="sec-soon">
-        <p class="sec-soon-tag">준비 중</p>
-        <p>이 섹션은 아직 작성 전입니다. 들어갈 내용은 다음과 같습니다.</p>
-        <ul>
-          <li>문제마다 점검 순서: 한 곳만인지 → 갑자기인지 → 원인 나누기 → 조치</li>
-          <li>두께 균일도, 파티클, 플라즈마 이상 등</li>
-        </ul>
+      <h2 id="frame">모든 문제에 쓰는 네 칸 점검 틀</h2>
+      <p>증상이 달라도 처음 몇 단계는 같습니다. 부품부터 뜯어보지 않고, 먼저 <em>범위와 시점</em>으로 의심할 곳을 좁힙니다.</p>
+      <ol class="tf-frame">
+        <li><strong>한 곳만인가?</strong> 한 챔버(PM)에서만 생기면 그 챔버의 부품, 여러 챔버에서 함께 생기면 함께 쓰는 것(레시피·가스 공급·이송 경로·측정 장비)을 봅니다.</li>
+        <li><strong>갑자기인가, 서서히인가?</strong> 갑자기 생겼으면 그 시점에 있었던 일(정비·부품 교체·세정·레시피 변경·알람)을, 서서히 나빠졌으면 쌓이거나 닳는 것(막 쌓임·막힘·마모·센서 드리프트)을 봅니다.</li>
+        <li><strong>원인 나누기</strong> — 가스·RF·배기·웨이퍼 중 어느 길의 문제인지(<a href="hardware.html#map">장비 구성의 계통도</a>), 로그와 측정 결과로 후보를 하나씩 지웁니다.</li>
+        <li><strong>조치와 확인</strong> — 고친 뒤 테스트 웨이퍼로 결과가 돌아왔는지 확인하고, 원인과 조치를 기록합니다.</li>
+      </ol>
+      <p>웨이퍼가 지나는 길은 <strong>진공 쪽</strong>(PM·TM·LL)과 <strong>대기 쪽</strong>(EFEM·FOUP)이 다릅니다. 파티클처럼 길 전체가 원인이 될 수 있는 문제는 두 쪽을 따로 나눠서 봅니다. 아래 흐름도는 대표적인 점검 순서이고, 실제 순서와 판단 기준은 장비·회사마다 다릅니다 <span class="verify-tag">검증 필요</span>.</p>
+    </div>
+
+    <!-- 2) 증상별 점검 흐름도 (남색 띠). 증상 고르기 버튼은 js/figs/trouble-flow.js가 .tf-pick에 만듦 -->
+    <section class="sec-band" aria-labelledby="troubleshooting">
+      <div class="sec-scrolly-bg" aria-hidden="true"><div class="sec-scrolly-glow"></div><div class="stage-reed"></div></div>
+      <div class="sec-band-inner">
+        <div class="sec-scrolly-head">
+          <h2 id="troubleshooting">문제와 점검 순서</h2>
+          <p>증상을 누르면 점검 흐름도가 펼쳐집니다. 원인 후보의 부품 이름을 누르면 장비 페이지에서 그 부품 패널이 열립니다.</p>
+        </div>
+
+        <div class="tf-wrap" data-trouble>
+          <div class="tf-pick" role="group" aria-label="증상 고르기"></div>
+
+          <!-- ===================== A. 두께·균일도 ===================== -->
+          <details class="tf" id="tf-thickness">
+            <summary><span class="tf-key">A</span><span class="tf-sum"><span class="tf-sum-name">막 두께 이상 · 균일도 나쁨</span><span class="tf-sum-hint">두께가 목표에서 벗어남, 웨이퍼 안 두께 차이가 큼</span></span></summary>
+            <div class="tf-body">
+              <div class="tf-ask">
+                <p class="tf-ask-title">CS 엔지니어가 고객에게 먼저 물어볼 것</p>
+                <ul>
+                  <li>언제부터, 어느 PM에서 나왔나요?</li>
+                  <li>두께 자체가 벗어났나요, 웨이퍼 안 차이(균일도)가 커졌나요? 균일도 맵 모양(가운데 두꺼움 / 가장자리 두꺼움 / 한쪽 치우침)은요?</li>
+                  <li>최근 정비·부품 교체·RPS 세정·레시피 변경이 있었나요?</li>
+                  <li>같은 측정 장비로 잰 값인가요?</li>
+                  <li>RF 반사 전력·압력·유량 알람 기록이 있나요?</li>
+                </ul>
+              </div>
+              <ol class="tf-flow">
+                <li class="tf-step" style="--i:0">
+                  <p class="tf-step-no">01 · 범위</p>
+                  <p class="tf-step-q">한 챔버만인가, 여러 챔버인가</p>
+                  <div class="tf-branch">
+                    <p><strong>한 챔버만</strong> → 그 챔버의 히터·샤워헤드·간격·펌핑 링, 그 챔버로 가는 가스 라인(MFC)과 RF 쪽</p>
+                    <p><strong>여러 챔버</strong> → 함께 바뀐 레시피, 공용 가스 공급(레귤레이터 공급 압력), 측정 장비 자체 <span class="verify-tag">검증 필요</span></p>
+                  </div>
+                </li>
+                <li class="tf-step" style="--i:1">
+                  <p class="tf-step-no">02 · 시점</p>
+                  <p class="tf-step-q">갑자기인가, 서서히인가</p>
+                  <div class="tf-branch">
+                    <p><strong>갑자기</strong> → 정비·부품 교체 직후(간격·평행이 틀어졌는지), RPS 세정 직후(시즈닝), 그때 난 알람</p>
+                    <p><strong>서서히</strong> → 쌓이고 닳는 것: 샤워헤드 구멍 막힘, 펌핑 링·배기 막힘, MFC 드리프트(시간이 지나며 어긋남), 온도 센서</p>
+                  </div>
+                </li>
+                <li class="tf-step" style="--i:2">
+                  <p class="tf-step-no">03 · 원인 후보 → 확인 → 조치</p>
+                  <p class="tf-step-q">균일도 맵의 모양과 최근 PM·세정 이력을 함께 보고 좁힌다</p>
+                  <ul class="tf-cands">
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=pm">샤워헤드–히터 간격·평행 <span>공정 챔버 패널</span></a>
+                      <p><b>확인</b> 한쪽 치우침 맵이면 가장 먼저 의심. 간격과 평행(레벨링)을 잰다</p>
+                      <p><b>조치</b> 레벨링 다시 맞춘 뒤 테스트 웨이퍼 <span class="verify-tag">검증 필요</span></p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=pm">히터 온도 분포 <span>공정 챔버 패널</span></a>
+                      <p><b>확인</b> 영역별 온도 읽음값과 열전대(온도 센서) 상태</p>
+                      <p><b>조치</b> 센서·히터 점검, 필요하면 교체 <span class="verify-tag">검증 필요</span></p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=showerhead">샤워헤드 구멍 막힘 <span>샤워헤드 패널</span></a>
+                      <p><b>확인</b> 얇아진 영역이 특정 구멍 영역과 겹치는지, 마지막 세정 이후 처리량, 떼어서 육안·빛 투과 검사 <span class="verify-tag">검증 필요</span></p>
+                      <p><b>조치</b> 세정, 복구되지 않으면 샤워헤드 교체</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=pm">펌핑 링 막힘 (배기 쏠림) <span>공정 챔버 패널</span></a>
+                      <p><b>확인</b> 배기가 한쪽으로 쏠리지 않았는지, 스로틀 밸브 열림 값이 평소보다 많이 열려 있는지</p>
+                      <p><b>조치</b> 펌핑 링·배기 경로의 쌓인 부산물 제거 <span class="verify-tag">검증 필요</span></p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=gas-box">MFC 유량 <span>가스 박스 패널</span></a>
+                      <p><b>확인</b> 표시값과 셋포인트(목표값) 차이, 밸브 구동 값 추이, 가스를 끈 상태의 영점, 유량 검증(압력 상승 속도로 실제 유량 재기) <span class="verify-tag">검증 필요</span></p>
+                      <p><b>조치</b> MFC 보정 또는 교체 후 테스트 웨이퍼</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=rf-generator">RF 반사 전력 <span>RF 전원 장치 패널</span></a>
+                      <p><b>확인</b> 반사 전력과 매칭 튜닝 위치가 평소와 다른지</p>
+                      <p><b>조치</b> 다르면 <a href="#tf-plasma" data-tf-go="tf-plasma">C. 플라즈마 이상</a> 흐름으로</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=pm">세정 직후 첫 몇 장만 다름 <span>공정 챔버 패널</span></a>
+                      <p><b>확인</b> 시즈닝을 정해진 대로 했는지, 세정 종료 판정이 정상이었는지, 몇 장 뒤 평소 값으로 돌아오는지 <span class="verify-tag">검증 필요</span></p>
+                      <p><b>조치</b> 시즈닝 레시피 확인, 같은 레시피의 다른 PM과 세정 직후 첫 장 비교</p></li>
+                  </ul>
+                </li>
+                <li class="tf-step" style="--i:3">
+                  <p class="tf-step-no">04 · 조치 후 확인</p>
+                  <p class="tf-step-q">테스트 웨이퍼로 두께·균일도를 다시 잰다</p>
+                  <p class="tf-step-text">같은 레시피의 다른 PM과 비교해 평소 수준으로 돌아온 것을 확인한 뒤 생산을 다시 시작하고, 원인과 조치를 기록합니다.</p>
+                </li>
+              </ol>
+            </div>
+          </details>
+
+          <!-- ===================== B. 파티클 ===================== -->
+          <details class="tf" id="tf-particle">
+            <summary><span class="tf-key">B</span><span class="tf-sum"><span class="tf-sum-name">파티클 증가</span><span class="tf-sum-hint">웨이퍼 위 입자·결함 수가 평소보다 많음</span></span></summary>
+            <div class="tf-body">
+              <div class="tf-ask">
+                <p class="tf-ask-title">CS 엔지니어가 고객에게 먼저 물어볼 것</p>
+                <ul>
+                  <li>파티클 맵에서 어디에 몰리나요? (가장자리 / 특정 위치 / 전체)</li>
+                  <li>장비에 들어가기 전 측정값과 비교했나요? (들어올 때부터 있었는지)</li>
+                  <li>어느 PM을 거친 웨이퍼인가요? 공정 없이 이송만 한 웨이퍼도 늘었나요?</li>
+                  <li>마지막 RPS 세정 뒤 몇 장째인가요? 최근 챔버를 연 정비가 있었나요?</li>
+                  <li>파티클 크기·성분 분석 결과가 있나요?</li>
+                </ul>
+              </div>
+              <ol class="tf-flow">
+                <li class="tf-step" style="--i:0">
+                  <p class="tf-step-no">01 · 범위</p>
+                  <p class="tf-step-q">한 챔버만인가, 웨이퍼가 함께 지나는 길 전체인가</p>
+                  <div class="tf-branch">
+                    <p><strong>한 챔버만</strong> → 그 PM 안: 벽·샤워헤드에 쌓인 막 벗겨짐, 리프트 핀, 슬릿 밸브·뚜껑 오링(고무 밀봉)</p>
+                    <p><strong>여러 챔버 · 모든 웨이퍼</strong> → 함께 지나는 길. <em>진공 쪽</em>(TM 이송, LL 펌핑·벤트)과 <em>대기 쪽</em>(EFEM의 FFU·로봇)을 나눠, 공정 없이 이송만 한 웨이퍼로 어디서 붙는지 찾는다. 공용 가스 라인 필터도 후보</p>
+                  </div>
+                </li>
+                <li class="tf-step" style="--i:1">
+                  <p class="tf-step-no">02 · 시점</p>
+                  <p class="tf-step-q">갑자기인가, 서서히인가</p>
+                  <div class="tf-branch">
+                    <p><strong>갑자기</strong> → 정비로 챔버를 연 뒤, 오링·부품 교체 뒤, 펌핑·벤트 속도 설정 변경, 배관 작업 뒤 퍼지 부족</p>
+                    <p><strong>서서히</strong> → 세정 뒤 처리량이 늘수록(쌓인 막이 두꺼워져 벗겨짐), 오링·블레이드 패드 마모</p>
+                  </div>
+                </li>
+                <li class="tf-step" style="--i:2">
+                  <p class="tf-step-no">03 · 원인 후보 → 확인 → 조치</p>
+                  <p class="tf-step-q">파티클이 몰리는 위치와 "어디를 거친 웨이퍼인지"로 좁힌다</p>
+                  <ul class="tf-cands">
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=showerhead">벽·샤워헤드에 쌓인 막 벗겨짐 <span>샤워헤드 패널</span></a>
+                      <p><b>확인</b> 마지막 RPS 세정 이후 처리량 — 벽·샤워헤드에 쌓인 막이 벗겨지는지</p>
+                      <p><b>조치</b> RPS 세정, 세정 주기 조정 <span class="verify-tag">검증 필요</span></p></li>
+                    <li class="tf-cand"><a class="tf-part" href="parameters.html#lab">기체 속 반응 조건 <span>공정변수 페이지</span></a>
+                      <p><b>확인</b> 압력·전력 조건이 기체 속 반응으로 파티클이 생기기 쉬운 쪽인지, 레시피와 같은지</p>
+                      <p><b>조치</b> 레시피 값, 스로틀 밸브·MFC 실제값 점검</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=pm">리프트 핀·이송 긁힘 <span>공정 챔버 패널</span></a>
+                      <p><b>확인</b> 리프트 핀·웨이퍼 이송 중 긁힘, 웨이퍼 뒷면 상태</p>
+                      <p><b>조치</b> 핀 높이·끝 마모 점검, 필요하면 교체 <span class="verify-tag">검증 필요</span></p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=pm">슬릿 밸브·뚜껑 오링 <span>공정 챔버 패널</span></a>
+                      <p><b>확인</b> 오링 마모, 여닫을 때 닿는 면</p>
+                      <p><b>조치</b> 오링 교체 뒤 리크 체크(누설 점검)</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=tm">진공 쪽 이송: TM <span>트랜스퍼 모듈 패널</span></a>
+                      <p><b>확인</b> TM에 들어갔다 나오기만 한 웨이퍼로 재서 이송 탓인지 공정 탓인지 나눔, 블레이드 패드 오염</p>
+                      <p><b>조치</b> 블레이드 패드·표면 청소, 슬릿 밸브 오링 점검</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=loadlock">진공 쪽 이송: LL <span>로드락 패널</span></a>
+                      <p><b>확인</b> LL을 거치기만 한 웨이퍼로 확인, 벤트·펌핑 속도 설정, 벤트 N<sub>2</sub> 필터·디퓨저</p>
+                      <p><b>조치</b> 속도 설정 복구, LL 바닥·선반 청소</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=efem">대기 쪽: EFEM <span>EFEM 패널</span></a>
+                      <p><b>확인</b> EFEM만 돌린 웨이퍼로 확인, EFEM 내부 차압(양압), FFU 팬·필터</p>
+                      <p><b>조치</b> 멈춘 팬·막힌 필터 교체, 문·패널 닫힘 확인</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=gas-box">가스 라인 <span>가스 박스 패널</span></a>
+                      <p><b>확인</b> 특정 가스를 켤 때만 늘어나는지(가스 스틱을 하나씩 좁혀 감), 필터 앞뒤 압력 차이, 배관 작업 뒤 퍼지</p>
+                      <p><b>조치</b> 필터 교체, 충분히 퍼지</p></li>
+                  </ul>
+                </li>
+                <li class="tf-step" style="--i:3">
+                  <p class="tf-step-no">04 · 조치 후 확인</p>
+                  <p class="tf-step-q">파티클 측정용 웨이퍼로 다시 잰다</p>
+                  <p class="tf-step-text">장비에 넣기 전과 뒤를 비교해 늘어난 양을 확인합니다. 챔버를 열었다면 리크 체크와 시즈닝을 마친 뒤 확인합니다 <span class="verify-tag">검증 필요</span>. 아킹 흔적이 보이면 <a href="#tf-plasma" data-tf-go="tf-plasma">C. 플라즈마 이상</a>도 함께 봅니다.</p>
+                </li>
+              </ol>
+            </div>
+          </details>
+
+          <!-- ===================== C. 플라즈마 ===================== -->
+          <details class="tf" id="tf-plasma">
+            <summary><span class="tf-key">C</span><span class="tf-sum"><span class="tf-sum-name">플라즈마 이상</span><span class="tf-sum-hint">점화 실패 · 반사 전력 높음 · 아킹(불꽃 방전)</span></span></summary>
+            <div class="tf-body">
+              <div class="tf-ask">
+                <p class="tf-ask-title">CS 엔지니어가 고객에게 먼저 물어볼 것</p>
+                <ul>
+                  <li>알람 이름과 시각은요? 점화 순간 / 공정 중간 / 특정 레시피 단계 중 언제인가요?</li>
+                  <li>반사 전력과 매칭 튜닝 위치 로그를 볼 수 있나요? 평소 값과 비교하면요?</li>
+                  <li>최근 RF 케이블·매칭·샤워헤드 같은 부품을 바꿨나요? 레시피를 바꿨나요?</li>
+                  <li>마지막 RPS 세정은 언제였나요?</li>
+                  <li>아킹이라면 웨이퍼에 자국(결함 맵)이 있나요?</li>
+                </ul>
+                <p class="tf-safety">RF 쪽을 손으로 점검할 때는 전원 차단·잠금(LOTO) 뒤에 합니다.</p>
+              </div>
+              <ol class="tf-flow">
+                <li class="tf-step" style="--i:0">
+                  <p class="tf-step-no">01 · 범위</p>
+                  <p class="tf-step-q">한 챔버만인가, 여러 챔버인가</p>
+                  <div class="tf-branch">
+                    <p><strong>한 챔버만</strong> → 그 PM의 RF 경로(제너레이터 → 케이블 → 매칭 → 전극)와 챔버 안 상태</p>
+                    <p><strong>여러 챔버</strong> → 함께 바뀐 레시피 조건(압력·가스), 공용 설비 <span class="verify-tag">검증 필요</span></p>
+                  </div>
+                </li>
+                <li class="tf-step" style="--i:1">
+                  <p class="tf-step-no">02 · 시점</p>
+                  <p class="tf-step-q">언제 나는가, 갑자기인가 서서히인가</p>
+                  <div class="tf-branch is-three">
+                    <p><strong>점화 순간</strong> → 점화 단계의 압력·가스, 매칭 시작 위치(프리셋) <span class="verify-tag">검증 필요</span></p>
+                    <p><strong>공정 중간 · 특정 단계</strong> → 그 단계의 압력·가스 변화, 챔버 안 쌓인 막</p>
+                    <p><strong>갑자기 / 서서히</strong> → 갑자기: 부품 교체 뒤 체결·정합 범위 / 서서히: 튜닝 위치가 조금씩 끝으로 움직임(챔버 상태 변화)</p>
+                  </div>
+                </li>
+                <li class="tf-step" style="--i:2">
+                  <p class="tf-step-no">03 · 원인 후보 → 확인 → 조치</p>
+                  <p class="tf-step-q">챔버 조건 → RF 연결 → 챔버 안 → 마지막에 RF 장치 자체 순서로</p>
+                  <ul class="tf-cands">
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=gas-box">압력·가스 조건 <span>가스 박스 패널</span></a>
+                      <p class="tf-tags"><i>점화 실패</i><i>반사 전력</i><i>아킹</i></p>
+                      <p><b>확인</b> 압력·가스 유량이 레시피대로인지 — 챔버 조건이 바뀌면 플라즈마 임피던스가 바뀜</p>
+                      <p><b>조치</b> 압력(스로틀 밸브)·유량(MFC) 쪽 원인부터 해결</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=rf-generator">매칭 튜닝 위치 <span>RF 전원 장치 패널</span></a>
+                      <p class="tf-tags"><i>반사 전력</i><i>점화 실패</i></p>
+                      <p><b>확인</b> 커패시터 위치가 평소 값·다른 PM과 비교해 끝에 붙어 있는지(정합 범위를 벗어남), 왔다 갔다 하는지(헌팅)</p>
+                      <p><b>조치</b> 끝에 붙었으면 챔버 조건 변화부터, 헌팅이면 플라즈마 안정성·튜닝 속도 설정, 모터·커패시터 구동 점검</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=rf-generator">RF 케이블·커넥터 <span>RF 전원 장치 패널</span></a>
+                      <p class="tf-tags"><i>점화 실패</i><i>반사 전력</i></p>
+                      <p><b>확인</b> 케이블·커넥터 체결, 매칭 박스와 전극 연결부의 풀림·탄 흔적</p>
+                      <p><b>조치</b> 다시 체결하거나 교체</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=rf-generator">제너레이터 출력·인터록 <span>RF 전원 장치 패널</span></a>
+                      <p class="tf-tags"><i>점화 실패</i></p>
+                      <p><b>확인</b> 제너레이터가 실제로 포워드 전력을 내보냈는지, 인터록(뚜껑·냉각수 등)으로 막히지 않았는지</p>
+                      <p><b>조치</b> 인터록이 걸린 원인부터 해결</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=showerhead">샤워헤드 구멍·가장자리 아킹 <span>샤워헤드 패널</span></a>
+                      <p class="tf-tags"><i>아킹</i><i>반사 전력</i></p>
+                      <p><b>확인</b> 반사 전력·전압 로그에 순간적으로 튀는 값, 구멍 가장자리 변색·침식, 파티클·결함 증가 시점과 겹치는지</p>
+                      <p><b>조치</b> 세정, 침식이 심하면 교체 <span class="verify-tag">검증 필요</span></p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=pm">쌓인 막·이물, 접지 경로 <span>공정 챔버 패널</span></a>
+                      <p class="tf-tags"><i>아킹</i><i>반사 전력</i></p>
+                      <p><b>확인</b> 세정 주기, 벽·샤워헤드에서 벗겨진 날카로운 이물, 히터 쪽 접지 경로 <span class="verify-tag">검증 필요</span></p>
+                      <p><b>조치</b> RPS 세정, 세정 주기 조정</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=rf-generator">매칭·제너레이터 자체 <span>RF 전원 장치 패널</span></a>
+                      <p class="tf-tags"><i>마지막에</i></p>
+                      <p><b>확인</b> 위의 것을 모두 확인한 뒤에도 남으면</p>
+                      <p><b>조치</b> 매칭 네트워크 부품(커패시터·모터)이나 제너레이터를 교체 시험으로 좁힘</p></li>
+                  </ul>
+                </li>
+                <li class="tf-step" style="--i:3">
+                  <p class="tf-step-no">04 · 조치 후 확인</p>
+                  <p class="tf-step-q">점화·반사 전력·튜닝 위치가 평소 범위인지 본다</p>
+                  <p class="tf-step-text">테스트 레시피로 점화가 바로 되는지, 반사 전력이 평소처럼 낮은지, 튜닝 위치가 평소 범위에 있는지 확인한 뒤 테스트 웨이퍼로 두께와 결함을 봅니다.</p>
+                </li>
+              </ol>
+            </div>
+          </details>
+
+          <!-- ===================== D. 막질 ===================== -->
+          <details class="tf" id="tf-film">
+            <summary><span class="tf-key">D</span><span class="tf-sum"><span class="tf-sum-name">막질 이상</span><span class="tf-sum-hint">굴절률이나 막 응력이 기준에서 벗어남</span></span></summary>
+            <div class="tf-body">
+              <div class="tf-ask">
+                <p class="tf-ask-title">CS 엔지니어가 고객에게 먼저 물어볼 것</p>
+                <ul>
+                  <li>어느 값이 어느 방향으로 벗어났나요? (굴절률 높음/낮음, 응력 인장/압축 쪽)</li>
+                  <li>같은 웨이퍼의 두께·균일도는 정상인가요?</li>
+                  <li>어느 PM인가요? 같은 레시피의 다른 PM은요?</li>
+                  <li>최근 가스 교체, MFC·히터·매칭 교체, 레시피 변경이 있었나요?</li>
+                  <li>같은 측정 장비로 잰 값인가요?</li>
+                </ul>
+              </div>
+              <ol class="tf-flow">
+                <li class="tf-step" style="--i:0">
+                  <p class="tf-step-no">01 · 범위</p>
+                  <p class="tf-step-q">한 챔버만인가, 여러 챔버인가</p>
+                  <div class="tf-branch">
+                    <p><strong>한 챔버만</strong> → 그 PM의 온도(히터), RF(전력·저주파 비율), 그 PM으로 가는 MFC</p>
+                    <p><strong>여러 챔버</strong> → 레시피 변경, 공용 가스 공급(가스 교체·공급 압력), 측정 장비 <span class="verify-tag">검증 필요</span></p>
+                  </div>
+                </li>
+                <li class="tf-step" style="--i:1">
+                  <p class="tf-step-no">02 · 시점</p>
+                  <p class="tf-step-q">갑자기인가, 서서히인가</p>
+                  <div class="tf-branch">
+                    <p><strong>갑자기</strong> → MFC·히터·매칭 교체 직후, 가스 교체, RPS 세정 직후(시즈닝)</p>
+                    <p><strong>서서히</strong> → MFC 드리프트, 온도 센서 드리프트, 챔버 안 쌓임 <span class="verify-tag">검증 필요</span></p>
+                  </div>
+                </li>
+                <li class="tf-step" style="--i:2">
+                  <p class="tf-step-no">03 · 원인 후보 → 확인 → 조치</p>
+                  <p class="tf-step-q">"무엇이 벗어났나"로 변수를 거꾸로 찾는다 (<a href="parameters.html#lab">공정변수</a>의 경향)</p>
+                  <ul class="tf-cands">
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=gas-box">굴절률 → 가스 비율 (MFC) <span>가스 박스 패널</span></a>
+                      <p class="tf-tags"><i>굴절률</i></p>
+                      <p><b>확인</b> 굴절률은 막 조성(실리콘과 질소의 비)을 따라감 → 원료 가스마다 MFC 표시값과 셋포인트, 영점, 유량 검증</p>
+                      <p><b>조치</b> MFC 보정 또는 교체</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=rf-generator">응력 → RF 전력·저주파 비율 <span>RF 전원 장치 패널</span></a>
+                      <p class="tf-tags"><i>응력</i></p>
+                      <p><b>확인</b> 응력은 이온 충돌을 따라감 → 실제로 들어간 전력(포워드 − 반사), 제너레이터 출력 보정, 매칭 상태 <span class="verify-tag">검증 필요</span></p>
+                      <p><b>조치</b> 출력 보정, 매칭 점검</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=pm">응력·수소·밀도 → 히터 온도 <span>공정 챔버 패널</span></a>
+                      <p class="tf-tags"><i>응력</i><i>굴절률</i></p>
+                      <p><b>확인</b> 영역별 온도 읽음값과 열전대 상태</p>
+                      <p><b>조치</b> 센서·히터 점검, 필요하면 교체 <span class="verify-tag">검증 필요</span></p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=pm">압력 → 스로틀 밸브·압력계 <span>공정 챔버 패널</span></a>
+                      <p class="tf-tags"><i>응력</i></p>
+                      <p><b>확인</b> 스로틀 밸브 열림 값 추이, 압력계 영점</p>
+                      <p><b>조치</b> 압력계 보정, 배기 쪽 막힘 해결</p></li>
+                    <li class="tf-cand"><a class="tf-part" href="../pecvd.html#part=pm">세정 직후 첫 몇 장만 <span>공정 챔버 패널</span></a>
+                      <p class="tf-tags"><i>둘 다</i></p>
+                      <p><b>확인</b> 시즈닝을 정해진 대로 했는지, 몇 장 뒤 평소 값으로 돌아오는지 <span class="verify-tag">검증 필요</span></p>
+                      <p><b>조치</b> 시즈닝 레시피 확인</p></li>
+                  </ul>
+                </li>
+                <li class="tf-step" style="--i:3">
+                  <p class="tf-step-no">04 · 조치 후 확인</p>
+                  <p class="tf-step-q">굴절률·응력·두께를 함께 다시 잰다</p>
+                  <p class="tf-step-text">변수는 서로 얽혀 있어서 하나를 고치면 다른 값이 움직일 수 있습니다(<a href="parameters.html#tradeoff">공정변수: 얽힘</a>). 다른 PM과 비교해 함께 기준 안에 들어온 것을 확인합니다.</p>
+                </li>
+              </ol>
+            </div>
+          </details>
+        </div>
       </div>
-      <h2 id="troubleshooting">문제와 점검 순서</h2>
-      <details>
-        <summary>문제 상황 (예: 두께 균일도 불량)</summary>
-        <ol>
-          <li class="todo">점검 1</li>
-        </ol>
-      </details>
+    </section>
+
+    <!-- 3) 관련 패널·페이지 -->
+    <div class="sec-read">
+      <h2 id="related">자세히 보기: 부품 패널</h2>
+      <p>각 부품 패널의 "자주 생기는 문제"에 부품 하나 기준의 점검 순서가 더 자세히 있습니다. 위 흐름도는 그 내용을 증상 기준으로 다시 묶은 것입니다.</p>
+      <ul class="related-links">
+        <li><a href="../pecvd.html#part=pm"><span class="related-name">공정 챔버 (PM)</span><span class="related-desc">균일도·파티클·압력·플라즈마·세정 직후·이송 에러</span></a></li>
+        <li><a href="../pecvd.html#part=showerhead"><span class="related-name">샤워헤드</span><span class="related-desc">구멍 막힘·구멍 안 아킹·표면 막 벗겨짐</span></a></li>
+        <li><a href="../pecvd.html#part=rf-generator"><span class="related-name">RF 전원 장치</span><span class="related-desc">반사 전력·아킹·점화 실패·정합 안 잡힘</span></a></li>
+        <li><a href="../pecvd.html#part=gas-box"><span class="related-name">가스 박스</span><span class="related-desc">MFC 드리프트·밸브 누설·가스 라인 파티클</span></a></li>
+        <li><a href="../pecvd.html#part=pump"><span class="related-name">드라이 펌프</span><span class="related-desc">펌프 다운 지연·트립·포어라인 막힘</span></a></li>
+        <li><a href="../pecvd.html#part=loadlock"><span class="related-name">로드락 · 트랜스퍼 모듈</span><span class="related-desc">벤트·이송 중 파티클 (진공 쪽)</span></a></li>
+      </ul>
+      <p>면접에서 이 흐름을 말로 설명하는 연습은 다음 섹션 <a href="interview.html">면접 질문</a>에서 합니다.</p>
+
+      <h2 id="page-sources">이 페이지의 출처</h2>
+      <ul class="source-list">
+        <li>이 사이트의 부품 패널 내용 — 공정 챔버·샤워헤드·가스 박스·RF 전원 장치·드라이 펌프·로드락·트랜스퍼 모듈·EFEM의 "자주 생기는 문제" (각 패널의 출처 칸 참고). 흐름도의 "확인" 문장은 이 내용을 증상별로 다시 묶은 것</li>
+        <li>일반 교과서 내용 — 범위·시점으로 원인을 좁히는 점검 방식, 굴절률과 막 조성·응력과 이온 충돌의 관계</li>
+      </ul>
     </div>
   </main>
 
@@ -51,5 +363,6 @@
   <script src="../../js/pages.js"></script>
   <script src="../../js/main.js"></script>
   <script src="../../js/sections.js"></script>
+  <script src="../../js/figs/trouble-flow.js"></script>  <!-- 증상 고르기 → 흐름도 펼치기 -->
 </body>
 </html>
