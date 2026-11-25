@@ -1,5 +1,7 @@
 // =============================================================
-// 공정변수 "직접 조절해 보기" (equipment/pecvd/parameters.html)
+// 공정변수 "직접 조절해 보기" (equipment/pecvd/parameters.html · equipment/ald/parameters.html)
+//   다른 장비: 이 파일보다 먼저 window.PARAM_LAB_DATA = { results: [...], vars: [...] } 를 두면 그 내용으로 그림
+//   (ALD = js/figs/param-lab-ald.js). 없으면 아래 PECVD 내용
 //
 // 변수 5개를 내림(-1) · 기준(0) · 올림(+1)으로 바꾸면, 결과 7개의 막대가 그 방향으로 움직이고 이유가 한 줄 나온다.
 //   - 실리콘 질화막(SiH4 + NH3) 기준 "경향"만. 숫자·눈금 없음. 막대 길이 = 방향과 대략의 세기(약/강)만
@@ -24,7 +26,7 @@
 
   // ---------- 결과 항목 ----------
   //   neg / pos : 막대 왼쪽 / 오른쪽 끝의 뜻 (응력은 "인장 쪽 / 압축 쪽")
-  const RESULTS = [
+  const PECVD_RESULTS = [
     { id: "rate",     name: "증착 속도",          neg: "줄어듦", pos: "늘어남" },
     { id: "unif",     name: "두께 균일도",        neg: "나빠짐", pos: "좋아짐" },
     { id: "dens",     name: "막 밀도",            neg: "성겨짐", pos: "치밀해짐" },
@@ -38,7 +40,7 @@
   //   effects: { 결과id: [방향, 세기, 올렸을 때 이유, 내렸을 때 이유, 검증필요] }
   //     방향 +1 = "올림"일 때 막대가 pos 쪽으로 / -1 = neg 쪽으로 / 0 = 방향이 조건에 따라 다름("달라짐")
   //     세기 1(약) · 2(강) — 그림용 대략값
-  const VARS = [
+  const PECVD_VARS = [
     { id: "temp", name: "히터(웨이퍼) 온도", up: "올림", down: "내림", part: "pm", partName: "히터 패널",
       effects: {
         h:    [-1, 2, "온도가 높으면 Si–H·N–H 결합의 수소가 더 많이 빠져나가 막 속에 덜 남음", "온도가 낮으면 수소가 덜 빠져나가 막 속에 더 남음", false],
@@ -73,6 +75,11 @@
         unif: [ 0, 1, "가스가 웨이퍼에 닿기 전 더 퍼지지만, 너무 넓으면 플라즈마가 불안정해짐", "구멍 흔적이 두께에 비치고, 간격 편차(평행)에 더 민감해짐", true]
       } }
   ];
+
+  // 장비별 내용이 있으면 그것을, 없으면 PECVD
+  const custom = window.PARAM_LAB_DATA || null;
+  const RESULTS = custom ? custom.results : PECVD_RESULTS;
+  const VARS = custom ? custom.vars : PECVD_VARS;
 
   const base = root.getAttribute("data-part-base") || "";
   const state = {};           // 변수id → -1 | 0 | 1
@@ -119,14 +126,20 @@
     RESULTS.forEach(r => {
       let net = 0, hasPos = false, hasNeg = false, hasVague = false;
       const whys = [];
+      let hasFlat = false;
       VARS.forEach(v => {
         const s = state[v.id], e = v.effects[r.id];
         if (!s || !e) return;
-        const dir = e[0] * s, w = e[1];
-        if (dir > 0) hasPos = true; else if (dir < 0) hasNeg = true; else hasVague = true;
-        net += dir * w;
+        // 효과 두 가지 적는 법: 배열 = 올림/내림이 대칭 / { up: [...], down: [...] } = 올릴 때와 내릴 때가 다름
+        //   비대칭 칸: [방향(결과 막대 기준 +1·-1·0), 세기, 이유, 검증필요] — 방향 null = "거의 그대로"(이유만 보여 줌), 칸이 없으면 영향 없음
+        let dir, w, why, ver;
+        if (Array.isArray(e)) { dir = e[0] * s; w = e[1]; why = s > 0 ? e[2] : e[3]; ver = e[4]; }
+        else { const x = s > 0 ? e.up : e.down; if (!x) return; [dir, w, why, ver] = x; }
+        if (dir === null) hasFlat = true;
+        else if (dir > 0) hasPos = true; else if (dir < 0) hasNeg = true; else hasVague = true;
+        if (dir) net += dir * w;
         const mark = s > 0 ? "▲" : "▼";
-        whys.push(`<span class="pl-why-var">${esc(v.name.replace(/ \(.*\)/, ""))} ${mark} ${esc(s > 0 ? v.up : v.down)}</span> ${esc(s > 0 ? e[2] : e[3])}${e[4] ? VERIFY : ""}`);
+        whys.push(`<span class="pl-why-var">${esc(v.name.replace(/ \(.*\)/, ""))} ${mark} ${esc(s > 0 ? v.up : v.down)}</span> ${esc(why)}${ver ? VERIFY : ""}`);
       });
 
       // 상태: none(변화 없음) / pos / neg / mixed(엇갈림) / vague(달라짐)
@@ -134,6 +147,7 @@
       if (hasPos && hasNeg) { st = "mixed"; word = "엇갈림"; }
       else if (hasPos || hasNeg) { st = net > 0 ? "pos" : "neg"; word = net > 0 ? r.pos : r.neg; mag = Math.min(2, Math.abs(net)); }
       else if (hasVague) { st = "vague"; word = "달라짐"; }
+      else if (hasFlat) { st = "none"; word = "거의 그대로"; }
       if (st === "mixed") whys.push('<span class="pl-why-mix">효과가 서로 반대 — 어느 쪽이 클지는 조건에 따라 다름</span>');
       if ((st === "pos" || st === "neg") && hasVague) word += " · 모양도 달라짐";
 

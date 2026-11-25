@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>원리 | ALD 장비 | LAYER BY LAYER · 증착 공정 노트</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<!-- ALD 섹션 하위 페이지 (01 원리). 틀은 PECVD 하위 페이지와 같음: 머리(하늘색) → 크림 본문 → 이전/다음 (js/sections.js)
+     사이클 그림은 js/figs/ald-cycle.js의 작은 계통도를 재사용([data-ald-mini]). 온도 창 그림은 이 파일 안 SVG(개념도, 숫자 없음) -->
+<body data-root="../../" data-process="ald" class="page-stage sec-page" data-equip="ald" data-section="principle">
+  <header id="site-header"></header>
+
+  <section class="sec-hero">
+    <div class="sec-hero-bg" aria-hidden="true"><div class="sec-hero-glow"></div><div class="stage-reed"></div></div>
+    <div class="sec-hero-inner">
+      <a class="sec-back" href="../ald.html#sections">ALD 장비로 돌아가기</a>
+      <p class="sec-kicker"><span class="sec-kicker-no">01</span><span class="sec-kicker-of">/ 07</span><span class="sec-kicker-en">Principle</span></p>
+      <h1 class="sec-title">원리</h1>
+      <p class="sec-lede">표면이 다 차면 더 붙지 않는 반응을 네 단계로 나눠 반복합니다. 그래서 두께를 사이클 수로 세고, 깊은 구멍 안쪽까지 같은 두께로 덮을 수 있습니다.</p>
+    </div>
+    <nav class="sec-rail-wrap" aria-label="ALD 섹션"><ol class="sec-rail" data-sec-rail></ol></nav>
+  </section>
+
+  <main class="sec-main">
+    <div class="sec-read">
+      <h2 id="self-limiting">자기제한 반응: 표면이 다 차면 멈춘다</h2>
+      <p>ALD(Atomic Layer Deposition, 원자층 증착)는 막의 재료가 되는 <strong>전구체</strong>(원료 분자)와, 그 전구체와 반응해 막을 완성하는 <strong>반응 기체</strong>를 <em>동시에 넣지 않고</em> 번갈아 넣습니다. 두 기체가 챔버 안에서 함께 있는 순간이 없도록, 겹치지 않는 짧은 주입(펄스)으로 차례차례 넣는 것이 핵심입니다.</p>
+      <p>전구체를 넣으면 분자가 웨이퍼 표면의 <strong>붙을 자리</strong>(반응할 수 있는 원자 자리)에 달라붙습니다(흡착 — <a href="../../basics/thin-film-growth.html">박막 성장</a>의 첫 단계). 자리가 모두 차면 더 들어온 분자는 붙을 곳이 없어 그냥 떠 있다가 빠져나갑니다. 이렇게 <strong>표면이 스스로 반응량을 정하는 것</strong>을 자기제한(self-limiting) 반응이라고 합니다. 그래서 전구체를 조금 더 오래 넣어도 한 번에 쌓이는 양은 거의 같습니다 — 이 성질 덕분에 ALD는 가스 흐름이 고르지 않아도 웨이퍼 전체에 고른 막을 만들 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+      <p>CVD(화학 기상 증착)는 원료 기체들을 함께 흘려 공중과 표면에서 계속 반응시키므로, 가스가 많이 닿는 곳에 더 많이 쌓입니다. ALD는 반응을 표면에서만, 한 층씩 끝내도록 쪼갠 CVD라고 생각하면 이해하기 쉽습니다.</p>
+
+      <h2 id="cycle">4단계 사이클</h2>
+      <p>네 단계를 한 묶음(사이클)으로 반복합니다. 대표 예로 많이 드는 것이 트라이메틸알루미늄(TMA)과 물로 알루미늄 산화막(Al<sub>2</sub>O<sub>3</sub>)을 만드는 공정입니다.</p>
+      <ol>
+        <li><strong>전구체 주입</strong> — 전구체가 표면 자리에 붙습니다. 자리가 다 차면 멈춥니다(1차 자기제한).</li>
+        <li><strong>퍼지</strong> — 반응하지 않는 불활성 기체(N<sub>2</sub>·Ar 등)로 붙지 않고 남은 전구체를 챔버 밖으로 몰아냅니다.</li>
+        <li><strong>반응 기체 주입</strong> — 산화제 같은 반응 기체가 표면의 전구체와 반응해 막 한 층을 완성하고, 다음 사이클의 전구체가 붙을 자리를 새로 만듭니다(2차 자기제한).</li>
+        <li><strong>퍼지</strong> — 남은 반응 기체와 반응에서 나온 부산물을 몰아냅니다. 여기까지가 한 사이클입니다.</li>
+      </ol>
+      <div class="ald-mini" data-ald-mini></div>
+      <p>퍼지가 두 번이나 들어가는 이유는, 남은 전구체와 반응 기체가 공중에서 만나면 그 순간부터 CVD처럼 마구 쌓이고 공중에서 생긴 입자가 파티클이 되기 때문입니다 <span class="verify-tag">검증 필요</span>. 한 사이클에 쌓이는 두께를 <strong>사이클당 성장량</strong>(GPC, growth per cycle)이라고 하고, 원하는 두께가 될 때까지 사이클 수를 정해 반복합니다. 사이클마다 쌓이는 양이 거의 같기 때문에 <strong>두께 = 사이클 수</strong>로 정밀하게 맞출 수 있습니다.</p>
+      <p>이 네 단계가 장비에서 실제로 어떻게 켜지고 꺼지는지는 <a href="../ald.html#part=ald-valve">ALD 밸브 패널</a>에, 웨이퍼가 들어와 사이클을 돌고 나가는 전체 순서는 <a href="flow.html">공정 흐름</a>에 있습니다.</p>
+
+      <h2 id="window">ALD 온도 창</h2>
+      <p>자기제한이 제대로 일어나는 웨이퍼 온도 범위를 <strong>ALD 온도 창</strong>(ALD window)이라고 부릅니다. 창 안에서는 온도가 조금 바뀌어도 사이클당 성장량이 거의 일정합니다. 창을 벗어나면 네 가지 일이 생길 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+      <figure class="ald-window">
+        <svg viewBox="0 0 520 270" role="img" aria-label="ALD 온도 창 개념도. 가로축은 웨이퍼 온도, 세로축은 사이클당 성장량. 가운데 온도 창에서는 성장량이 평평하다. 창보다 낮은 쪽은 응축이면 위로, 반응 부족이면 아래로 갈라지고, 창보다 높은 쪽은 분해면 위로, 이탈이면 아래로 갈라진다.">
+          <rect class="aw-band" x="190" y="24" width="150" height="206"/>
+          <text class="aw-band-text" x="265" y="44">ALD 온도 창</text>
+          <path class="aw-axis" d="M40 230 H500 M40 230 V20"/>
+          <text class="aw-axis-text" x="500" y="252" text-anchor="end">웨이퍼 온도 →</text>
+          <text class="aw-axis-text" x="46" y="16">사이클당 성장량 ↑</text>
+          <path class="aw-flat" d="M190 130 H340"/>
+          <path class="aw-up" d="M190 130 C150 128 110 100 64 56"/>
+          <path class="aw-down" d="M190 130 C150 132 110 168 64 204"/>
+          <path class="aw-up" d="M340 130 C380 128 420 100 470 56"/>
+          <path class="aw-down" d="M340 130 C380 132 420 168 470 204"/>
+          <text class="aw-label" x="70" y="48">응축</text>
+          <text class="aw-label" x="70" y="222">반응 부족</text>
+          <text class="aw-label" x="464" y="48" text-anchor="end">분해</text>
+          <text class="aw-label" x="464" y="222" text-anchor="end">이탈</text>
+        </svg>
+        <figcaption>개념도 — 숫자 없이 모양만. 어느 갈래로 가는지는 전구체와 조건에 따라 다릅니다.</figcaption>
+      </figure>
+      <ul>
+        <li><strong>너무 낮으면 ① 응축</strong>: 전구체가 차가운 표면에서 액체·고체로 맺혀 한 층보다 많이 쌓입니다. 표면 반응이 아니라 이슬이 맺히는 것과 비슷합니다.</li>
+        <li><strong>너무 낮으면 ② 반응 부족</strong>: 반응에 필요한 에너지가 모자라 반응이 끝까지 가지 않습니다. 성장량이 줄고, 덜 반응한 전구체 조각(예: 탄소·수소)이 막에 불순물로 남기 쉽습니다.</li>
+        <li><strong>너무 높으면 ③ 분해</strong>: 전구체가 표면 자리와 상관없이 열로 스스로 쪼개져 쌓입니다. 자기제한이 깨지고 CVD처럼 되어, 두께가 늘고 균일도와 단차 피복이 나빠집니다.</li>
+        <li><strong>너무 높으면 ④ 이탈</strong>: 붙었던 분자나 표면의 반응 자리가 열로 떨어져 나가 성장량이 줄어듭니다.</li>
+      </ul>
+      <p>그래서 장비는 웨이퍼 온도(히터)뿐 아니라 챔버 벽·밸브·배관 온도도 관리합니다. 전구체가 지나가는 길에 차가운 곳이 있으면 거기서 응축이 일어나기 때문입니다(<a href="../ald.html#part=precursor">전구체 공급부 패널</a>). 온도를 바꾸면 막이 어떻게 달라지는지는 <a href="parameters.html">공정변수</a>에서 직접 바꿔 볼 수 있습니다.</p>
+
+      <h2 id="vs-pecvd">PECVD와 비교</h2>
+      <p>같은 박막을 PECVD로도, ALD로도 만들 수 있을 때 무엇을 보고 고르는지 정리합니다. 경향만 적었고, 막 종류와 장비에 따라 달라질 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>항목</th><th>ALD</th><th><a href="../pecvd/principle.html">PECVD</a></th></tr></thead>
+          <tbody>
+            <tr><td><strong>막이 쌓이는 방식</strong></td><td>기체를 번갈아 넣어 표면에서만, 한 층씩 반응</td><td>원료 기체를 함께 넣고 <a href="../../basics/plasma.html">플라즈마</a>로 쪼개 계속 쌓음</td></tr>
+            <tr><td><strong>단차 피복</strong> (구멍·홈의 바닥·옆면·위를 얼마나 고르게 덮나)</td><td>매우 좋음 — 표면이 다 찰 때까지 기다리므로 깊은 구조 안쪽까지 같은 두께</td><td>상대적으로 불리 — 기체가 먼저 닿는 입구·윗면에 더 쌓이기 쉬움</td></tr>
+            <tr><td><strong>두께 제어</strong></td><td>사이클 수로 셈 → 아주 얇은 막을 정밀하게</td><td>시간·전력·유량으로 맞춤 → 얇을수록 상대 오차가 커짐</td></tr>
+            <tr><td><strong>속도</strong></td><td>느림 — 매 사이클 퍼지 시간이 들어감</td><td>빠름 — 두꺼운 막에 유리</td></tr>
+            <tr><td><strong>쓰는 곳</strong></td><td>아주 얇고 고르게 덮어야 하는 막</td><td>비교적 두껍게, 빨리 쌓아야 하는 절연막</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>한 줄로 말하면 <strong>"ALD는 느리지만 얇고 고르게, PECVD는 빠르게 두껍게"</strong>입니다. 플라즈마를 쓰는 ALD(PEALD)도 있습니다. 반응 기체 단계에서만 플라즈마를 켜서 더 낮은 온도에서 막을 만들 수 있지만, 플라즈마 손상과 깊은 구조 안쪽 피복은 따져 봐야 합니다 <span class="verify-tag">검증 필요</span>(<a href="../ald.html#part=peald-rf">플라즈마 소스 패널</a>).</p>
+
+      <h2 id="related">자세히 보기: 부품 패널</h2>
+      <p>원리를 실제로 만드는 부품입니다. 장비 페이지의 분해 그림에서 해당 부품 설명 패널이 열린 채로 시작합니다.</p>
+      <ul class="related-links">
+        <li><a href="../ald.html#part=pm"><span class="related-name">공정 챔버</span><span class="related-desc">작은 반응 공간, 히터, 온도의 역할</span></a></li>
+        <li><a href="../ald.html#part=ald-valve"><span class="related-name">ALD 밸브</span><span class="related-desc">네 단계를 켜고 끄는 빠른 밸브</span></a></li>
+        <li><a href="../ald.html#part=precursor"><span class="related-name">전구체 공급부</span><span class="related-desc">가열 용기·가열 배관, 응축과 분해</span></a></li>
+        <li><a href="../ald.html#part=peald-rf"><span class="related-name">플라즈마 소스 (선택)</span><span class="related-desc">열 ALD와 PEALD의 차이</span></a></li>
+      </ul>
+
+      <h2 id="page-sources">이 페이지의 출처</h2>
+      <ul class="source-list">
+        <li>Wikipedia, "Atomic layer deposition" —
+          <a href="https://en.wikipedia.org/wiki/Atomic_layer_deposition">https://en.wikipedia.org/wiki/Atomic_layer_deposition</a>
+          (2026-11-25 확인). 확인한 내용: 전구체를 동시에 넣지 않고 겹치지 않는 펄스로 차례로 넣음, 주입–퍼지–주입–퍼지가 한 사이클, 사이클 수를 바꿔 두께를 정밀하게 조절하고 사이클당 성장량으로 공정을 설명함, TMA와 물로 만드는 Al<sub>2</sub>O<sub>3</sub>가 대표 예, 얇고 고르게 덮는(conformal) 막, 플라즈마 ALD로 증착 온도를 낮출 수 있음. ALD 온도 창, PECVD와의 속도 비교는 이 자료에서 확인하지 못함.</li>
+        <li>일반 교과서 내용 — ALD 온도 창(응축·반응 부족·분해·이탈), 퍼지 부족 시 CVD처럼 쌓이는 현상, ALD와 PECVD의 단차 피복·속도 비교</li>
+        <li>이 사이트의 부품 패널 내용 — 공정 챔버·ALD 밸브·전구체 공급부·플라즈마 소스 (각 패널의 출처 칸 참고)</li>
+      </ul>
+    </div>
+  </main>
+
+  <nav class="sec-pager" data-sec-pager></nav>
+
+  <footer><a href="../../index.html">← 목차로 돌아가기</a></footer>
+
+  <script src="../../js/pages.js"></script>
+  <script src="../../js/main.js"></script>
+  <script src="../../js/sections.js"></script>
+  <script src="../../js/motion-pref.js"></script>   <!-- 정지 화면 판정 -->
+  <script src="../../js/figs/ald-cycle.js"></script>  <!-- 작은 사이클 그림 ([data-ald-mini]) -->
+</body>
+</html>

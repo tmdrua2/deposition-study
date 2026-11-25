@@ -12,6 +12,26 @@
   공개 사이트(GitHub Pages) https://tmdrua2.github.io/deposition-study/ — 이제 커밋할 때마다 `git push origin main`
 - Node.js 설치 + `find-skills` 스킬 설치 (Vercel Labs, 컴퓨터 전체 `~/.claude/skills/`에 설치)
 
+## 완료 (최신)
+- **ALD 2차 2-1** (2026-11-25): 구조 정리 + 하위 페이지 4개 + 모듈 패널 공정변수·문제
+  - 구조: 펌프 4대·배기 배관 4줄을 `data/pecvd.js` → `data/platform.js`의 `EQUIPMENT_SHARED.pumpParts(장비별 글)`로 옮김.
+    공통 그림·설명은 한 곳, 장비별 원리 ④⑤·면접·출처만 각자 넘김(PECVD: 파우더·포어라인 가열 질문·파우더 특허 2개 / ALD: 배기 배관 반응·스크러버).
+    `ald.html`은 이제 `pecvd.js`를 안 불러옴. PECVD 펌프 패널 내용은 그대로(출처·질문 순서만 공통 먼저), 원리 ①의 "PECVD 부산물" → "증착 부산물"
+  - 상태 표시: 메뉴·표지에서 ALD = "장비 화면 완성 · 내용 작성 중" (`main.js` `sections: "ald"` + `partLabel`, 표지에서 계속 누를 수 있음). 7개 다 완성되면 저절로 "완성"
+  - 사이클 점선: 크림 바탕에서 잘 보이게 굵게(3.6)·짙은 코발트(`--ac-line`), 흐름 애니메이션 끊김 없게(`ac-flow`)
+  - 하위 페이지 `equipment/ald/`: principle(자기제한·4단계·온도 창 개념도·PECVD 비교표) · hardware(대기/진공/공급/배기 묶음별 모듈 → `#part` 링크, 매엽식·배치식·공간 분할 개념 비교) ·
+    flow(투입 → 가열·안정화 → 사이클 반복 → 퍼지·배출 → 반출 `<ol>`, 레시피 표) · parameters(조작 그림 + 포화 곡선 개념도 + 공정변수 표)
+  - 사이클 그림 재사용: `ald-cycle.js`에 `[data-ald-mini]` 작은 계통도(네 단계 자동 전환, 단계 눌러 이동, 정지 화면이면 4장 나란히)
+  - 조작 그림: `param-lab.js`를 장비별 내용(`window.PARAM_LAB_DATA`)도 받게 + 올릴 때·내릴 때가 다른 효과와 "거의 그대로" 상태 추가. ALD 내용 = `js/figs/param-lab-ald.js`
+  - 패널: PM·ALD 밸브·전구체 공급부·반응 기체 공급부·PEALD의 공정변수·문제(점검 순서: 한 곳만인지 → 갑자기인지 → 원인 나누기 → 조치), PM 구성품에 스로틀 밸브 추가
+  - 출처: Wikipedia "Atomic layer deposition"(2026-11-25 열어 확인 — 펄스 차례 주입, 사이클, 사이클 수로 두께, TMA+물, 공간 분할 ALD, PEALD 저온).
+    온도 창·퍼지 부족 영향·매엽/배치 비교는 이 자료에 없어 [검증 필요] + "일반 교과서 내용". Materials Today 리뷰(Johnson 등)는 열리지 않아(403) 쓰지 않음
+  - `tools/collect-pages.js`에 ALD 4페이지 추가 → `data/pecvd-pages.js` 다시 생성. `collect.js`가 다른 장비 하위 페이지 글을 빼도록 수정(PECVD 출처 모음에 ALD가 섞이지 않게)
+  - 점검(헤드리스 크롬): 10개 페이지 × 1440·390 스크립트 오류 0·가로 넘침 0, 패널 `?still=1#part=pump·ald-valve·pm`, 분해 끝 사이클, 조작 그림(휴대폰), 정지 화면 사이클 4장
+  - **2-2에서 할 일**: ① 문제와 점검·면접 질문(5개, CS 1개 이상)·출처 하위 페이지(`equipment/ald/troubleshooting·interview·sources.html`, `EQUIP_SECTIONS.ald` ready, 카드 링크, collect-pages에 추가)
+    ② 패널 PM 포인트·면접 칸 채우기(ALD 펌프 면접 질문 포함) ③ 직접 열어 본 출처 더 찾기(특허 등) — 온도 창·퍼지 부족·배치식 비교의 [검증 필요] 대조
+    ④ 퍼지 가스가 전구체 캐리어를 겸하는지 등 구성 확인 ⑤ 하늘색 하위 페이지 머리 대비를 실제 맥북·아이폰에서 확인 ⑥ (선택) PM2~4 사이클·챔버 단면
+
 ## 완료 (최근)
 - **표지 상단 바 색 전환 수정** (2026-11-25): 전환 0.3초, 배경·글씨가 동시에 바뀌고 읽기 어려운 중간 회색 구간은 건너뜀(`css/style.css` `--hdr-ease`), 맨 위로·#링크 도착 시 색 즉시 맞춤(`js/home.js` scrollend·hashchange), 스크롤마다 getComputedStyle 읽던 것 제거
 - **메인 표지 개편 완료** (2026-11-25, `wip-cover` 브랜치에서 작업 → `main`에 합친 뒤 브랜치 삭제, `index.html`에서 확인)
@@ -67,7 +87,7 @@
     표지 진열 칸 비율 48:12×4 → 40:28:11×3, `index.html`이 `data/ald.js`도 불러 표지 ALD 그림이 장비 페이지와 같은 데이터. `pages.js`에 `EQUIP_SECTIONS.ald`(모두 ready:false)
   - 점검(헤드리스 크롬): 1440×900·1280×720·390×844 분해 끝+사이클 네 단계 캡처, `?still=1`·움직임 줄이기, 표지 1440·1280·390 → 스크립트 오류 0.
     390px에서 이름표가 오른쪽 끝에서 잘려 밸브 왼쪽으로 놓도록 수정(`is-left`)
-  - **2차에서 할 일**: ① 하위 페이지 7개(`equipment/ald/*.html`, `EQUIP_SECTIONS.ald` ready·카드 링크 달기, 메뉴 `sections: "ald"`로 되돌리기) —
+  - (→ 2-1에서 일부 처리, 남은 일은 위 "완료 (최신)"의 2-2 목록) **2차에서 할 일**: ① 하위 페이지 7개(`equipment/ald/*.html`, `EQUIP_SECTIONS.ald` ready·카드 링크 달기, 메뉴 `sections: "ald"`로 되돌리기) —
     원리(자기제한 반응·사이클 스크롤 애니메이션)·장비 구성·공정 흐름·공정변수(온도 창·주입/퍼지 시간)·문제와 점검·면접(CS 1개 이상)·출처(직접 연 자료만)
     ② 새 모듈 패널의 공정변수·문제·PM·면접·출처 채우기와 [검증 필요] 대조 ③ 펌프를 플랫폼으로 옮길지 결정 ④ 퍼지 가스가 전구체 캐리어를 겸하는지 등 구성 확인
     ⑤ 표지·카드 `data-equip="ald"` 하늘색 대비를 실제 맥북·아이폰에서 확인 ⑥ PM2~4에도 사이클을 보여 줄지, 챔버 안쪽 단면 보여 줄지

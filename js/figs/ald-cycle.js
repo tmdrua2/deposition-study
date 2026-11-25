@@ -182,7 +182,7 @@
 
   function buildStill(stageEl, box) {
     box.innerHTML =
-      '<h2 class="ald-steps-title">ALD 사이클 4단계</h2>' +
+      (stageEl ? '<h2 class="ald-steps-title">ALD 사이클 4단계</h2>' : '<h3 class="ald-steps-title">ALD 사이클 4단계</h3>') +
       '<p class="ald-steps-lede">네 단계가 막이 원하는 두께가 될 때까지 반복됩니다. 단계마다 켜지는 밸브와 배관만 하늘색으로 표시했습니다.</p>' +
       '<ol class="ald-steps-grid">' +
       STEPS.map((s, i) =>
@@ -211,5 +211,48 @@
     new MutationObserver(update).observe(stageEl, { attributes: true, attributeFilter: ["class"] });
   }
 
-  window.AldCycle = { mount: mount };
+  // ---------------------------------------------------------------
+  // 3) 하위 페이지용 작은 사이클 그림 (equipment/ald/principle.html · flow.html)
+  //    <div data-ald-mini></div> 를 두면: 작은 계통도 한 장이 네 단계를 차례로 보여 줌 + 아래 단계 이름·설명
+  //    정지 화면(움직임 줄이기·?still=1·데이터 절약)이면 네 장을 나란히 (장비 페이지 정지 화면과 같은 그림)
+  //    GSAP 없이 setTimeout만 씀 → 하위 페이지에서 GSAP를 안 불러도 됨. 화면 밖·탭 숨김이면 멈춤
+  // ---------------------------------------------------------------
+  function mini(box) {
+    const still = window.MotionPref ? !!MotionPref.reason() : false;
+    if (still) { buildStill(null, box); box.classList.add("is-still"); return; }
+    box.innerHTML =
+      '<figure class="ald-mini-fig"><div class="ald-mini-svg"></div>' +
+      '<figcaption><ol class="ald-mini-steps">' +
+      STEPS.map((s, i) => '<li data-i="' + i + '" tabindex="0" role="button"><span>' + (i + 1) + "/4</span>" + s.name + "</li>").join("") +
+      '</ol><p class="ald-mini-desc" aria-live="off"></p></figcaption></figure>';
+    const svgBox = box.querySelector(".ald-mini-svg"), desc = box.querySelector(".ald-mini-desc");
+    const lis = [...box.querySelectorAll(".ald-mini-steps li")];
+    let i = 0, timer = null, visible = true;
+    function show(k) {
+      i = k;
+      svgBox.innerHTML = miniSvg(STEPS[k]);
+      lis.forEach((li, j) => li.classList.toggle("is-on", j === k));
+      desc.textContent = STEPS[k].desc;
+    }
+    function tick() { show((i + 1) % STEPS.length); timer = setTimeout(tick, STEPS[i].dur * 1000); }
+    function sync() {
+      const run = visible && !document.hidden;
+      if (run && !timer) timer = setTimeout(tick, STEPS[i].dur * 1000);
+      if (!run && timer) { clearTimeout(timer); timer = null; }
+    }
+    // 단계 이름을 누르면 그 단계로 (멈추지 않고 거기서부터 이어서 돎)
+    lis.forEach((li, j) => {
+      const go = () => { clearTimeout(timer); timer = null; show(j); sync(); };
+      li.addEventListener("click", go);
+      li.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });   // 키보드로도
+    });
+    show(0);
+    document.addEventListener("visibilitychange", sync);
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver((e) => { visible = e[e.length - 1].isIntersecting; sync(); }).observe(box);
+    } else sync();
+  }
+  document.addEventListener("DOMContentLoaded", () => document.querySelectorAll("[data-ald-mini]").forEach(mini));
+
+  window.AldCycle = { mount: mount, mini: mini };
 })();

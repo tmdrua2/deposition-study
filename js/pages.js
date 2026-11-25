@@ -54,6 +54,15 @@ const PAGES = [
     keywords: "pecvd 출처 sources 특허 patent 교과서 검증 필요 참고 자료" },
   { section: "equipment", title: "ALD (원자층 증착)", short: "ALD", desc: "원자층 증착", path: "equipment/ald.html",
     keywords: "ald atomic layer deposition 원자층 self-limiting 자기제한 purge 퍼지 전구체 precursor 반응 기체 사이클 ald 밸브 가열 peald 플라즈마 ald 장비 분해" },
+  // ALD 섹션 하위 페이지 (hidden: 검색에만)
+  { section: "equipment", title: "ALD 원리 (자기제한 반응·4단계 사이클·온도 창)", path: "equipment/ald/principle.html", hidden: true,
+    keywords: "ald 원리 자기제한 self-limiting 포화 사이클 전구체 퍼지 반응 기체 온도 창 ald window 단차 피복 conformal pecvd 비교 tma al2o3" },
+  { section: "equipment", title: "ALD 장비 구성 (모듈 역할·매엽식·배치식·공간 분할)", path: "equipment/ald/hardware.html", hidden: true,
+    keywords: "ald 장비 구성 공정 챔버 ald 밸브 전구체 공급부 캐니스터 반응 기체 퍼지 peald 펌프 매엽식 배치식 batch spatial 공간 분할" },
+  { section: "equipment", title: "ALD 공정 흐름 (투입·가열·사이클 반복·퍼지·반출)", path: "equipment/ald/flow.html", hidden: true,
+    keywords: "ald 공정 흐름 웨이퍼 투입 가열 안정화 사이클 반복 퍼지 배출 반출 레시피" },
+  { section: "equipment", title: "ALD 공정변수 (펄스 시간·퍼지 시간·온도·전구체 공급량)", path: "equipment/ald/parameters.html", hidden: true,
+    keywords: "ald 공정변수 펄스 시간 pulse 퍼지 시간 purge 온도 전구체 공급량 dose 사이클당 성장 gpc 포화" },
   { section: "equipment", title: "Epi (에피택시)", short: "Epi", desc: "에피택시", path: "equipment/epi.html",
     keywords: "epi epitaxy 에피택시 에피 단결정 sige" },
   { section: "equipment", title: "전기도금 (ECD)", short: "ECD", desc: "전기도금", path: "equipment/ecd.html",
@@ -90,16 +99,16 @@ const EQUIP_SECTIONS = {
       { id: "sources",         title: "출처",       en: "Sources",         ready: true,  card: "출처와 [검증 필요] 문장 모음" },
     ],
   },
-  // ALD: 장비 분해 화면만 완성(1차). 하위 페이지는 2차에서 만든다 → 만들 때 folder 아래에 파일을 두고 ready: true 로 바꿈
+  // ALD: 장비 분해 화면(1차) + 2-1에서 원리·장비 구성·공정 흐름·공정변수 완성. 나머지 3개는 2-2에서 → 만들면 ready: true
   ald: {
     name: "ALD",
     home: "equipment/ald.html",
     folder: "equipment/ald/",
     list: [
-      { id: "principle",       title: "원리",       en: "Principle",       ready: false },
-      { id: "hardware",        title: "장비 구성",   en: "Hardware",        ready: false },
-      { id: "flow",            title: "공정 흐름",   en: "Process flow",    ready: false },
-      { id: "parameters",      title: "공정변수",    en: "Parameters",      ready: false },
+      { id: "principle",       title: "원리",       en: "Principle",       ready: true,  card: "사이클 그림과 온도 창 읽기" },
+      { id: "hardware",        title: "장비 구성",   en: "Hardware",        ready: true,  card: "모듈 역할과 장비 방식 비교" },
+      { id: "flow",            title: "공정 흐름",   en: "Process flow",    ready: true,  card: "투입부터 반출까지 순서" },
+      { id: "parameters",      title: "공정변수",    en: "Parameters",      ready: true,  card: "펄스·퍼지·온도를 직접 바꿔 보기" },
       { id: "troubleshooting", title: "문제와 점검", en: "Troubleshooting", ready: false },
       { id: "interview",       title: "면접 질문",   en: "Interview",       ready: false },
       { id: "sources",         title: "출처",       en: "Sources",         ready: false },

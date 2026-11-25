@@ -3312,13 +3312,16 @@ body[data-equip="ald"] .equip-stage-pin {
 .ald-cycle.is-live { opacity: 1; }
 .wafer-path { transition: opacity 0.5s ease; }
 .wafer-path.is-dim { opacity: 0.22; }                       /* 사이클이 돌 때 웨이퍼 경로는 뒤로 물러남 */
-.ac-base { fill: none; stroke: var(--st-rule-strong); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.ac-lit { fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-dasharray: 7 6; stroke-linecap: round; stroke-linejoin: round;
+/* 점선: 분해 끝 크림 바탕에서 잘 보이게 굵고 진하게 (2-1). --ac-line = 짙은 코발트(공정 색 계열) */
+.ald-cycle { --ac-line: #1D5C93; }
+.ac-base { fill: none; stroke: var(--st-rule-strong); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.ac-lit { fill: none; stroke: var(--ac-line); stroke-width: 3.6; stroke-dasharray: 9 6; stroke-linecap: round; stroke-linejoin: round;
   vector-effect: non-scaling-stroke; opacity: 0; transition: opacity 0.3s ease; }
-.ac-lit.is-on { opacity: 1; animation: wp-flow 0.9s linear infinite; }
+.ac-lit.is-on { opacity: 1; animation: ac-flow 0.9s linear infinite; }
+@keyframes ac-flow { to { stroke-dashoffset: -30; } }   /* 점선 한 마디(9+6)의 2배 → 끊김 없이 반복 */
 .ac-valve { fill: var(--st-bg); stroke: var(--st-rule-strong); stroke-width: 1.5; vector-effect: non-scaling-stroke; transition: fill 0.25s ease, stroke 0.25s ease; }
-.ac-valve.is-on { fill: var(--accent); stroke: var(--accent); }
-.ac-halo { fill: none; stroke: var(--accent); stroke-width: 1.5; vector-effect: non-scaling-stroke; opacity: 0; transition: opacity 0.3s ease; }
+.ac-valve.is-on { fill: var(--ac-line); stroke: var(--ac-line); }
+.ac-halo { fill: none; stroke: var(--ac-line); stroke-width: 1.8; vector-effect: non-scaling-stroke; opacity: 0; transition: opacity 0.3s ease; }
 .ac-halo.is-on { opacity: 0.55; }
 /* 밸브 옆 단계 이름표 */
 .ald-chip { position: absolute; z-index: 901; pointer-events: none; white-space: nowrap; opacity: 0; transition: opacity 0.35s ease;
@@ -3350,7 +3353,7 @@ body[data-equip="ald"] .equip-stage-pin {
 .as-chamber { fill: color-mix(in srgb, var(--bg) 40%, #cfd6dc); stroke: var(--muted); stroke-width: 1.4; }
 .as-text { fill: var(--muted); font-size: 10px; font-family: inherit; text-anchor: middle; }
 .as-pipe { fill: none; stroke: var(--faint); stroke-width: 1.4; opacity: 0.7; }
-.as-pipe.is-on { stroke: var(--c-ald); stroke-width: 2.6; stroke-dasharray: 6 5; opacity: 1; }
+.as-pipe.is-on { stroke: var(--c-ald); stroke-width: 3.2; stroke-dasharray: 7 5; opacity: 1; }
 .as-valve { fill: var(--bg); stroke: var(--faint); stroke-width: 1.4; }
 .as-valve.is-on { fill: var(--c-ald); stroke: var(--c-ald); }
 
@@ -3360,3 +3363,62 @@ body[data-equip="ald"] .equip-stage-pin {
 @media (prefers-reduced-motion: reduce) {
   .ac-lit.is-on { animation: none; }
 }
+
+/* =============================================================
+   ALD 하위 페이지 (equipment/ald/*.html, 2-1) — 크림 본문 위 그림·목록
+   선·점은 공정 색(--c-ald), 글자는 본문 색
+   ============================================================= */
+/* 작은 사이클 그림 (js/figs/ald-cycle.js mini) */
+.ald-mini { margin: 1.4em 0; }
+.ald-mini-fig { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: center; margin: 0;
+  padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--bg) 70%, #fff); }
+.ald-mini-svg svg { display: block; width: 100%; height: auto; }
+.ald-mini-steps { display: grid; gap: 4px; margin: 0 0 12px !important; padding: 0 !important; list-style: none; }
+.ald-mini-steps li { margin: 0 !important; padding: 6px 10px; border-radius: 8px; color: var(--muted); font-size: var(--fs-sm); font-weight: 600; cursor: pointer; transition: background 0.25s, color 0.25s; }
+.ald-mini-steps li span { margin-right: 8px; font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 500; }
+.ald-mini-steps li:focus-visible { outline: 2px solid var(--c-ald); outline-offset: 1px; }
+.ald-mini-steps li.is-on { color: var(--ink); background: color-mix(in srgb, var(--c-ald) 12%, transparent); }
+.ald-mini-steps li.is-on span { color: var(--c-ald); }
+.ald-mini-desc { margin: 0 !important; min-height: 3.2em; color: var(--ink); font-size: var(--fs-sm); line-height: 1.6; }
+.ald-mini.is-still .ald-steps-title { margin: 0 0 6px; font-size: var(--fs-lg); }
+.ald-mini.is-still .ald-steps-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 640px) {
+  .ald-mini-fig { grid-template-columns: 1fr; padding: 14px; }
+  .ald-mini.is-still .ald-steps-grid { grid-template-columns: 1fr; }
+}
+/* 개념 곡선 (온도 창 · 포화 곡선) */
+.ald-window { margin: 1.4em 0; padding: 16px 16px 12px; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--bg) 70%, #fff); }
+.ald-window svg { display: block; width: 100%; max-width: 620px; height: auto; margin: 0 auto; }
+.ald-window figcaption { margin-top: 8px; color: var(--muted); font-size: var(--fs-xs); line-height: 1.6; }
+.aw-band { fill: color-mix(in srgb, var(--c-ald) 10%, transparent); }
+.aw-band-text { fill: var(--c-ald); font-size: 13px; font-weight: 700; text-anchor: middle; }
+.aw-axis { fill: none; stroke: var(--muted); stroke-width: 1.4; }
+.aw-axis-text { fill: var(--muted); font-size: 12px; }
+.aw-flat { fill: none; stroke: var(--c-ald); stroke-width: 3.4; stroke-linecap: round; }
+.aw-up, .aw-down { fill: none; stroke: var(--c-ald); stroke-width: 2.4; stroke-dasharray: 7 5; stroke-linecap: round; }
+.ald-sat .aw-down { stroke-dasharray: none; stroke-width: 3; }
+.aw-mark { stroke: var(--faint); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.aw-dot { fill: var(--c-ald); }
+.aw-label { fill: var(--ink); font-size: 13px; font-weight: 700; }
+/* 장비 구성: 묶음 제목 · 방식 그림 */
+.sec-read h3.hw-group { margin: 1.6em 0 0.2em; font-size: var(--fs-md); font-weight: 800; letter-spacing: -0.02em; }
+.hw-note { color: var(--muted); font-size: var(--fs-sm); }
+.ald-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 1.2em 0; }
+.ald-type { margin: 0; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--bg) 70%, #fff); }
+.ald-type svg { display: block; width: 100%; height: auto; }
+.ald-type figcaption { margin-top: 8px; color: var(--ink); font-size: var(--fs-sm); line-height: 1.5; }
+.ald-type figcaption span { display: block; color: var(--muted); font-size: var(--fs-xs); }
+.at-ch { fill: color-mix(in srgb, var(--bg) 40%, #cfd6dc); stroke: var(--muted); stroke-width: 1.4; }
+.at-wf, .at-stack rect { fill: var(--muted); }
+.at-gas, .at-move { stroke: var(--c-ald); stroke-width: 3; stroke-dasharray: 6 4; fill: none; }
+.at-zone { stroke: var(--muted); stroke-width: 1.2; }
+.at-zone.is-a { fill: color-mix(in srgb, var(--c-ald) 35%, transparent); }
+.at-zone.is-b { fill: color-mix(in srgb, var(--c-ald) 18%, transparent); }
+.at-zone.is-p { fill: color-mix(in srgb, var(--bg) 60%, #fff); }
+@media (max-width: 640px) { .ald-types { grid-template-columns: 1fr; } .ald-type svg { max-width: 200px; margin: 0 auto; } }
+/* 공정 흐름 단계 */
+.flow-steps > li { margin-bottom: 1.1em; }
+.flow-steps em { font-style: normal; font-weight: 700; color: var(--ink); }
+.flow-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.flow-links a { padding: 3px 11px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--ink); font-size: var(--fs-xs); text-decoration: none; }
+.flow-links a:hover { border-color: var(--c-ald); }

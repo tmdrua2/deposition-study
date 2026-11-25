@@ -379,6 +379,207 @@ window.SITE_PAGE_NOTES = {
    "section": "troubleshooting"
   },
   {
+   "path": "equipment/ald/principle.html",
+   "group": "ALD 원리",
+   "title": "원리",
+   "sources": [
+    {
+     "kind": "웹 자료(위키백과)",
+     "title": "Wikipedia, \"Atomic layer deposition\"",
+     "url": "https://en.wikipedia.org/wiki/Atomic_layer_deposition",
+     "checked": "2026-11-25",
+     "note": "전구체를 동시에 넣지 않고 겹치지 않는 펄스로 차례로 넣음, 주입–퍼지–주입–퍼지가 한 사이클, 사이클 수를 바꿔 두께를 정밀하게 조절하고 사이클당 성장량으로 공정을 설명함, TMA와 물로 만드는 Al2O3가 대표 예, 얇고 고르게 덮는(conformal) 막, 플라즈마 ALD로 증착 온도를 낮출 수 있음. ALD 온도 창, PECVD와의 속도 비교는 이 자료에서 확인하지 못함."
+    },
+    {
+     "kind": "일반 교과서 내용",
+     "title": "일반 교과서 내용",
+     "note": "ALD 온도 창(응축·반응 부족·분해·이탈), 퍼지 부족 시 CVD처럼 쌓이는 현상, ALD와 PECVD의 단차 피복·속도 비교"
+    }
+   ],
+   "verify": [
+    {
+     "text": "그래서 전구체를 조금 더 오래 넣어도 한 번에 쌓이는 양은 거의 같습니다 — 이 성질 덕분에 ALD는 가스 흐름이 고르지 않아도 웨이퍼 전체에 고른 막을 만들 수 있습니다.",
+     "where": "자기제한 반응: 표면이 다 차면 멈춘다",
+     "anchor": "self-limiting"
+    },
+    {
+     "text": "퍼지가 두 번이나 들어가는 이유는, 남은 전구체와 반응 기체가 공중에서 만나면 그 순간부터 CVD처럼 마구 쌓이고 공중에서 생긴 입자가 파티클이 되기 때문입니다.",
+     "where": "4단계 사이클",
+     "anchor": "cycle"
+    },
+    {
+     "text": "창을 벗어나면 네 가지 일이 생길 수 있습니다.",
+     "where": "ALD 온도 창",
+     "anchor": "window"
+    },
+    {
+     "text": "경향만 적었고, 막 종류와 장비에 따라 달라질 수 있습니다.",
+     "where": "PECVD와 비교",
+     "anchor": "vs-pecvd"
+    },
+    {
+     "text": "반응 기체 단계에서만 플라즈마를 켜서 더 낮은 온도에서 막을 만들 수 있지만, 플라즈마 손상과 깊은 구조 안쪽 피복은 따져 봐야 합니다 (플라즈마 소스 패널).",
+     "where": "PECVD와 비교",
+     "anchor": "vs-pecvd"
+    }
+   ],
+   "interview": [],
+   "equip": "ald",
+   "section": "principle"
+  },
+  {
+   "path": "equipment/ald/hardware.html",
+   "group": "ALD 장비 구성",
+   "title": "장비 구성",
+   "sources": [
+    {
+     "kind": "웹 자료(위키백과)",
+     "title": "Wikipedia, \"Atomic layer deposition\"",
+     "url": "https://en.wikipedia.org/wiki/Atomic_layer_deposition",
+     "checked": "2026-11-25",
+     "note": "공간 분할 ALD는 기체를 서로 다른 위치로 넣어 공간으로 나누고, 대량 생산 라인에 맞는다는 설명. 매엽식과 배치식의 비교는 이 자료에서 확인하지 못함."
+    },
+    {
+     "kind": "일반 교과서 내용",
+     "title": "일반 교과서 내용",
+     "note": "ALD 장비 모듈 구성, 전구체·반응 기체 배관 분리, 매엽식·배치식 비교"
+    }
+   ],
+   "verify": [
+    {
+     "text": "아래는 개념만 비교했습니다.",
+     "where": "장비 방식: 매엽식 · 배치식 · 공간 분할",
+     "anchor": "types"
+    },
+    {
+     "text": "한 번에 한 장이라 처리량을 챔버 수로 늘림",
+     "where": "장비 방식: 매엽식 · 배치식 · 공간 분할 · 매엽식 — 따져 볼 점",
+     "anchor": "types"
+    },
+    {
+     "text": "공간이 커서 퍼지가 오래 걸리고, 위·아래 웨이퍼끼리 차이를 관리해야 함",
+     "where": "장비 방식: 매엽식 · 배치식 · 공간 분할 · 배치식 — 따져 볼 점",
+     "anchor": "types"
+    },
+    {
+     "text": "구역 사이를 기체가 새지 않게 막는 구조가 필요",
+     "where": "장비 방식: 매엽식 · 배치식 · 공간 분할 · 공간 분할 — 따져 볼 점",
+     "anchor": "types"
+    }
+   ],
+   "interview": [],
+   "equip": "ald",
+   "section": "hardware"
+  },
+  {
+   "path": "equipment/ald/flow.html",
+   "group": "ALD 공정 흐름",
+   "title": "공정 흐름",
+   "sources": [
+    {
+     "kind": "웹 자료(위키백과)",
+     "title": "Wikipedia, \"Atomic layer deposition\"",
+     "url": "https://en.wikipedia.org/wiki/Atomic_layer_deposition",
+     "checked": "2026-11-25",
+     "note": "주입–퍼지–주입–퍼지가 한 사이클이고 사이클 수로 두께를 조절. 웨이퍼 이송·가열·안정화 순서는 이 자료에서 확인하지 못함."
+    },
+    {
+     "kind": "일반 교과서 내용",
+     "title": "일반 교과서 내용",
+     "note": "진공 장비의 웨이퍼 이송(FOUP → EFEM → LL → TM → PM), 로드락 펌핑·벤트, 레시피 단계 구성, 초기 지연"
+    }
+   ],
+   "verify": [
+    {
+     "text": "웨이퍼 온도가 ALD 온도 창 안에 들어와 고르게 되기 전에 사이클을 시작하면, 처음 몇 사이클의 성장량이 달라질 수 있습니다.",
+     "where": "한 장의 웨이퍼가 겪는 순서",
+     "anchor": "flow"
+    },
+    {
+     "text": "막을 처음 쌓기 시작할 때 표면 상태에 따라 처음 몇 사이클은 덜 쌓이는 경우가 있습니다(초기 지연).",
+     "where": "한 장의 웨이퍼가 겪는 순서",
+     "anchor": "flow"
+    },
+    {
+     "text": "남은 기체가 있는 채로 문을 열면 트랜스퍼 모듈로 넘어가 오염이 될 수 있기 때문입니다.",
+     "where": "한 장의 웨이퍼가 겪는 순서",
+     "anchor": "flow"
+    },
+    {
+     "text": "이때 뜨거운 웨이퍼를 식히기도 합니다.",
+     "where": "한 장의 웨이퍼가 겪는 순서",
+     "anchor": "flow"
+    }
+   ],
+   "interview": [],
+   "equip": "ald",
+   "section": "flow"
+  },
+  {
+   "path": "equipment/ald/parameters.html",
+   "group": "ALD 공정변수",
+   "title": "공정변수",
+   "sources": [
+    {
+     "kind": "웹 자료(위키백과)",
+     "title": "Wikipedia, \"Atomic layer deposition\"",
+     "url": "https://en.wikipedia.org/wiki/Atomic_layer_deposition",
+     "checked": "2026-11-25",
+     "note": "ALD 공정을 사이클당 성장량으로 설명하고 사이클 수로 두께를 조절. 펄스·퍼지 시간이 모자랄 때의 영향, 온도 창은 이 자료에서 확인하지 못함."
+    },
+    {
+     "kind": "일반 교과서 내용",
+     "title": "일반 교과서 내용",
+     "note": "포화 곡선, 퍼지 부족 시 CVD처럼 쌓이는 현상, 온도 창, 전구체 공급량과 포화"
+    }
+   ],
+   "verify": [
+    {
+     "text": "퍼지 시간도 같은 방법으로, 줄여 가다 두께가 늘기 시작하는(기체가 섞이기 시작하는) 지점을 찾습니다.",
+     "where": "포화 곡선: 레시피를 잡는 방법",
+     "anchor": "saturation"
+    },
+    {
+     "text": "너무 딱 맞추면 전구체 용기 온도가 조금만 흔들려도 포화 아래로 떨어집니다.",
+     "where": "포화 곡선: 레시피를 잡는 방법",
+     "anchor": "saturation"
+    },
+    {
+     "text": "포화 전에 닫히면 사이클당 두께가 줄고, 기체가 먼저 닿는 쪽만 덮여 균일도·단차 피복이 나빠짐",
+     "where": "공정변수 표 · 펄스 시간 (전구체·반응 기체 주입) — 내리면",
+     "anchor": "parameters"
+    },
+    {
+     "text": "남은 기체가 다음 기체와 만나 CVD처럼 더 쌓임 → 두께 증가, 균일도·단차 피복 악화, 파티클·불순물 증가",
+     "where": "공정변수 표 · 퍼지 시간 — 내리면",
+     "anchor": "parameters"
+    },
+    {
+     "text": "균일도·단차 피복이 나빠질 수 있음",
+     "where": "공정변수 표 · 웨이퍼 온도 (올리면 = 온도 창 위로) — 올리면",
+     "anchor": "parameters"
+    },
+    {
+     "text": "창 아래로 내려가면 반응 부족으로 덜 쌓이고 불순물이 남거나, 응축으로 오히려 더 쌓이고 파티클 위험",
+     "where": "공정변수 표 · 웨이퍼 온도 (올리면 = 온도 창 위로) — 내리면",
+     "anchor": "parameters"
+    },
+    {
+     "text": "남는 전구체가 많아 퍼지 부담이 커짐",
+     "where": "공정변수 표 · 전구체 공급량 (용기 온도·캐리어 가스) — 올리면",
+     "anchor": "parameters"
+    },
+    {
+     "text": "충분한 공급 ↔ 원료 비용, 열에 약한 전구체의 분해",
+     "where": "공정변수 표 · 전구체 공급량 (용기 온도·캐리어 가스) — 트레이드오프",
+     "anchor": "parameters"
+    }
+   ],
+   "interview": [],
+   "equip": "ald",
+   "section": "parameters"
+  },
+  {
    "path": "basics/vacuum.html",
    "group": "기초 · 진공",
    "title": "진공",

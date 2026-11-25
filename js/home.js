@@ -26,8 +26,8 @@
   const equip = groupOf("증착 장비");
   if (lineup && equip) {
     lineup.innerHTML = equip.items.map((it) => {
-      const st = menuState(it).status;
-      const ready = st === "done";
+      const ms = menuState(it), st = ms.status;
+      const ready = st === "done" || ms.open;        // 완성 또는 "장비 화면 완성 · 내용 작성 중" → 누를 수 있음
       const tone = toneOf(it.path);
       const inner = `
         <span class="slot-depth">
@@ -39,7 +39,7 @@
         <span class="slot-label">
           <span class="slot-abbr">${esc(tone === "ecd" ? "ECD" : it.name)}</span>
           <span class="slot-ko">${esc(PAGES.find((p) => p.path === it.path)?.desc || it.en)}</span>
-          <span class="slot-status${ready ? " is-done" : ""}">${ready ? "완성 · 보러 가기" : "준비 중"}</span>
+          <span class="slot-status${ready ? " is-done" : ""}">${st === "done" ? "완성 · 보러 가기" : ready ? esc(ms.label) : "준비 중"}</span>
         </span>`;
       return ready
         ? `<li class="slot is-ready" data-tone="${tone}"><a class="slot-link" href="${ROOT + it.path}">${inner}</a></li>`

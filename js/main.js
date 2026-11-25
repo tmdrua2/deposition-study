@@ -39,8 +39,10 @@ const MENU_GROUPS = [
     // sections: 이 장비의 섹션 목록(js/pages.js EQUIP_SECTIONS) → 상태·설명을 완성 섹션 수로 자동 계산 (아래 menuState)
     { path: "equipment/pecvd.html", name: "PECVD", en: "Plasma-Enhanced CVD", sections: "pecvd",
       desc: "장비 분해 연출과 원리부터 면접 질문까지 7개 섹션" },
-    { path: "equipment/ald.html", name: "ALD", en: "Atomic Layer Deposition", status: "done",   // 장비 분해 화면 완성(1차) — 7개 섹션 하위 페이지는 준비 중
-      desc: "장비 분해 연출 + 전구체·퍼지·반응 기체 사이클 기체 흐름 (섹션 7개는 준비 중)" },
+    // ALD: 장비 분해 화면은 완성, 섹션은 채우는 중 → 일부만 완성이면 partLabel 글자를 상태로 보여 줌 (7개 다 완성되면 저절로 "완성")
+    { path: "equipment/ald.html", name: "ALD", en: "Atomic Layer Deposition", sections: "ald",
+      partLabel: "장비 화면 완성 · 내용 작성 중",
+      desc: "장비 분해 연출 + 전구체·퍼지·반응 기체 사이클 기체 흐름" },
     { path: "equipment/pvd.html", name: "PVD", en: "Physical Vapor Deposition", status: "wip",
       desc: "스퍼터링 공정 모션 — 본문은 채우는 중" },
     { path: "equipment/epi.html", name: "Epi", en: "Epitaxy", status: "soon",
@@ -65,7 +67,9 @@ function menuState(it) {
   const done = eq.list.filter((s) => s.ready);
   if (done.length === eq.list.length) return { status: "done", desc: `장비 분해 연출 + ${eq.list.length}개 섹션 완성 (원리부터 면접 질문·출처까지)` };
   if (!done.length) return { status: "soon", desc: it.desc };
-  return { status: "wip", desc: `장비 분해 연출 + ${eq.list.length}개 섹션 중 ${done.length}개 완성 (${done.map((s) => s.title).join("·")})` };
+  // label(있으면): 상태 칸에 "작성 중" 대신 보일 글자, open: 표지에서 눌러 들어갈 수 있게 둘지
+  return { status: "wip", label: it.partLabel, open: !!it.partLabel,
+    desc: `장비 분해 연출 + ${eq.list.length}개 섹션 중 ${done.length}개 완성 (${done.map((s) => s.title).join("·")})` };
 }
 
 // 지금 보고 있는 페이지인지 (PECVD 하위 페이지 equipment/pecvd/*.html도 PECVD로 봄)
@@ -106,7 +110,7 @@ function renderHeader() {
             <span class="mi-no">${num}</span>
             <span class="mi-name">${it.name}</span>
             <span class="mi-en">${it.en}</span>
-            <span class="mi-status is-${st.status}">${cur ? "보는 중 · " : ""}${STATUS_TEXT[st.status]}</span>
+            <span class="mi-status is-${st.status}">${cur ? "보는 중 · " : ""}${st.label || STATUS_TEXT[st.status]}</span>
             ${ARROW}
           </a>
         </li>`;

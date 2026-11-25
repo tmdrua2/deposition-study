@@ -65,7 +65,8 @@
     }).sort((a, b) => a.no - b.no);
 
     // 하위 페이지 노트 (없으면 빈 목록)
-    const notes = ((window.SITE_PAGE_NOTES || {}).pages || []);
+    //   이 장비의 하위 페이지 + 기초 페이지만 (다른 장비 하위 페이지는 뺌 — 한 파일에 PECVD·ALD가 함께 있음)
+    const notes = ((window.SITE_PAGE_NOTES || {}).pages || []).filter(n => !n.equip || n.equip === equipId);
     const secList = sec ? sec.list : [];
     const pageLabel = n => n.equip ? `${eq.title.replace(/ 장비$/, "")} · ${n.title}` : n.group;
 
