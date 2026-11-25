@@ -350,3 +350,20 @@ renderPageHead();
 renderPageToc();
 setupReveal();
 setupToTop();
+
+// ---------- PECVD 같은 장비 무대 페이지: 무대가 끝나 크림 본문이 바 아래에 오면 상단 바도 크림으로 ----------
+//   (무대 안에서의 남색 → 크림 전환은 stage.js가 함. 여기는 "무대가 완전히 지나간 뒤"만 맡음)
+//   body.hdr-body → CSS가 색만 바꾸고 transition으로 부드럽게 (blur 없음)
+(function () {
+  const st = document.querySelector(".equip-stage");
+  if (!st || !document.body.classList.contains("page-stage")) return;
+  let raf = 0;
+  function check() {
+    raf = 0;
+    document.body.classList.toggle("hdr-body", st.getBoundingClientRect().bottom < 36);
+  }
+  const queue = () => { if (!raf) raf = requestAnimationFrame(check); };
+  window.addEventListener("scroll", queue, { passive: true });
+  window.addEventListener("resize", queue);
+  check();
+})();

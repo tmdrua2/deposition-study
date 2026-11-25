@@ -7,9 +7,10 @@
 //        → 같은 렌더러(render-iso.js), 같은 바닥선·조명
 //      · 표지에서는 서브팹(아래층) 펌프·배기관을 빼고 팹 바닥 위 장비만 그림 (모두 같은 바닥에 서도록)
 //      · 바닥 반사: 그린 그림을 한 번 더 복사해 위아래로 뒤집어 아주 옅게 (CSS가 흐리게 처리)
-//   2) 깊이감: 넓은 화면 + 마우스일 때만, 마우스 위치에 따라 배경 < 글자 < 뒤 장비 < 앞 장비 순으로
+//   2) 상단 바 색이 스크롤 위치의 배경색에 맞춰 바뀜 (body[data-hdr])
+//   3) 깊이감: 넓은 화면 + 마우스일 때만, 마우스 위치에 따라 배경 < 글자 < 뒤 장비 < 앞 장비 순으로
 //      조금씩 더 움직임. 움직임 줄이기·?still=1·데이터 절약이면 끔
-//   3) 아래 목차: 기초 / 장비사·실습 기록 — 같은 MENU_GROUPS에서 생성
+//   4) 아래 목차: 기초 / 장비사·실습 기록 — 같은 MENU_GROUPS에서 생성
 //   마우스를 올리면 바탕이 물드는 효과는 CSS(:has)만으로 처리
 // =============================================================
 (function () {
@@ -130,64 +131,74 @@
       console.warn("표지 장비 그림을 그리지 못했습니다:", box.dataset.equip, e);
     }
   });
-  // 큰 글자와 PECVD의 앞뒤 겹침 맞추기 (넓은 화면만)
-  //   글자 크기는 화면 "폭", 장비 크기는 화면 "높이"를 따라가서 화면 비율마다 겹침이 달라짐
-  //   → PECVD 몸체 윗선을 재서 글자 아래쪽 약 1/3만 장비 뒤로 숨게 글자 위치를 정함.
-  //     위쪽 녹아드는 띠(MIN_TOP)에 글자가 닿으면 대신 PECVD 그림 자리를 낮춤.
-  const MIN_TOP = 96, HIDE = 0.32;
-  const wide = matchMedia("(min-width: 901px)");
-  function layoutWord() {
-    const st = document.querySelector(".cover-stage"), word = document.querySelector(".cs-word");
-    const en = document.querySelector(".cs-word-en"), f = figs.find((x) => x.box.closest(".slot.is-ready"));
-    if (!st || !word || !en || !f) return;
-    const depth = f.box.closest(".slot-depth");
-    depth.style.height = "";
-    word.style.top = "";
-    if (!wide.matches) { fit(f); return; }
-    const wh = en.getBoundingClientRect().height;
-    const bodyTop = () => {           // PECVD 몸체 윗선 (무대 위끝 기준)
-      fit(f);
-      const vb = f.info.viewBox, body = f.info.assembledBody;
-      const s = f.scene.offsetHeight / vb[3];
-      return f.box.getBoundingClientRect().top - st.getBoundingClientRect().top + f.scene.offsetTop + (body[1] - vb[1]) * s;
-    };
-    let top = bodyTop() - (1 - HIDE) * wh;
-    if (top < MIN_TOP) {               // 글자가 너무 위로 올라감 → 그림 자리를 그만큼 줄여 장비를 낮춤
-      depth.style.height = Math.max(160, depth.offsetHeight - (MIN_TOP - top)) + "px";
-      top = Math.max(MIN_TOP, bodyTop() - (1 - HIDE) * wh);
-    }
-    word.style.top = top + "px";
-  }
-  const fitAll = () => { figs.forEach(fit); layoutWord(); };
+  // 글자는 장비 위쪽에 따로 놓이므로(겹치지 않음) 장비 그림만 칸 크기에 맞춤
+  const fitAll = () => { figs.forEach(fit); };
   fitAll();
   let raf = 0;
   window.addEventListener("resize", () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(fitAll); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);   // 글꼴이 늦게 와서 칸 크기가 바뀔 때
 
-  // ---------- 2) 마우스 깊이감 ----------
   const stage = document.querySelector(".cover-stage");
   if (!stage) return;
+
+  // ---------- 2) 상단 바 색: 지금 바 아래에 보이는 화면 색에 맞춤 ----------
+  //   body[data-hdr] = light(크림) / sand(모래색) / dark(남색) → CSS가 색 변수만 바꾸고 색 전환은 transition
+  const secMore = document.querySelector(".cover-sec.is-more"), secAbout = document.querySelector(".cover-sec.is-about");
+  let hdrRaf = 0;
+  function themeNow() {
+    const y = 36;                                   // 바 가운데 높이
+    const fade = parseFloat(getComputedStyle(document.querySelector(".cover-hero")).getPropertyValue("--fade")) || 110;
+    const sr = stage.getBoundingClientRect();
+    let t = "light";
+    if (sr.top + 100 < y && sr.bottom - fade / 2 > y) t = "dark";                 // 어두운 장비 무대 위
+    if (secMore && secMore.getBoundingClientRect().top + 120 < y) t = "sand";     // 모래색 구간
+    if (secAbout && secAbout.getBoundingClientRect().top + 200 < y) t = "dark";   // 남색 구간 + 바닥글
+    if (document.body.dataset.hdr !== t) document.body.dataset.hdr = t;
+  }
+  function onScroll() { if (!hdrRaf) hdrRaf = requestAnimationFrame(() => { hdrRaf = 0; themeNow(); }); }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  themeNow();
+
+  // ---------- 3) 마우스 깊이감 ----------
   const still = (window.MotionPref && MotionPref.reason()) ||
     !matchMedia("(hover: hover) and (pointer: fine) and (min-width: 900px)").matches;
   if (still) { stage.classList.add("is-still"); return; }
 
   // 목표값(마우스 위치 -1~1)을 향해 매 프레임 조금씩 따라감 → 부드럽게
+  //   ★ 성능: 예전에는 무대에 CSS 변수(--px)를 넣어서 장비 그림 속 수천 개 요소의 스타일이 매 프레임 다시 계산됐다.
+  //     지금은 움직일 층 몇 개의 transform만 직접 바꾼다 (층마다 이동 거리 = 깊이).
+  const layers = [
+    [stage.querySelector(".cs-tones"), -6, -4],
+    [stage.querySelector(".cs-word"), -12, -6],
+    [stage.querySelector(".cs-floor"), -9, 0]
+  ].concat([...stage.querySelectorAll(".slot")].map((el) =>
+    [el, el.classList.contains("is-ready") ? -26 : -17, el.classList.contains("is-ready") ? -10 : -7]
+  )).filter((l) => l[0]);
+  layers.forEach((l) => { l[0].style.willChange = "transform"; });
   let tx = 0, ty = 0, x = 0, y = 0, running = false;
   function tick() {
     x += (tx - x) * 0.06;
     y += (ty - y) * 0.06;
-    stage.style.setProperty("--px", x.toFixed(4));
-    stage.style.setProperty("--py", y.toFixed(4));
+    layers.forEach((l) => { l[0].style.transform = "translate3d(" + (x * l[1]).toFixed(2) + "px," + (y * l[2]).toFixed(2) + "px,0)"; });
     if (Math.abs(tx - x) > 0.001 || Math.abs(ty - y) > 0.001) requestAnimationFrame(tick);
     else running = false;
   }
+  // mousemove는 좌표만 기억하고, 그리기는 requestAnimationFrame 한 번에 묶음
+  let pending = null;
   function aim(nx, ny) {
     tx = nx; ty = ny;
     if (!running) { running = true; requestAnimationFrame(tick); }
   }
   stage.addEventListener("pointermove", (e) => {
-    const r = stage.getBoundingClientRect();
-    aim(((e.clientX - r.left) / r.width) * 2 - 1, ((e.clientY - r.top) / r.height) * 2 - 1);
+    if (pending) { pending = e; return; }
+    pending = e;
+    requestAnimationFrame(() => {
+      const r = stage.getBoundingClientRect(), ev = pending;
+      pending = null;
+      aim(((ev.clientX - r.left) / r.width) * 2 - 1, ((ev.clientY - r.top) / r.height) * 2 - 1);
+    });
   });
   stage.addEventListener("pointerleave", () => aim(0, 0));
+
 })();
