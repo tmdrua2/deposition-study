@@ -130,7 +130,35 @@
       console.warn("표지 장비 그림을 그리지 못했습니다:", box.dataset.equip, e);
     }
   });
-  const fitAll = () => figs.forEach(fit);
+  // 큰 글자와 PECVD의 앞뒤 겹침 맞추기 (넓은 화면만)
+  //   글자 크기는 화면 "폭", 장비 크기는 화면 "높이"를 따라가서 화면 비율마다 겹침이 달라짐
+  //   → PECVD 몸체 윗선을 재서 글자 아래쪽 약 1/3만 장비 뒤로 숨게 글자 위치를 정함.
+  //     위쪽 녹아드는 띠(MIN_TOP)에 글자가 닿으면 대신 PECVD 그림 자리를 낮춤.
+  const MIN_TOP = 96, HIDE = 0.32;
+  const wide = matchMedia("(min-width: 901px)");
+  function layoutWord() {
+    const st = document.querySelector(".cover-stage"), word = document.querySelector(".cs-word");
+    const en = document.querySelector(".cs-word-en"), f = figs.find((x) => x.box.closest(".slot.is-ready"));
+    if (!st || !word || !en || !f) return;
+    const depth = f.box.closest(".slot-depth");
+    depth.style.height = "";
+    word.style.top = "";
+    if (!wide.matches) { fit(f); return; }
+    const wh = en.getBoundingClientRect().height;
+    const bodyTop = () => {           // PECVD 몸체 윗선 (무대 위끝 기준)
+      fit(f);
+      const vb = f.info.viewBox, body = f.info.assembledBody;
+      const s = f.scene.offsetHeight / vb[3];
+      return f.box.getBoundingClientRect().top - st.getBoundingClientRect().top + f.scene.offsetTop + (body[1] - vb[1]) * s;
+    };
+    let top = bodyTop() - (1 - HIDE) * wh;
+    if (top < MIN_TOP) {               // 글자가 너무 위로 올라감 → 그림 자리를 그만큼 줄여 장비를 낮춤
+      depth.style.height = Math.max(160, depth.offsetHeight - (MIN_TOP - top)) + "px";
+      top = Math.max(MIN_TOP, bodyTop() - (1 - HIDE) * wh);
+    }
+    word.style.top = top + "px";
+  }
+  const fitAll = () => { figs.forEach(fit); layoutWord(); };
   fitAll();
   let raf = 0;
   window.addEventListener("resize", () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(fitAll); });

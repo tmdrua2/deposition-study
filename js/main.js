@@ -82,7 +82,9 @@ function renderHeader() {
 
   header.innerHTML = `
     <div class="header-inner">
-      <a class="logo" href="${ROOT}index.html">증착 공정 노트</a>
+      <a class="logo" href="${ROOT}index.html" aria-label="LAYER BY LAYER 증착 공정 노트, 처음으로">
+        <span class="logo-en">LAYER BY LAYER</span><span class="logo-ko">증착 공정 노트</span>
+      </a>
       <button class="menu-btn" type="button" aria-label="메뉴 열기" aria-expanded="false" aria-controls="site-menu">
         <span></span><span></span><span></span>
       </button>
@@ -141,7 +143,7 @@ function renderHeader() {
         </aside>
       </div>
       <div class="menu-foot" style="--i:${++row}">
-        <strong>증착 공정 노트</strong>
+        <strong>LAYER BY LAYER · 증착 공정 노트</strong>
         <span>반도체 증착 장비를 원리·장비 구성·점검 순서로 정리하는 학습 노트</span>
       </div>
     </div>`;
@@ -199,126 +201,7 @@ function renderHeader() {
   links.forEach((a) => a.addEventListener("click", () => setOpen(false, false)));
 }
 
-// ---------- 2) 메인 페이지 카테고리 카드 ----------
-// 카드 배경에 깔리는 은은한 선 그림 (흰 선, 낮은 투명도)
-function cardPattern(id) {
-  let shapes = "";
-  if (id === "basics") {
-    // 웨이퍼: 큰 원 + 칩 격자 + 아래쪽 노치
-    let dies = "";
-    for (let x = 300; x < 620; x += 26) {
-      for (let y = 40; y < 360; y += 26) {
-        const cx = x + 13 - 460, cy = y + 13 - 200;
-        if (cx * cx + cy * cy < 140 * 140) dies += `<rect x="${x + 2}" y="${y + 2}" width="22" height="22" rx="1.5"/>`;
-      }
-    }
-    shapes = `<circle cx="460" cy="200" r="165" stroke-width="1.4"/><circle cx="460" cy="200" r="185" opacity=".5"/>${dies}`;
-  } else if (id === "equipment") {
-    // 동심원 호: 플라즈마·박막 층 느낌
-    for (let r = 40; r <= 400; r += 14) shapes += `<circle cx="560" cy="360" r="${r}"/>`;
-  } else if (id === "companies") {
-    // 완만한 곡선 다발
-    for (let i = 0; i < 16; i++) {
-      const y = 60 + i * 16;
-      shapes += `<path d="M120 ${y + 120} C 260 ${y - 40}, 420 ${y + 160}, 640 ${y}"/>`;
-    }
-  } else {
-    // 실습 기록: 웨이퍼 윤곽 + 쌓인 막(가로선)
-    shapes = `<circle cx="470" cy="230" r="150"/><circle cx="470" cy="230" r="120" opacity=".6"/>`;
-    for (let y = 250; y < 400; y += 9) shapes += `<path d="M260 ${y} H 640" opacity=".55"/>`;
-  }
-  return `<svg class="card-bg" viewBox="0 0 640 400" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
-    <g fill="none" stroke="#fff" stroke-width="1">${shapes}</g></svg>`;
-}
-
-function renderToc() {
-  const toc = document.getElementById("toc");
-  if (!toc) return;
-
-  toc.innerHTML = SECTIONS.map((sec) => {
-    const pages = pagesOf(sec.id);
-    if (!pages.length) return "";
-    // 카드 제목(영문 + →)은 섹션의 첫 페이지로 이동
-    // 페이지가 여러 개인 섹션은 아래에 알약 버튼을 하나씩 더 둠
-    const single = pages.length === 1;
-    const pills = single ? "" : `<ul class="pills">${pages
-      .map((p) => `<li><a class="pill" href="${ROOT + p.path}">${p.short || p.title}${ARROW}</a></li>`)
-      .join("")}</ul>`;
-    const head = `<h3 class="card-title">${sec.en}${ARROW}</h3><p class="card-desc">${sec.desc}</p>`;
-    return `
-      <section class="cat-card card-${sec.id}${single ? " is-small" : ""}" id="${sec.id}" aria-label="${sec.title}">
-        ${cardPattern(sec.id)}
-        <a class="card-link" href="${ROOT + pages[0].path}">${head}</a>${pills}
-      </section>`;
-  }).join("");
-}
-
-// ---------- 메인 페이지 장비 목록 (단순한 선 그림) ----------
-// 색: 선=남색, 면=연회색, 포인트=하늘색. viewBox는 모두 160×120
-const EQUIP_ART = {
-  // PVD: 위쪽 타겟(진한 판)에서 원자가 튀어나와 아래 웨이퍼에 쌓임
-  "equipment/pvd.html": `
-    <rect x="30" y="14" width="100" height="92" rx="6" class="f-body"/>
-    <rect x="44" y="22" width="72" height="10" rx="2" class="f-ink"/>
-    <path d="M52 36v4M68 36v4M92 36v4M108 36v4" class="s-thin"/>
-    <circle cx="60" cy="54" r="2" class="f-sky"/><circle cx="80" cy="48" r="2" class="f-sky"/>
-    <circle cx="98" cy="60" r="2" class="f-sky"/><circle cx="72" cy="68" r="2" class="f-sky"/><circle cx="90" cy="74" r="2" class="f-sky"/>
-    <rect x="48" y="84" width="64" height="4" rx="1" class="f-ink"/>
-    <rect x="56" y="88" width="48" height="10" class="f-line"/>
-    <path d="M30 60h-12M130 60h12" class="s-line"/>`,
-  // PECVD: 가스 관 → 샤워헤드(구멍) → 플라즈마 → 히터 위 웨이퍼
-  "equipment/pecvd.html": `
-    <path d="M80 4v14" class="s-line"/>
-    <rect x="28" y="18" width="104" height="88" rx="6" class="f-body"/>
-    <rect x="40" y="26" width="80" height="8" rx="2" class="f-line"/>
-    <path d="M48 38v5M58 38v5M68 38v5M78 38v5M88 38v5M98 38v5M108 38v5" class="s-sky"/>
-    <path d="M44 56c12-6 24 6 36 0s24 6 36 0M44 64c12-6 24 6 36 0s24 6 36 0" class="s-sky s-thin"/>
-    <rect x="48" y="80" width="64" height="4" rx="1" class="f-ink"/>
-    <rect x="44" y="84" width="72" height="12" rx="2" class="f-line"/>
-    <path d="M52 100h56" class="s-thin"/>`,
-  // ALD: 전구체 A·B를 번갈아 넣는 펄스 + 한 층씩 쌓인 막
-  "equipment/ald.html": `
-    <rect x="22" y="20" width="116" height="60" rx="6" class="f-body"/>
-    <path d="M6 36h16M6 50h16" class="s-line"/>
-    <circle cx="10" cy="36" r="3" class="f-ink"/><circle cx="10" cy="50" r="3" class="f-sky"/>
-    <rect x="42" y="56" width="76" height="4" rx="1" class="f-ink"/>
-    <rect x="42" y="52" width="76" height="3" class="f-sky"/>
-    <rect x="42" y="48" width="76" height="3" class="f-ink-soft"/>
-    <rect x="42" y="44" width="76" height="3" class="f-sky"/>
-    <rect x="46" y="60" width="68" height="10" class="f-line"/>
-    <path d="M22 104h12v-12h10v12h12v-12h10v12h12v-12h10v12h12v-12h10v12h18" class="s-line"/>`,
-  // Epi: 램프 히터 사이 석영관, 서셉터 위 웨이퍼에 결정(점 격자)
-  "equipment/epi.html": `
-    <rect x="20" y="40" width="120" height="40" rx="20" class="f-body"/>
-    <g class="f-sky"><circle cx="34" cy="26" r="5"/><circle cx="56" cy="26" r="5"/><circle cx="78" cy="26" r="5"/><circle cx="100" cy="26" r="5"/><circle cx="122" cy="26" r="5"/>
-    <circle cx="34" cy="94" r="5"/><circle cx="56" cy="94" r="5"/><circle cx="78" cy="94" r="5"/><circle cx="100" cy="94" r="5"/><circle cx="122" cy="94" r="5"/></g>
-    <rect x="46" y="62" width="68" height="8" rx="2" class="f-line"/>
-    <rect x="50" y="58" width="60" height="4" class="f-ink"/>
-    <g class="f-ink"><circle cx="56" cy="53" r="1.4"/><circle cx="64" cy="53" r="1.4"/><circle cx="72" cy="53" r="1.4"/><circle cx="80" cy="53" r="1.4"/><circle cx="88" cy="53" r="1.4"/><circle cx="96" cy="53" r="1.4"/><circle cx="104" cy="53" r="1.4"/></g>`,
-  // ECD: 도금액이 담긴 조, 위에서 웨이퍼를 담그고 아래 양극(+)
-  "equipment/ecd.html": `
-    <path d="M80 6v18" class="s-line"/>
-    <rect x="44" y="24" width="72" height="8" rx="2" class="f-line"/>
-    <rect x="50" y="32" width="60" height="4" class="f-ink"/>
-    <path d="M26 30v70a6 6 0 0 0 6 6h96a6 6 0 0 0 6-6V30" class="f-body"/>
-    <path d="M28 50h104v50a4 4 0 0 1-4 4H32a4 4 0 0 1-4-4z" class="f-sky-soft"/>
-    <rect x="52" y="90" width="56" height="6" rx="1" class="f-ink"/>
-    <g class="f-sky"><circle cx="62" cy="70" r="2"/><circle cx="80" cy="62" r="2"/><circle cx="96" cy="74" r="2"/><circle cx="72" cy="80" r="2"/><circle cx="90" cy="56" r="2"/></g>
-    <path d="M140 92h8M144 88v8M124 12h8" class="s-line"/>`,
-};
-
-function renderEquipList() {
-  const list = document.getElementById("equip-list");
-  if (!list) return;
-  list.innerHTML = pagesOf("equipment").map((p) => `
-    <li class="equip-item">
-      <a href="${ROOT + p.path}">
-        <div class="equip-art"><svg viewBox="0 0 160 120" aria-hidden="true">${EQUIP_ART[p.path] || ""}</svg></div>
-        <strong>${p.short || p.title}</strong>
-        <span>${p.desc || ""}</span>
-      </a>
-    </li>`).join("");
-}
+// ---------- 2) 메인 페이지(표지) 장비 진열·아래 목차는 js/home.js ----------
 
 // ---------- 메인 페이지 검색 ----------
 // 지금은 제목과 keywords만 검색합니다 (파일을 직접 열어도 동작하도록).
@@ -344,78 +227,6 @@ function setupSearch() {
         }).join("")
       : `<li class="empty">검색 결과가 없습니다.</li>`;
   });
-}
-
-// ---------- 메인 첫 화면: 점·선 네트워크 구 ----------
-// 구 표면에 점을 고르게 뿌리고(피보나치 배치), 가까운 점끼리 선으로 잇습니다.
-// 매 프레임 조금씩 옆으로 돌려서 2D 화면에 그립니다. 뒤쪽 점·선은 더 흐리게.
-function setupSphere() {
-  const box = document.getElementById("sphere");
-  if (!box) return;
-
-  const N = 72;              // 점 개수
-  const SIZE = 400, R = 180; // 그림 크기, 구 반지름
-  const pts = [];
-  for (let i = 0; i < N; i++) {
-    const y = 1 - (i / (N - 1)) * 2;
-    const r = Math.sqrt(1 - y * y);
-    const t = i * Math.PI * (3 - Math.sqrt(5)); // 황금각
-    pts.push([Math.cos(t) * r, y, Math.sin(t) * r]);
-  }
-  // 각 점에서 가장 가까운 3개와 연결 (중복 제거)
-  const edges = new Set();
-  pts.forEach((a, i) => {
-    pts.map((b, j) => [j, (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2])
-      .filter(([j]) => j !== i)
-      .sort((m, n) => m[1] - n[1])
-      .slice(0, 3)
-      .forEach(([j]) => edges.add(i < j ? `${i}-${j}` : `${j}-${i}`));
-  });
-  const pairs = [...edges].map((e) => e.split("-").map(Number));
-
-  const NS = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(NS, "svg");
-  svg.setAttribute("viewBox", `0 0 ${SIZE} ${SIZE}`);
-  const lines = pairs.map(() => svg.appendChild(document.createElementNS(NS, "line")));
-  // 점 몇 개는 남색 포인트로
-  const dots = pts.map((_, i) => {
-    const c = svg.appendChild(document.createElementNS(NS, "circle"));
-    if (i % 9 === 0) c.classList.add("is-ink");
-    return c;
-  });
-  box.appendChild(svg);
-
-  const TILT = 0.38; // 앞으로 살짝 기울임 (라디안)
-  function draw(angle) {
-    const ca = Math.cos(angle), sa = Math.sin(angle);
-    const ct = Math.cos(TILT), st = Math.sin(TILT);
-    const proj = pts.map(([x, y, z]) => {
-      const x1 = x * ca + z * sa, z1 = -x * sa + z * ca;   // 세로축 회전
-      const y2 = y * ct - z1 * st, z2 = y * st + z1 * ct;  // 기울임
-      return [SIZE / 2 + x1 * R, SIZE / 2 + y2 * R, z2];
-    });
-    pairs.forEach(([i, j], k) => {
-      const a = proj[i], b = proj[j], l = lines[k];
-      l.setAttribute("x1", a[0].toFixed(1)); l.setAttribute("y1", a[1].toFixed(1));
-      l.setAttribute("x2", b[0].toFixed(1)); l.setAttribute("y2", b[1].toFixed(1));
-      l.style.opacity = (0.35 + 0.65 * ((a[2] + b[2]) / 4 + 0.5)).toFixed(2);
-    });
-    proj.forEach(([x, y, z], i) => {
-      const d = dots[i];
-      d.setAttribute("cx", x.toFixed(1)); d.setAttribute("cy", y.toFixed(1));
-      d.setAttribute("r", (2 + z * 1.2).toFixed(2));
-      d.style.opacity = (0.35 + 0.65 * (z / 2 + 0.5)).toFixed(2);
-    });
-  }
-
-  if (REDUCE_MOTION) { draw(0.6); return; } // 움직임 줄이기: 멈춘 그림 한 장
-  let start = null;
-  function frame(t) {
-    if (start === null) start = t;
-    draw(((t - start) / 1000) * 0.12); // 1초에 0.12라디안 → 약 52초에 한 바퀴
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
 }
 
 // ---------- 3) 학습 페이지 제목 영역 ----------
@@ -456,13 +267,17 @@ function renderPageToc() {
 // ---------- 4) 스크롤하면 아래에서 위로 나타나기 ----------
 // 처음 화면보다 아래에 있는 제목·카드만 숨겼다가, 화면에 들어오면 나타나게 합니다.
 function setupReveal() {
-  if (REDUCE_MOTION || !("IntersectionObserver" in window)) return;
+  // 움직임 줄이기·?still=1(정지 화면 점검)이면 나타나기 효과 없이 처음부터 보임
+  if (REDUCE_MOTION || /[?&]still=1/.test(location.search) || !("IntersectionObserver" in window)) return;
   const main = document.querySelector("main");
   if (!main) return;
   // 섹션 카드·섹션 하위 페이지는 자체 디자인이라 나타나기 효과를 쓰지 않음
   if (main.matches(".sec-hub-main, .sec-main")) return;
 
-  const targets = main.classList.contains("home")
+  // 표지(main.cover): 섹션 배경은 그대로 두고 안의 제목·목록만 나타남
+  const targets = main.classList.contains("cover")
+    ? main.querySelectorAll(".cover-sec > *")
+    : main.classList.contains("home")
     ? main.querySelectorAll(".home-section > .eyebrow, .home-section > h2, .cat-card, .equip-item")
     : main.querySelectorAll(":scope > :not(.page-head)");
 
@@ -530,10 +345,7 @@ function setupToTop() {
 }
 
 renderHeader();
-renderToc();
-renderEquipList();
 setupSearch();
-setupSphere();
 renderPageHead();
 renderPageToc();
 setupReveal();

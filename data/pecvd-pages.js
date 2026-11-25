@@ -1,11 +1,11 @@
 // =============================================================
-// 자동 생성 파일 — 직접 고치지 말 것.  만드는 법: node tools/collect-pages.js  (만든 날: 2026-11-24)
+// 자동 생성 파일 — 직접 고치지 말 것.  만드는 법: node tools/collect-pages.js  (만든 날: 2026-11-25)
 // 페이지(HTML) 글에서 뽑은 출처 · [검증 필요] 문장 · 면접 질문.
 // 쓰는 곳: equipment/pecvd/interview.html, equipment/pecvd/sources.html (js/figs/collect.js가 부품 데이터와 합침)
 //   path    = 사이트 맨 위 기준 경로, anchor = 그 페이지 안의 위치(id)
 // =============================================================
 window.SITE_PAGE_NOTES = {
- "generated": "2026-11-24",
+ "generated": "2026-11-25",
  "pages": [
   {
    "path": "equipment/pecvd/principle.html",
@@ -57,7 +57,7 @@ window.SITE_PAGE_NOTES = {
      "anchor": "films"
     },
     {
-     "text": "TEOS로 만든 막에는 탄소와 수소가 남을 수 있습니다. 부산물 구성은.",
+     "text": "TEOS로 만든 막에는 탄소와 수소가 남을 수 있습니다.",
      "where": "대표적인 막 두 가지",
      "anchor": "films"
     }

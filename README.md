@@ -1,4 +1,4 @@
-# 증착 공정 노트
+# LAYER BY LAYER · 증착 공정 노트
 
 반도체 증착 공정(PVD, CVD/PECVD, ALD, Epi, ECD) 개인 학습 사이트.
 
