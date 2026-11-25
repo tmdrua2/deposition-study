@@ -521,10 +521,17 @@
       // 다 분해된 뒤에만 모듈 그림에 "누를 수 있음" 손가락 모양
       scene.classList.toggle("is-exploded", isStatic || (!!tl && time >= moveEnd));
       // 웨이퍼 경로를 다 그린 뒤에만 점선이 천천히 흐름
-      wafer.classList.toggle("is-flowing", !!tl && time >= flowAt);
+      const flowing = !!tl && time >= flowAt;
+      wafer.classList.toggle("is-flowing", flowing);
+      // 장비별 덧그림(예: ALD 사이클 기체 흐름)이 "분해가 끝나고 흐르기 시작/멈춤"을 알 수 있게 알림
+      if (flowing !== flowNow) { flowNow = flowing; flowHooks.forEach((f) => f(flowing)); }
       // 크림이 반쯤 차오른 뒤에는 부품 패널을 밝은 유리로 (값이 같으면 classList는 아무것도 안 바꿈)
       document.body.classList.toggle("stage-light", !isStatic && !!tl && time >= lightAt);
     }
+
+    // 흐름 알림 받는 곳 (onFlow로 등록) — 반환값 참고
+    let flowNow = false;
+    const flowHooks = [];
 
     // ---------- 5) 타임라인 ----------
     const wpAt = moveEnd + 0.2;            // 웨이퍼 경로 그리기 시작
@@ -903,7 +910,13 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fit(); ScrollTrigger.refresh(); openFromHash(); scrollToPlainHash(); });
     else setTimeout(() => { openFromHash(); scrollToPlainHash(); }, 300);
 
-    return { info: info, callouts: callouts, panel: panel };
+    // scene·wafer·onFlow·isStatic: 장비별 덧그림(js/figs/ald-cycle.js)이 쓰는 손잡이
+    return {
+      info: info, callouts: callouts, panel: panel,
+      scene: scene, wafer: wafer, figure: figure, caption: caption, vb: vb,
+      onFlow: (f) => { flowHooks.push(f); },
+      isStatic: () => isStatic
+    };
   }
 
   window.EquipStage = { mount: mount };

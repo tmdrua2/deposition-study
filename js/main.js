@@ -39,8 +39,8 @@ const MENU_GROUPS = [
     // sections: 이 장비의 섹션 목록(js/pages.js EQUIP_SECTIONS) → 상태·설명을 완성 섹션 수로 자동 계산 (아래 menuState)
     { path: "equipment/pecvd.html", name: "PECVD", en: "Plasma-Enhanced CVD", sections: "pecvd",
       desc: "장비 분해 연출과 원리부터 면접 질문까지 7개 섹션" },
-    { path: "equipment/ald.html", name: "ALD", en: "Atomic Layer Deposition", status: "soon",
-      desc: "자기제한 반응으로 한 층씩 쌓는 원자층 증착" },
+    { path: "equipment/ald.html", name: "ALD", en: "Atomic Layer Deposition", status: "done",   // 장비 분해 화면 완성(1차) — 7개 섹션 하위 페이지는 준비 중
+      desc: "장비 분해 연출 + 전구체·퍼지·반응 기체 사이클 기체 흐름 (섹션 7개는 준비 중)" },
     { path: "equipment/pvd.html", name: "PVD", en: "Physical Vapor Deposition", status: "wip",
       desc: "스퍼터링 공정 모션 — 본문은 채우는 중" },
     { path: "equipment/epi.html", name: "Epi", en: "Epitaxy", status: "soon",

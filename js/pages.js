@@ -53,7 +53,7 @@ const PAGES = [
   { section: "equipment", title: "PECVD 출처 · [검증 필요] 모음", path: "equipment/pecvd/sources.html", hidden: true,
     keywords: "pecvd 출처 sources 특허 patent 교과서 검증 필요 참고 자료" },
   { section: "equipment", title: "ALD (원자층 증착)", short: "ALD", desc: "원자층 증착", path: "equipment/ald.html",
-    keywords: "ald atomic layer deposition 원자층 self-limiting 자기제한 purge 퍼지" },
+    keywords: "ald atomic layer deposition 원자층 self-limiting 자기제한 purge 퍼지 전구체 precursor 반응 기체 사이클 ald 밸브 가열 peald 플라즈마 ald 장비 분해" },
   { section: "equipment", title: "Epi (에피택시)", short: "Epi", desc: "에피택시", path: "equipment/epi.html",
     keywords: "epi epitaxy 에피택시 에피 단결정 sige" },
   { section: "equipment", title: "전기도금 (ECD)", short: "ECD", desc: "전기도금", path: "equipment/ecd.html",
@@ -88,6 +88,21 @@ const EQUIP_SECTIONS = {
       { id: "troubleshooting", title: "문제와 점검", en: "Troubleshooting", ready: true,  card: "증상을 골라 점검 흐름도 펼치기" },
       { id: "interview",       title: "면접 질문",   en: "Interview",       ready: true,  card: "질문 카드로 30초 답변 연습" },
       { id: "sources",         title: "출처",       en: "Sources",         ready: true,  card: "출처와 [검증 필요] 문장 모음" },
+    ],
+  },
+  // ALD: 장비 분해 화면만 완성(1차). 하위 페이지는 2차에서 만든다 → 만들 때 folder 아래에 파일을 두고 ready: true 로 바꿈
+  ald: {
+    name: "ALD",
+    home: "equipment/ald.html",
+    folder: "equipment/ald/",
+    list: [
+      { id: "principle",       title: "원리",       en: "Principle",       ready: false },
+      { id: "hardware",        title: "장비 구성",   en: "Hardware",        ready: false },
+      { id: "flow",            title: "공정 흐름",   en: "Process flow",    ready: false },
+      { id: "parameters",      title: "공정변수",    en: "Parameters",      ready: false },
+      { id: "troubleshooting", title: "문제와 점검", en: "Troubleshooting", ready: false },
+      { id: "interview",       title: "면접 질문",   en: "Interview",       ready: false },
+      { id: "sources",         title: "출처",       en: "Sources",         ready: false },
     ],
   },
 };

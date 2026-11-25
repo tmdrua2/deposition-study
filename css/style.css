@@ -63,6 +63,7 @@
      남색은 코랄·골유리 질감과 함께 쓸 때만. 코랄은 글자·선·버튼에 쓰지 않는다 */
   --navy: #14213D;
   --navy-deep: #0C1529;
+  --glow-rgb: 255, 107, 91;   /* 무대 빛 번짐 색 (코랄). 장비별로 body[data-equip]에서 바꿈 */
   --navy-lift: #1E2C4E;   /* 무대 아래쪽이 살짝 밝아지는 색 (보라 기운 없이) */
   --coral: #FF6B5B;
   --cream: #F4EDE0;
@@ -1119,10 +1120,10 @@ footer a:hover { color: var(--ink); }
   width: var(--glow-w, 60vw);
   height: var(--glow-h, 40vw);
   background: radial-gradient(closest-side,
-    rgba(255, 107, 91, 0.62) 0%,
-    rgba(255, 107, 91, 0.34) 34%,
-    rgba(255, 107, 91, 0.12) 64%,
-    rgba(255, 107, 91, 0) 100%);
+    rgba(var(--glow-rgb), 0.62) 0%,
+    rgba(var(--glow-rgb), 0.34) 34%,
+    rgba(var(--glow-rgb), 0.12) 64%,
+    rgba(var(--glow-rgb), 0) 100%);
   transform: translate(-50%, -50%);
 }
 /* 세로 골유리: 1px 밝은 선 + 그늘 띠가 일정 간격으로 반복 (그림 파일·흐림 필터 없음) */
@@ -1888,7 +1889,7 @@ main.sec-hub-main { max-width: var(--max); padding: 24px var(--gutter) 88px; }
 .sec-hub-glow, .sec-hero-glow, .sec-scrolly-glow {
   position: absolute;
   background: radial-gradient(closest-side,
-    rgba(255, 107, 91, 0.5) 0%, rgba(255, 107, 91, 0.24) 40%, rgba(255, 107, 91, 0.08) 70%, rgba(255, 107, 91, 0) 100%);
+    rgba(var(--glow-rgb), 0.5) 0%, rgba(var(--glow-rgb), 0.24) 40%, rgba(var(--glow-rgb), 0.08) 70%, rgba(var(--glow-rgb), 0) 100%);
 }
 .sec-hub-glow { right: -12%; top: -30%; width: 72%; height: 110%; }
 .sec-hub-head {
@@ -3100,7 +3101,7 @@ main.cover { max-width: none; padding: 0; }
 .cs-lineup {
   position: relative; z-index: 3; flex: 1 1 auto; min-height: 0;
   margin: 0 var(--edge-x) var(--fade); padding: 0; list-style: none;
-  display: grid; grid-template-columns: 48fr repeat(4, 12fr); column-gap: 1.2%; align-items: end;
+  display: grid; grid-template-columns: 40fr 28fr repeat(3, 11fr); column-gap: 1.2%;   /* 완성 장비 둘(PECVD·ALD)이 앞 두 칸 */ align-items: end;
 }
 .cs-lineup .slot { margin: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
 .slot-link { display: flex; flex-direction: column; justify-content: flex-end; height: 100%;
@@ -3281,4 +3282,81 @@ main.cover { max-width: none; padding: 0; }
 @media (prefers-reduced-motion: reduce) {
   .is-cover #site-header, .is-cover .logo, .is-cover .menu-btn span, .slot-depth, .slot-glow { transition: none; }
   .slot-link:hover .slot-depth, .slot-link:focus-visible .slot-depth { transform: none; }
+}
+
+/* =============================================================
+   ALD 장비 페이지 (equipment/ald.html) — 하늘색 톤 무대 + 사이클 기체 흐름
+   · 색: 장비 무대의 남색 대신 하늘색(--tone-ald-*)을 깐다. 남색 변수를 이 페이지 안에서만 바꾸는 방식이라
+     무대·섹션 카드·헤더가 PECVD와 같은 코드 그대로 하늘색이 됨. 코랄 빛은 옅은 하늘빛으로
+   · 하늘색은 PECVD 남색보다 밝아서 글자 대비를 맞추려고 위쪽을 조금 짙게 잡음 (크림 글자 대비 5 이상)
+   ============================================================= */
+body[data-equip="ald"] {
+  --navy-deep: #174668;
+  --navy: #2A6591;                 /* --tone-ald-top(#2C6A99)을 글자 대비 때문에 살짝 짙게 */
+  --navy-lift: #4C8DBB;            /* 무대 아래쪽이 살짝 밝아지는 색 (--tone-ald-low 쪽) */
+  --on-navy-muted: #D3E4F1;
+  --on-navy-soft: #E4EFF7;
+  --on-navy-faint: #B4CFE3;
+  --glow-rgb: 205, 232, 247;       /* --tone-ald-glow */
+  --c-cvd-bright: #BFE6FA;         /* 어두운 하늘 위 강조 선·점 (공정 색 = 하늘 쪽 밝은 값) */
+}
+body[data-equip="ald"] .equip-stage-pin {
+  --st-accent-light: #2A6FA8;      /* 크림 단계 강조 (공정 색 코발트 계열) */
+  --st-floor: rgba(14, 48, 78, 0.5);
+  --st-shadow: rgba(6, 28, 50, 0.34);
+}
+
+/* ---------- 사이클 기체 흐름 덧그림 (js/figs/ald-cycle.js) ---------- */
+.ald-cycle { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 900; overflow: visible; pointer-events: none;
+  opacity: 0; transition: opacity 0.5s ease; }
+.ald-cycle.is-live { opacity: 1; }
+.wafer-path { transition: opacity 0.5s ease; }
+.wafer-path.is-dim { opacity: 0.22; }                       /* 사이클이 돌 때 웨이퍼 경로는 뒤로 물러남 */
+.ac-base { fill: none; stroke: var(--st-rule-strong); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.ac-lit { fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-dasharray: 7 6; stroke-linecap: round; stroke-linejoin: round;
+  vector-effect: non-scaling-stroke; opacity: 0; transition: opacity 0.3s ease; }
+.ac-lit.is-on { opacity: 1; animation: wp-flow 0.9s linear infinite; }
+.ac-valve { fill: var(--st-bg); stroke: var(--st-rule-strong); stroke-width: 1.5; vector-effect: non-scaling-stroke; transition: fill 0.25s ease, stroke 0.25s ease; }
+.ac-valve.is-on { fill: var(--accent); stroke: var(--accent); }
+.ac-halo { fill: none; stroke: var(--accent); stroke-width: 1.5; vector-effect: non-scaling-stroke; opacity: 0; transition: opacity 0.3s ease; }
+.ac-halo.is-on { opacity: 0.55; }
+/* 밸브 옆 단계 이름표 */
+.ald-chip { position: absolute; z-index: 901; pointer-events: none; white-space: nowrap; opacity: 0; transition: opacity 0.35s ease;
+  transform: translate(18px, -50%); padding: 4px 11px 5px; border: 1px solid var(--accent); border-radius: 999px;
+  background: color-mix(in srgb, var(--st-bg) 86%, transparent); color: var(--st-ink); font-size: var(--fs-sm); font-weight: 700; line-height: 1.3; }
+.ald-chip.is-live { opacity: 1; }
+.ald-chip.is-left { transform: translate(calc(-100% - 18px), -50%); }   /* 장면 오른쪽 끝 가까이면 밸브 왼쪽에 */
+.ald-chip small { margin-right: 6px; color: var(--accent); font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 500; }
+/* 아래 설명줄: 사이클 네 단계 중 지금 단계 강조 */
+.iso-caption .ac-steps { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px; }
+.iso-caption .ac-step { color: var(--st-faint); transition: color 0.25s ease; }
+.iso-caption .ac-step.is-on { color: var(--st-ink); font-weight: 700; }
+.iso-caption .ac-step.is-on::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--accent); }
+
+/* ---------- 정지 화면: 사이클 네 단계를 나란히 (움직임 줄이기 · ?still=1 · 데이터 절약) ---------- */
+.ald-steps { max-width: var(--max); margin: 0 auto; padding: 36px var(--gutter) 8px; }
+.ald-steps[hidden] { display: none; }
+.ald-steps-title { margin: 0 0 6px; font-size: var(--fs-xl); font-weight: 800; letter-spacing: -0.03em; color: var(--ink); }
+.ald-steps-lede { margin: 0 0 20px; max-width: 40em; color: var(--muted); font-size: var(--fs-sm); line-height: 1.7; }
+.ald-steps-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.ald-step { margin: 0; padding: 14px 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--bg) 70%, #fff); }
+.ald-step svg { display: block; width: 100%; height: auto; }
+.ald-step-name { margin: 10px 0 2px; color: var(--ink); font-size: var(--fs-md); font-weight: 800; letter-spacing: -0.02em; }
+.ald-step-name span { margin-right: 6px; color: var(--c-ald); font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 500; }
+.ald-step-desc { margin: 0; color: var(--muted); font-size: var(--fs-sm); line-height: 1.6; }
+@media (max-width: 900px) { .ald-steps-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* 그림 안 부품 (작은 계통도) */
+.as-box { fill: color-mix(in srgb, var(--bg) 60%, #fff); stroke: var(--faint); stroke-width: 1.2; }
+.as-chamber { fill: color-mix(in srgb, var(--bg) 40%, #cfd6dc); stroke: var(--muted); stroke-width: 1.4; }
+.as-text { fill: var(--muted); font-size: 10px; font-family: inherit; text-anchor: middle; }
+.as-pipe { fill: none; stroke: var(--faint); stroke-width: 1.4; opacity: 0.7; }
+.as-pipe.is-on { stroke: var(--c-ald); stroke-width: 2.6; stroke-dasharray: 6 5; opacity: 1; }
+.as-valve { fill: var(--bg); stroke: var(--faint); stroke-width: 1.4; }
+.as-valve.is-on { fill: var(--c-ald); stroke: var(--c-ald); }
+
+/* 준비 중인 섹션 카드: 링크 없음 → 올려도 커지지 않고 손가락 모양 없음 */
+.sec-card a:not([href]) { cursor: default; }
+.sec-card a:not([href]):hover { transform: none; border-color: rgba(244, 237, 224, 0.14); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ac-lit.is-on { animation: none; }
 }
