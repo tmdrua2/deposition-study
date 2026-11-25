@@ -13,6 +13,7 @@
 - Node.js 설치 + `find-skills` 스킬 설치 (Vercel Labs, 컴퓨터 전체 `~/.claude/skills/`에 설치)
 
 ## 완료 (최근)
+- **표지 상단 바 색 전환 수정** (2026-11-25): 전환 0.3초, 배경·글씨가 동시에 바뀌고 읽기 어려운 중간 회색 구간은 건너뜀(`css/style.css` `--hdr-ease`), 맨 위로·#링크 도착 시 색 즉시 맞춤(`js/home.js` scrollend·hashchange), 스크롤마다 getComputedStyle 읽던 것 제거
 - **메인 표지 개편 완료** (2026-11-25, `wip-cover` 브랜치에서 작업 → `main`에 합친 뒤 브랜치 삭제, `index.html`에서 확인)
   - 이름: 영문 **LAYER BY LAYER** + 한글 "증착 공정 노트" — 헤더 로고(두 줄)·메뉴 아래줄·모든 페이지 `<title>`·README·표지 바닥글
   - 시안 B(워드마크 무대): 위 줄 소개 + 큰 검색창 → 장비 진열 무대(첫 화면 높이에 맞춤) (시안·비교: `docs/cover-plan.md`, `docs/mockups/`)

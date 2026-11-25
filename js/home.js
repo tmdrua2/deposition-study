@@ -145,9 +145,12 @@
   //   body[data-hdr] = light(크림) / sand(모래색) / dark(남색) → CSS가 색 변수만 바꾸고 색 전환은 transition
   const secMore = document.querySelector(".cover-sec.is-more"), secAbout = document.querySelector(".cover-sec.is-about");
   let hdrRaf = 0;
+  const heroEl = document.querySelector(".cover-hero");
+  let fade = 110;                                   // 매 스크롤마다 getComputedStyle을 부르면 느려서, 크기가 바뀔 때만 읽음
+  const readFade = () => { fade = parseFloat(getComputedStyle(heroEl).getPropertyValue("--fade")) || 110; };
+  readFade();
   function themeNow() {
     const y = 36;                                   // 바 가운데 높이
-    const fade = parseFloat(getComputedStyle(document.querySelector(".cover-hero")).getPropertyValue("--fade")) || 110;
     const sr = stage.getBoundingClientRect();
     let t = "light";
     if (sr.top + 100 < y && sr.bottom - fade / 2 > y) t = "dark";                 // 어두운 장비 무대 위
@@ -157,7 +160,10 @@
   }
   function onScroll() { if (!hdrRaf) hdrRaf = requestAnimationFrame(() => { hdrRaf = 0; themeNow(); }); }
   window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", onScroll);
+  window.addEventListener("resize", () => { readFade(); onScroll(); });
+  window.addEventListener("scrollend", themeNow);   // 맨 위로·#링크처럼 크게 이동한 뒤 도착 위치 색을 바로 맞춤
+  window.addEventListener("hashchange", themeNow);
+  window.addEventListener("pageshow", themeNow);
   themeNow();
 
   // ---------- 3) 마우스 깊이감 ----------

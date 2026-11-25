@@ -3011,10 +3011,15 @@ body.is-cover { --cover-max: 1360px; background: var(--cover-bg); }
 body.is-cover { --hdr-bg: var(--cover-bg); --hdr-ink: var(--ink); --hdr-line: transparent; }
 body.is-cover[data-hdr="sand"] { --hdr-bg: var(--cover-sand); --hdr-line: transparent; }
 body.is-cover[data-hdr="dark"] { --hdr-bg: var(--navy-deep); --hdr-ink: var(--on-navy); --hdr-line: rgba(244, 237, 224, 0.10); }
+/* 색 전환 0.3초. 배경은 중간 회색(어떤 글씨색도 대비 4.5 미만인 구간)을 건너뛰도록 곡선에 점프를 넣고(40%→60%),
+   글씨색은 그 점프 순간(0.12초)에 한꺼번에 바뀐다 → 배경·글씨가 동시에 바뀌고 바뀌는 중에도 읽힌다.
+   linear()를 모르는 오래된 브라우저는 ease로 대체(그냥 부드럽게 바뀜). */
+.is-cover { --hdr-ease: ease; }
+@supports (transition-timing-function: linear(0, 1)) { .is-cover { --hdr-ease: linear(0, 0.4 40%, 0.6 40.5%, 1); } }
 .is-cover #site-header { background: var(--hdr-bg); border-bottom-color: var(--hdr-line);
-  transition: background-color 0.4s ease, border-color 0.4s ease; }
-.is-cover .logo { color: var(--hdr-ink); transition: color 0.4s ease; }
-.is-cover .menu-btn span { background: var(--hdr-ink); transition: background-color 0.4s ease; }
+  transition: background-color 0.3s var(--hdr-ease), border-color 0.3s var(--hdr-ease); }
+.is-cover .logo { color: var(--hdr-ink); transition: color 0.01s linear 0.121s; }
+.is-cover .menu-btn span { background: var(--hdr-ink); transition: background-color 0.01s linear 0.121s; }
 .is-cover .header-inner { max-width: var(--cover-max); }
 main.cover { max-width: none; padding: 0; }
 
