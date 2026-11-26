@@ -56,11 +56,11 @@ const PAGES = [
     keywords: "ald atomic layer deposition 원자층 self-limiting 자기제한 purge 퍼지 전구체 precursor 반응 기체 사이클 ald 밸브 가열 peald 플라즈마 ald 장비 분해" },
   // ALD 섹션 하위 페이지 (hidden: 검색에만)
   { section: "equipment", title: "ALD 원리 (자기제한 반응·4단계 사이클·온도 창)", path: "equipment/ald/principle.html", hidden: true,
-    keywords: "ald 원리 자기제한 self-limiting 포화 사이클 전구체 퍼지 반응 기체 온도 창 ald window 단차 피복 conformal pecvd 비교 tma al2o3" },
+    keywords: "ald 원리 자기제한 self-limiting 포화 사이클 전구체 퍼지 반응 기체 온도 창 ald window 단차 피복 conformal pecvd 비교 tma al2o3 시뮬레이션 표면 빈자리 퍼지 부족 파티클 알갱이 응축 분해 이탈" },
   { section: "equipment", title: "ALD 장비 구성 (모듈 역할·매엽식·배치식·공간 분할)", path: "equipment/ald/hardware.html", hidden: true,
     keywords: "ald 장비 구성 공정 챔버 ald 밸브 전구체 공급부 캐니스터 반응 기체 퍼지 peald 펌프 매엽식 배치식 batch spatial 공간 분할" },
   { section: "equipment", title: "ALD 공정 흐름 (투입·가열·사이클 반복·퍼지·반출)", path: "equipment/ald/flow.html", hidden: true,
-    keywords: "ald 공정 흐름 웨이퍼 투입 가열 안정화 사이클 반복 퍼지 배출 반출 레시피" },
+    keywords: "ald 공정 흐름 웨이퍼 투입 가열 안정화 사이클 반복 퍼지 배출 반출 레시피 웨이퍼 경로 foup efem 로드락 tm 밸브 시간표 펄스" },
   { section: "equipment", title: "ALD 공정변수 (펄스 시간·퍼지 시간·온도·전구체 공급량)", path: "equipment/ald/parameters.html", hidden: true,
     keywords: "ald 공정변수 펄스 시간 pulse 퍼지 시간 purge 온도 전구체 공급량 dose 사이클당 성장 gpc 포화" },
   { section: "equipment", title: "Epi (에피택시)", short: "Epi", desc: "에피택시", path: "equipment/epi.html",

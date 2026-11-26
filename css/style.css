@@ -101,6 +101,17 @@
   --sim-purge: #9FB7D6;   /* 퍼지 가스 */
   --sim-clean: #E3B36B;   /* 세정용 불소 라디칼 */
   --sim-deposit: #8E8370; /* 챔버 벽에 쌓인 막 */
+  /* ALD 원리 표면 시뮬레이션 (js/sim/ald-surface.js) · 밸브 시간표 (js/figs/ald-valve-timeline.js) — 하늘색 띠 위 색.
+     분자는 색 + 크기로 구분 (전구체 큰 원, 반응 기체 중간 원, 퍼지 가스 빈 원, 부산물 작은 점) */
+  --ald-prec: #F2C46D;    /* 전구체 (금색) */
+  --ald-react: #8FE0C8;   /* 반응 기체 (민트) */
+  --ald-purge: #E4EFF7;   /* 퍼지 가스 (빈 원) */
+  --ald-byp: #9FB0C2;     /* 부산물 */
+  --ald-site: #F4EDE0;    /* 빈자리 고리 */
+  --ald-film: #BFE6FA;    /* 쌓인 막 */
+  --ald-film-alt: #9DD3EF;/* 쌓인 막 (한 줄 걸러 살짝 진하게 → 층이 보이게) */
+  --ald-film-edge: #174668; /* 막 칸 테두리 */
+  --ald-grain: #2B2420;   /* 알갱이(파티클) */
   /* 장비 계통도 선 색 (js/figs/hardware-map.js) — 남색 위 밝은 색 / 크림 위 진한 색. 선 모양으로도 구분 */
   --sys-gas: #5CC2B8;   --sys-gas-deep: #2F8C84;    /* 가스: 실선 */
   --sys-rf: #E3B36B;    --sys-rf-deep: #A8711B;     /* RF: 긴 점선+점 */
@@ -1951,6 +1962,13 @@ main.sec-hub-main { max-width: var(--max); padding: 24px var(--gutter) 88px; }
   color: var(--on-navy);
 }
 .sec-card a:focus-visible { outline: 2px solid var(--c-cvd-bright); outline-offset: 3px; }
+/* 준비 중 섹션(href 없는 a, js/sections.js가 정함): 누를 수 없으니 손가락 모양·확대·외곽선 없이 살짝 흐리게 */
+.sec-card a:not([href]), .sec-rail a:not([href]), .sec-pager-link:not([href]) { cursor: default; }
+.sec-card a:not([href]) { opacity: 0.72; }
+.sec-card a:not([href]):hover { transform: none; border-color: rgba(244, 237, 224, 0.14); box-shadow: none; }
+.sec-rail a:not([href]):hover::before { background: transparent; }
+.sec-rail .is-soon a > span { opacity: 0.6; }
+.sec-pager-link:not([href]) { opacity: 0.72; }
 .sec-card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .sec-card-no, .sec-card-en { font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1; }
 .sec-card-no { display: inline-flex; align-items: center; gap: 8px; color: var(--on-navy); font-weight: 500; }
@@ -3422,3 +3440,143 @@ body[data-equip="ald"] .equip-stage-pin {
 .flow-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .flow-links a { padding: 3px 11px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--ink); font-size: var(--fs-xs); text-decoration: none; }
 .flow-links a:hover { border-color: var(--c-ald); }
+
+/* =============================================================
+   ALD 원리: 표면 시뮬레이션 (js/sim/ald-surface.js) — 하늘색 띠(.sec-band) 안
+   선 굵기·글꼴은 공정 흐름 평면도(.wr-*)와 같게. 색은 :root의 --ald-* 만 씀
+   ============================================================= */
+.asf-band .sec-band-inner { padding-top: clamp(96px, 10vw, 128px); }
+.asf { margin: 0; padding: 14px 16px 12px; border: 1px solid rgba(244, 237, 224, 0.14); border-radius: 22px; background: rgba(12, 21, 41, 0.42); }
+.asf-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+.asf-count { margin: 0; color: var(--on-navy-muted); font-size: var(--fs-sm); }
+.asf-count b { color: var(--on-navy); font-family: var(--font-mono); font-size: var(--fs-md); font-weight: 600; }
+.asf-svg-box svg { display: block; width: 100%; height: auto; max-height: calc(100svh - var(--header-h, 72px) - 320px); min-height: 220px; margin-top: 6px; }
+.asf-desc { min-height: 1.6em; margin: 6px 0 0; color: var(--on-navy); font-size: var(--fs-md); line-height: 1.6; }
+.asf-warn { margin: 6px 0 0; padding: 8px 12px; border-left: 3px solid var(--ald-prec); border-radius: 4px; background: rgba(12, 21, 41, 0.35); color: var(--on-navy-soft); font-size: var(--fs-sm); line-height: 1.6; }
+.asf-warn[hidden] { display: none; }
+.asf-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(244, 237, 224, 0.12); }
+.asf-ctrl .scrolly-pause { margin-left: 0; min-width: 5.5em; }
+.asf-steps { display: flex; align-items: center; gap: 6px; }
+.asf-arrow, .asf-bad {
+  height: 30px; padding: 0 12px; border: 1px solid rgba(244, 237, 224, 0.22); border-radius: 999px;
+  background: transparent; color: var(--on-navy-muted); font: inherit; font-size: var(--fs-xs); cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.asf-arrow { width: 30px; padding: 0; font-size: 10px; }
+.asf-arrow:disabled { opacity: 0.35; cursor: default; }
+.asf-arrow:not(:disabled):hover, .asf-bad:hover { border-color: var(--c-cvd-bright); color: var(--on-navy); }
+.asf-bad { margin-left: auto; font-size: var(--fs-sm); font-weight: 600; color: var(--on-navy); }
+.asf-bad[aria-pressed="true"] { border-color: var(--ald-prec); background: rgba(242, 196, 109, 0.14); }
+.asf-arrow:focus-visible, .asf-bad:focus-visible, .asf-play:focus-visible, .atw-marks button:focus-visible { outline: 2px solid var(--c-cvd-bright); outline-offset: 2px; }
+.asf-cap { margin-top: 12px; color: var(--on-navy-muted); font-size: var(--fs-xs); }
+.asf-legend i { width: 10px; height: 10px; }
+.asf-legend .k-site { box-sizing: border-box; border: 1.5px solid var(--ald-site); background: transparent; }
+.asf-legend .k-prec { width: 12px; height: 12px; background: var(--ald-prec); }
+.asf-legend .k-react { background: var(--ald-react); }
+.asf-legend .k-purge { box-sizing: border-box; width: 8px; height: 8px; border: 1.5px solid var(--ald-purge); background: transparent; }
+.asf-legend .k-byp { width: 6px; height: 6px; background: var(--ald-byp); }
+.asf-legend .k-film { width: 16px; height: 8px; border-radius: 2px; background: var(--ald-film); }
+.asf-legend .k-grain { width: 12px; height: 12px; background: var(--ald-grain); box-shadow: 0 0 0 1.5px var(--ald-react); }
+.asf-note { margin: 8px 0 0; color: var(--on-navy-muted); line-height: 1.6; }
+/* SVG 안 */
+.asf-svg text, .atw-svg text { font-family: Pretendard, -apple-system, sans-serif; }
+.asf-label { fill: var(--on-navy-muted); font-size: 13px; font-weight: 600; }
+.asf-label.is-end { text-anchor: end; }
+.asf-exhaust { fill: none; stroke: var(--on-navy-muted); stroke-width: 1.4; stroke-dasharray: 4 5; }
+.asf-head { fill: none; stroke: var(--on-navy-muted); stroke-width: 1.4; }
+.asf-sub { fill: var(--sim-wafer); }
+.asf-sub-t { fill: var(--navy-deep); font-size: 12px; font-weight: 700; text-anchor: middle; }
+.asf-cell { fill: var(--ald-film); stroke: var(--ald-film-edge); stroke-width: 1; }
+.asf-cell.is-alt { fill: var(--ald-film-alt); }
+.asf-site { fill: none; stroke: var(--ald-site); stroke-width: 1.6; }
+.asf-prec { fill: var(--ald-prec); stroke: var(--navy-deep); stroke-width: 1.2; }
+.asf-react { fill: var(--ald-react); stroke: var(--navy-deep); stroke-width: 1.2; }
+.asf-purge { fill: none; stroke: var(--ald-purge); stroke-width: 1.4; }
+.asf-byp { fill: var(--ald-byp); }
+.asf-grain { fill: var(--ald-grain); stroke: var(--ald-react); stroke-width: 2; }
+
+/* ---------- 온도 창 패널 ---------- */
+.atw { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 20px clamp(20px, 3vw, 40px); align-items: start;
+  margin-top: 24px; padding: 18px 18px 16px; border: 1px solid rgba(244, 237, 224, 0.14); border-radius: 22px; background: rgba(12, 21, 41, 0.42); }
+.atw-title { margin: 0 0 6px; color: var(--on-navy); font-size: var(--fs-lg); font-weight: 800; letter-spacing: -0.02em; }
+.atw-lede { margin: 0 0 16px; color: var(--on-navy-muted); font-size: var(--fs-sm); line-height: 1.6; }
+.atw-label { display: flex; justify-content: space-between; gap: 10px; color: var(--on-navy-muted); font-size: var(--fs-sm); }
+.atw-label b { color: var(--on-navy); }
+/* 막대: 가운데 1/3 = 온도 창 (공정 색으로 표시) */
+.atw-range { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; margin: 6px 0 4px; background: transparent; cursor: pointer; }
+.atw-range::-webkit-slider-runnable-track { height: 8px; border-radius: 999px;
+  background: linear-gradient(90deg, rgba(244, 237, 224, 0.18) 0 33%, var(--c-cvd-bright) 33% 67%, rgba(244, 237, 224, 0.18) 67% 100%); }
+.atw-range::-moz-range-track { height: 8px; border-radius: 999px;
+  background: linear-gradient(90deg, rgba(244, 237, 224, 0.18) 0 33%, var(--c-cvd-bright) 33% 67%, rgba(244, 237, 224, 0.18) 67% 100%); }
+.atw-range::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -7px; border: 2px solid var(--navy-deep); border-radius: 50%; background: var(--on-navy); }
+.atw-range::-moz-range-thumb { width: 18px; height: 18px; border: 2px solid var(--navy-deep); border-radius: 50%; background: var(--on-navy); }
+.atw-range:focus-visible { outline: 2px solid var(--c-cvd-bright); outline-offset: 4px; border-radius: 999px; }
+.atw-marks { display: grid; grid-template-columns: repeat(3, 1fr); }
+.atw-marks button { padding: 4px 0; border: 0; background: none; color: var(--on-navy-faint); font: inherit; font-size: var(--fs-xs); cursor: pointer; }
+.atw-marks button:nth-child(1) { text-align: left; }
+.atw-marks button:nth-child(3) { text-align: right; }
+.atw-marks button.is-on { color: var(--on-navy); font-weight: 700; }
+.atw-foot { margin: 14px 0 0; color: var(--on-navy-muted); font-size: var(--fs-xs); line-height: 1.6; }
+.atw-foot a { color: var(--on-navy); }
+.atw-draw { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.atw-draw.is-window { grid-template-columns: minmax(0, 1fr); max-width: 420px; justify-self: center; width: 100%; }
+.atw-card { margin: 0; padding: 10px 12px 12px; border: 1px solid rgba(244, 237, 224, 0.12); border-radius: 14px; background: rgba(12, 21, 41, 0.3); animation: atw-in 0.3s ease; }
+@keyframes atw-in { from { opacity: 0; } to { opacity: 1; } }
+.atw-pic svg { display: block; width: 100%; height: auto; }
+.atw-card figcaption { margin-top: 6px; color: var(--on-navy-muted); font-size: var(--fs-sm); line-height: 1.6; }
+.atw-card figcaption strong { display: block; color: var(--on-navy); }
+.asf-prec.is-half { opacity: 0.55; }
+.asf-prec.is-away { opacity: 0.8; }
+.atw-frag { fill: var(--ald-byp); }
+.atw-frag.is-prec { fill: var(--ald-prec); }
+.atw-drop { fill: none; stroke: var(--ald-site); stroke-width: 1.4; stroke-dasharray: 3 4; }
+.atw-arrow { fill: none; stroke: var(--on-navy-muted); stroke-width: 1.4; }
+
+@media (max-width: 899px) {
+  .atw { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .asf { padding: 10px 10px 10px; }
+  .asf-svg-box svg { max-height: none; min-height: 0; }
+  .asf-label { font-size: 22px; }
+  .asf-sub-t { font-size: 22px; }
+  .asf-desc { min-height: 4.8em; font-size: var(--fs-sm); }
+  .asf-bad { margin-left: 0; width: 100%; height: 38px; }
+  .asf-ctrl { gap: 10px; }
+  .asf-steps { flex: 1; justify-content: flex-end; }
+  .atw { padding: 14px 12px; }
+  .atw-draw { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .atw-card { animation: none; } }
+
+/* =============================================================
+   ALD 공정 흐름: 웨이퍼 경로(.wr, PECVD와 같은 그림) 오른쪽 위 밸브 시간표 (js/figs/ald-valve-timeline.js)
+   ============================================================= */
+body[data-equip="ald"] .wr-plasma-a { stop-color: var(--ald-film); stop-opacity: 0.55; }   /* ALD는 열 반응: PM 빛을 하늘색으로 */
+body[data-equip="ald"] .wr-plasma-b { stop-color: var(--ald-film); }
+.wr-side { min-width: 0; }
+.vt { margin: 0 0 14px; padding: 12px 14px 10px; border: 1px solid rgba(244, 237, 224, 0.14); border-radius: 18px; background: rgba(12, 21, 41, 0.42); transition: opacity 0.3s; }
+.vt-title { margin: 0 0 4px; color: var(--on-navy); font-size: var(--fs-sm); font-weight: 700; }
+.vt-svg { display: block; width: 100%; height: auto; }
+.vt-svg text { font-family: Pretendard, -apple-system, sans-serif; }
+.vt-head { fill: var(--on-navy-faint); font-size: 14px; text-anchor: middle; }
+.vt-row { fill: var(--on-navy-muted); font-size: 16px; font-weight: 600; transition: fill 0.2s; }
+.vt-row.is-on { fill: var(--on-navy); font-weight: 800; }
+.vt-sep { stroke: rgba(244, 237, 224, 0.16); stroke-width: 1; stroke-dasharray: 2 4; }
+.vt-base { stroke: rgba(244, 237, 224, 0.28); stroke-width: 1.4; }
+.vt-on { opacity: 0.55; transition: opacity 0.2s; }
+.vt-on.is-prec { fill: var(--ald-prec); }
+.vt-on.is-purge { fill: var(--ald-purge); }
+.vt-on.is-react { fill: var(--ald-react); }
+.vt-on.is-now { opacity: 1; stroke: var(--on-navy); stroke-width: 2; }
+.vt-more { fill: none; stroke: rgba(244, 237, 224, 0.35); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.vt-play { stroke: var(--on-navy); stroke-width: 2; opacity: 0; }
+.vt.is-run .vt-play { opacity: 1; }
+.vt.is-idle .vt-chart { opacity: 0.45; }
+.vt-cap { min-height: 3em; margin: 6px 0 0; color: var(--on-navy); font-size: var(--fs-sm); line-height: 1.55; }
+.vt-note { margin: 6px 0 0; color: var(--on-navy-muted); font-size: var(--fs-xs); line-height: 1.55; }
+@media (max-width: 640px) {
+  .vt { padding: 10px 10px 8px; }
+  .vt-head { font-size: 18px; }
+  .vt-row { font-size: 20px; }
+}

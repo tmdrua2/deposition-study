@@ -7,7 +7,8 @@
   <link rel="stylesheet" href="../../css/style.css">
 </head>
 <!-- ALD 섹션 하위 페이지 (03 공정 흐름). 장비 페이지 틀대로 공정 흐름은 순서 목록 <ol>.
-     사이클 그림은 js/figs/ald-cycle.js의 작은 계통도를 재사용([data-ald-mini]) -->
+     사이클 그림은 js/figs/ald-cycle.js의 작은 계통도를 재사용([data-ald-mini]).
+     맨 앞 띠: 웨이퍼 경로(js/figs/wafer-route.js) + 밸브 시간표(js/figs/ald-valve-timeline.js) -->
 <body data-root="../../" data-process="ald" class="page-stage sec-page" data-equip="ald" data-section="flow">
   <header id="site-header"></header>
 
@@ -23,6 +24,51 @@
   </section>
 
   <main class="sec-main">
+    <!-- 0) 웨이퍼 경로 + 밸브 시간표 (하늘색 띠). 평면도: js/figs/wafer-route.js(PECVD와 같은 플랫폼, ALD 내용만 바꿈)
+            시간표: js/figs/ald-valve-timeline.js (웨이퍼가 PM에 있는 동안 재생선이 지나감) -->
+    <section class="sec-band vt-band" aria-labelledby="route">
+      <div class="sec-scrolly-bg" aria-hidden="true"><div class="sec-scrolly-glow"></div><div class="stage-reed"></div></div>
+      <div class="sec-band-inner">
+        <div class="sec-scrolly-head">
+          <h2 id="route">웨이퍼 경로와 밸브 시간표</h2>
+          <p>장비를 위에서 본 그림입니다. 웨이퍼가 FOUP에서 공정 챔버까지 들어갔다 나오는 동안, 챔버 안에서는 밸브가 번갈아 열립니다. 단계를 누르면 그 단계로 건너뜁니다.</p>
+        </div>
+        <div class="wr" data-wafer-route>
+          <figure class="wr-fig">
+            <div class="wr-svg"></div>
+            <figcaption class="wr-bar">
+              <p class="wr-cap"></p>
+              <span class="wr-legend"><i class="wr-k-ll" aria-hidden="true"></i>LL 칠: 옅음 = 대기, 진함 = 진공</span>
+              <button type="button" class="scrolly-pause" data-wr-play aria-pressed="false">일시정지</button>
+            </figcaption>
+          </figure>
+          <div class="wr-side">
+            <div class="vt" data-valve-timeline></div>
+            <ol class="wr-steps">
+              <li><button type="button" data-wr-step="0"><span class="wr-no">01</span><span class="wr-name">FOUP 문 열기 · 매핑</span>
+                <span class="wr-desc">대기 쪽: 로드포트가 FOUP 문을 열고, 칸마다 웨이퍼가 있는지 확인합니다(매핑) <span class="verify-tag">검증 필요</span>.</span></button></li>
+              <li><button type="button" data-wr-step="1"><span class="wr-no">02</span><span class="wr-name">ATM 로봇이 꺼냄</span>
+                <span class="wr-desc">EFEM의 대기 로봇이 웨이퍼 한 장을 꺼냅니다. 여기까지는 대기압입니다.</span></button></li>
+              <li><button type="button" data-wr-step="2"><span class="wr-no">03</span><span class="wr-name">얼라이너</span>
+                <span class="wr-desc">웨이퍼를 돌려 노치(방향 표시 홈) 방향과 중심을 맞춥니다.</span></button></li>
+              <li><button type="button" data-wr-step="3"><span class="wr-no">04</span><span class="wr-name">LL에 넣고 펌핑</span>
+                <span class="wr-desc">경계: 로드락의 대기 쪽 문으로 넣고 닫은 뒤 공기를 빼서(펌핑) 진공으로 만듭니다.</span></button></li>
+              <li><button type="button" data-wr-step="4"><span class="wr-no">05</span><span class="wr-name">TM으로</span>
+                <span class="wr-desc">진공 쪽: 슬릿 밸브가 열리면 진공 로봇이 웨이퍼를 트랜스퍼 모듈로 가져옵니다.</span></button></li>
+              <li><button type="button" data-wr-step="5"><span class="wr-no">06</span><span class="wr-name">PM에서 ALD 사이클</span>
+                <span class="wr-desc">공정 챔버에 넣고 슬릿 밸브를 닫으면 가열·안정화 → 사이클 반복 → 마지막 퍼지가 진행됩니다. 이때 위 밸브 시간표가 움직입니다.</span></button></li>
+              <li><button type="button" data-wr-step="6"><span class="wr-no">07</span><span class="wr-name">TM으로 꺼냄</span>
+                <span class="wr-desc">마지막 퍼지가 끝나면 진공 로봇이 웨이퍼를 다시 TM으로 꺼냅니다.</span></button></li>
+              <li><button type="button" data-wr-step="7"><span class="wr-no">08</span><span class="wr-name">LL에서 벤트 · 냉각</span>
+                <span class="wr-desc">경계: 로드락에 가스를 채워(벤트) 대기압으로 되돌리며 웨이퍼를 식힙니다. 어느 LL을 쓰는지, 어디서 식히는지는 장비마다 다릅니다 <span class="verify-tag">검증 필요</span>.</span></button></li>
+              <li><button type="button" data-wr-step="8"><span class="wr-no">09</span><span class="wr-name">FOUP로</span>
+                <span class="wr-desc">대기 쪽: 대기 로봇이 웨이퍼를 원래 FOUP 칸에 넣습니다.</span></button></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <div class="sec-read">
       <h2 id="flow">한 장의 웨이퍼가 겪는 순서</h2>
       <p>크게 다섯 단계 — <strong>투입 → 가열·안정화 → 사이클 반복 → 퍼지·배출 → 반출</strong>입니다. 웨이퍼를 옮기는 부분(1·5)은 PECVD와 같은 플랫폼을 쓰므로 거의 같고, ALD다운 부분은 가운데 2~4입니다.</p>
@@ -92,5 +138,7 @@
   <script src="../../js/sections.js"></script>
   <script src="../../js/motion-pref.js"></script>   <!-- 정지 화면 판정 -->
   <script src="../../js/figs/ald-cycle.js"></script>  <!-- 작은 사이클 그림 ([data-ald-mini]) -->
+  <script src="../../js/figs/ald-valve-timeline.js"></script>  <!-- 밸브 시간표 + 평면도용 ALD 내용 (wafer-route.js보다 먼저) -->
+  <script src="../../js/figs/wafer-route.js"></script>  <!-- 웨이퍼 경로 평면도 (공통) -->
 </body>
 </html>

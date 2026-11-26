@@ -15,6 +15,10 @@
 // 움직임 줄이기·?still=1·데이터 절약·저사양 → 자동 재생 없이 단계별 정지 그림 (단계 버튼으로 넘김, 재생 버튼으로 직접 재생 가능)
 // 화면 밖이거나 탭이 숨으면 멈춤. 상태는 "단계 번호 + 진행"으로 계산 → 아무 단계로나 바로 건너뛸 수 있음
 // 좌표는 그림 비율용 숫자일 뿐 실제 치수가 아님
+//
+// 장비별 내용 바꾸기 (ALD 공정 흐름 등): 이 파일보다 먼저든 나중이든 window.WAFER_ROUTE_DATA = { steps: { 5: { name, cap, act } } }
+//   → 그 단계의 이름·설명·도착 뒤 시간(act)만 덮어씀. 평면도·이동 경로는 공통 플랫폼이라 그대로
+// 단계·진행이 바뀔 때마다 root에 "wr:step" 이벤트 (detail: { i, t, move, act, playing }) → 다른 그림이 맞춰 움직일 수 있음
 // =============================================================
 (function () {
   "use strict";
@@ -162,6 +166,9 @@
   function setup(root) {
     const holder = root.querySelector(".wr-svg");
     if (!holder) return;
+    // 장비별 내용 덮어쓰기 (없으면 PECVD 내용 그대로)
+    const over = window.WAFER_ROUTE_DATA && window.WAFER_ROUTE_DATA.steps;
+    if (over) Object.keys(over).forEach((k) => { if (STEPS[k]) Object.assign(STEPS[k], over[k]); });
     holder.innerHTML = staticSvg();
     const $ = (id) => holder.querySelector("#" + id);
     const el = {
@@ -198,6 +205,8 @@
       el.llState.setAttribute("x", step === 3 ? "200" : "400");
       el.llState.setAttribute("text-anchor", step === 3 ? "end" : "start");
       Object.keys(el.doors).forEach((k) => el.doors[k].classList.toggle("is-open", !!o.door[k]));
+      // 다른 그림(ALD 밸브 시간표 등)에 지금 단계·진행을 알림
+      root.dispatchEvent(new CustomEvent("wr:step", { detail: { i: step, t, move: STEPS[step].move ? MOVE_T : 0, act: STEPS[step].act, playing } }));
     }
 
     function showStep() {

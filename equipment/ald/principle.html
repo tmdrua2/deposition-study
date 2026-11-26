@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="../../css/style.css">
 </head>
 <!-- ALD 섹션 하위 페이지 (01 원리). 틀은 PECVD 하위 페이지와 같음: 머리(하늘색) → 크림 본문 → 이전/다음 (js/sections.js)
-     사이클 그림은 js/figs/ald-cycle.js의 작은 계통도를 재사용([data-ald-mini]). 온도 창 그림은 이 파일 안 SVG(개념도, 숫자 없음) -->
+     맨 앞 표면 시뮬레이션은 js/sim/ald-surface.js. 사이클 그림은 js/figs/ald-cycle.js의 작은 계통도를 재사용([data-ald-mini]). 온도 창 그림은 이 파일 안 SVG(개념도, 숫자 없음) -->
 <body data-root="../../" data-process="ald" class="page-stage sec-page" data-equip="ald" data-section="principle">
   <header id="site-header"></header>
 
@@ -23,6 +23,70 @@
   </section>
 
   <main class="sec-main">
+    <!-- 0) 표면 시뮬레이션 (하늘색 띠): js/sim/ald-surface.js — 단면 사이클 [data-ald-surface] + 온도 창 [data-ald-temp]
+            움직임 줄이기·?still=1이면 자동 재생 없이 단계 버튼으로 단계별 정지 그림 -->
+    <section class="sec-band asf-band" aria-labelledby="sim">
+      <div class="sec-scrolly-bg" aria-hidden="true"><div class="sec-scrolly-glow"></div><div class="stage-reed"></div></div>
+      <div class="sec-band-inner">
+        <div class="sec-scrolly-head">
+          <h2 id="sim">표면에서 한 층씩: 사이클 시뮬레이션</h2>
+          <p>웨이퍼 표면을 아주 크게 확대한 단면입니다. 네 단계가 차례로 재생되고, 사이클을 돌 때마다 막이 한 줄씩 쌓입니다. 단계 번호를 누르면 그 단계로 건너뜁니다.</p>
+        </div>
+
+        <figure class="asf" data-ald-surface>
+          <div class="asf-top">
+            <p class="scrolly-stage asf-stage" data-asf-stage aria-live="polite"></p>
+            <p class="asf-count">사이클 <b data-asf-cycle>1</b><span aria-hidden="true"> · </span>쌓인 층 <b data-asf-layers>0</b></p>
+          </div>
+          <div class="asf-svg-box"></div>
+          <p class="asf-desc" data-asf-desc aria-live="polite"></p>
+          <p class="asf-warn" data-asf-warn hidden>퍼지가 부족한 경우: 남은 전구체와 반응 기체가 공중에서 만나 알갱이(파티클)가 생기고, 자기 제한 없이 CVD처럼 고르지 않게 쌓입니다 <span class="verify-tag">검증 필요</span></p>
+          <div class="asf-ctrl">
+            <button type="button" class="scrolly-pause asf-play" data-asf-play aria-pressed="false">일시정지</button>
+            <div class="asf-steps" role="group" aria-label="단계로 이동">
+              <button type="button" class="asf-arrow" data-asf-prev aria-label="이전 단계">◀</button>
+              <div class="scrolly-jump">
+                <button type="button" data-asf-step="0" aria-label="1단계 전구체 주입">1</button>
+                <button type="button" data-asf-step="1" aria-label="2단계 퍼지">2</button>
+                <button type="button" data-asf-step="2" aria-label="3단계 반응 기체 주입">3</button>
+                <button type="button" data-asf-step="3" aria-label="4단계 퍼지">4</button>
+              </div>
+              <button type="button" class="asf-arrow" data-asf-next aria-label="다음 단계">▶</button>
+            </div>
+            <button type="button" class="asf-bad" data-asf-bad aria-pressed="false">퍼지가 부족하면</button>
+          </div>
+          <figcaption class="asf-cap">
+            <ul class="scrolly-legend asf-legend" aria-label="그림 범례">
+              <li><i class="k-site"></i>빈자리</li>
+              <li><i class="k-prec"></i>전구체</li>
+              <li><i class="k-react"></i>반응 기체</li>
+              <li><i class="k-purge"></i>퍼지 가스</li>
+              <li><i class="k-byp"></i>부산물</li>
+              <li><i class="k-film"></i>쌓인 막</li>
+              <li><i class="k-grain"></i>알갱이(파티클)</li>
+            </ul>
+            <p class="asf-note">개념도: 실제로는 전구체 분자 크기 때문에 한 사이클에 원자 한 층보다 얇게 쌓이는 경우가 많음 <span class="verify-tag">검증 필요</span>. 크기·개수·속도는 실제 비율이 아닙니다.</p>
+          </figcaption>
+        </figure>
+
+        <div class="atw" data-ald-temp>
+          <div class="atw-ctrl">
+            <h3 class="atw-title">온도 창: 막대를 움직여 보기</h3>
+            <p class="atw-lede">웨이퍼 온도에 따라 표면에서 일어나는 일이 바뀝니다. 숫자 없이 구간만 나눈 개념도입니다.</p>
+            <label class="atw-label" for="atw-range">웨이퍼 온도 <b data-atw-zone>ALD 온도 창</b></label>
+            <input class="atw-range" id="atw-range" type="range" min="0" max="100" step="1" value="50">
+            <div class="atw-marks">
+              <button type="button" data-atw-mark="low">낮음</button>
+              <button type="button" data-atw-mark="window">ALD 온도 창</button>
+              <button type="button" data-atw-mark="high">높음</button>
+            </div>
+            <p class="atw-foot">낮은 쪽·높은 쪽에서 어느 갈래로 가는지는 전구체와 조건에 따라 다릅니다 <span class="verify-tag">검증 필요</span>. 그래프로는 <a href="#window">아래 ALD 온도 창</a>에 있습니다.</p>
+          </div>
+          <div class="atw-draw" data-atw-draw aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
     <div class="sec-read">
       <h2 id="self-limiting">자기제한 반응: 표면이 다 차면 멈춘다</h2>
       <p>ALD(Atomic Layer Deposition, 원자층 증착)는 막의 재료가 되는 <strong>전구체</strong>(원료 분자)와, 그 전구체와 반응해 막을 완성하는 <strong>반응 기체</strong>를 <em>동시에 넣지 않고</em> 번갈아 넣습니다. 두 기체가 챔버 안에서 함께 있는 순간이 없도록, 겹치지 않는 짧은 주입(펄스)으로 차례차례 넣는 것이 핵심입니다.</p>
@@ -115,5 +179,7 @@
   <script src="../../js/sections.js"></script>
   <script src="../../js/motion-pref.js"></script>   <!-- 정지 화면 판정 -->
   <script src="../../js/figs/ald-cycle.js"></script>  <!-- 작은 사이클 그림 ([data-ald-mini]) -->
+  <script src="../../vendor/gsap/gsap.min.js"></script>  <!-- 시뮬레이션 시계(타임라인) -->
+  <script src="../../js/sim/ald-surface.js"></script>  <!-- 표면 시뮬레이션 + 온도 창 -->
 </body>
 </html>

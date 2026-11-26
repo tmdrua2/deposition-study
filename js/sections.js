@@ -23,25 +23,36 @@
   const eq = typeof EQUIP_SECTIONS === "object" ? EQUIP_SECTIONS[body.dataset.equip] : null;
   if (!eq) return;
   // 장비 페이지(pecvd.html)의 섹션 카드: 아래 상태 줄을 완성 여부에 맞춤 (카드 li의 id = 섹션 id)
+  //   + 카드 링크도 여기서 정함: ready면 href를 달고, 아니면 href를 빼서 누를 수 없게 (페이지가 생기면 pages.js의 ready만 바꾸면 됨)
+  const root = typeof ROOT === "string" ? ROOT : (body.dataset.root || "");
+  const href = (s) => root + eq.folder + s.id + ".html";
+  // 준비 중인 섹션: <a>에서 href를 빼면 링크가 아니게 됨(누를 수 없음·Tab으로도 안 감) + 화면 읽기 프로그램에 "사용 불가"
+  const linkTo = (a, s) => {
+    if (!a) return;
+    if (s.ready) { a.setAttribute("href", href(s)); a.removeAttribute("aria-disabled"); }
+    else { a.removeAttribute("href"); a.setAttribute("aria-disabled", "true"); }
+  };
   eq.list.forEach((s) => {
-    const state = document.querySelector(`.sec-card#${s.id} .sec-card-state`);
+    const card = document.querySelector(`.sec-card#${s.id}`);
+    if (!card) return;
+    linkTo(card.querySelector("a"), s);
+    const state = card.querySelector(".sec-card-state");
     if (!state) return;
     state.textContent = s.ready ? (s.card || "읽기") : "준비 중";
     state.classList.toggle("is-soon", !s.ready);
   });
   if (!body.dataset.section) return;
-  const root = typeof ROOT === "string" ? ROOT : (body.dataset.root || "");
   const idx = eq.list.findIndex((s) => s.id === body.dataset.section);
   if (idx < 0) return;
   const pad2 = (n) => String(n).padStart(2, "0");
-  const href = (s) => root + eq.folder + s.id + ".html";
+  const hrefAttr = (s) => s.ready ? `href="${href(s)}"` : 'aria-disabled="true"';   // 준비 중이면 링크 없음
   const total = eq.list.length;
 
   // 7칸 진행 표시
   document.querySelectorAll("[data-sec-rail]").forEach((rail) => {
     rail.innerHTML = eq.list.map((s, i) => `
       <li class="${i === idx ? "is-current" : ""}${s.ready ? "" : " is-soon"}">
-        <a href="${href(s)}"${i === idx ? ' aria-current="page"' : ""}>
+        <a ${hrefAttr(s)}${i === idx ? ' aria-current="page"' : ""}>
           <span class="sec-rail-no">${pad2(i + 1)}</span><span class="sec-rail-name">${s.title}</span>
         </a>
       </li>`).join("");
@@ -51,7 +62,7 @@
   // 이전 / 장비 페이지로 / 다음
   const prev = eq.list[idx - 1], next = eq.list[idx + 1];
   const card = (s, i, dir) => s ? `
-    <a class="sec-pager-link is-${dir}" href="${href(s)}" rel="${dir}">
+    <a class="sec-pager-link is-${dir}${s.ready ? "" : " is-soon"}" ${hrefAttr(s)}${s.ready ? ` rel="${dir}"` : ""}>
       <span class="sec-pager-dir">${dir === "prev" ? "이전 섹션" : "다음 섹션"}</span>
       <span class="sec-pager-title"><span class="sec-pager-no">${pad2(i + 1)}</span>${s.title}</span>
       ${s.ready ? "" : '<span class="sec-pager-soon">준비 중</span>'}
