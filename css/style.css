@@ -3790,7 +3790,9 @@ body[data-equip="ald"] .wr-plasma-b { stop-color: var(--ald-film); }
   .sx-stage-col { position: sticky; top: var(--header-h, 56px); z-index: 5; margin: 0 calc(-1 * var(--gutter)); padding: 6px var(--gutter) 8px;
     background: var(--navy-deep); box-shadow: 0 10px 24px rgba(6, 28, 50, 0.35); }
   .sx-stage { position: static; padding: 8px 10px; border-radius: 16px; }
-  .sx-ch-box { width: 128px; }
+  .sx-ch-box { width: 92px; }
+  .sx-ch text { display: none; }                                  /* 휴대폰: 글씨 대신 밸브 색만 (JS가 밸브~챔버만 잘라 크게) */
+  .sx-ch-flow { stroke-width: 4; }
   .sx-stage-name { font-size: var(--fs-sm); }
   .sx-dots li { width: 14px; }
   .sx-svg-box svg { max-height: 27svh; min-height: 0; }
@@ -3806,7 +3808,7 @@ body[data-equip="ald"] .wr-plasma-b { stop-color: var(--ald-film); }
   .sx-step h3 { font-size: var(--fs-xl); }
   .sx-step p { font-size: var(--fs-sm); }
   .sx.is-still .sx-step { padding: 12px; }
-  .sx-still-top .sx-ch-box { width: 110px; }
+  .sx-still-top .sx-ch-box { width: 88px; }
   .sx-still-fig .sx-demo { grid-template-columns: 44% minmax(0, 1fr); gap: 8px; }
   .bn-temp-cards { grid-template-columns: minmax(0, 1fr); }
 }

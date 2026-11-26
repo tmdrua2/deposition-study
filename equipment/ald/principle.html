@@ -7,11 +7,12 @@
   <link rel="stylesheet" href="../../css/style.css">
 </head>
 <!-- ALD 섹션 하위 페이지 (01 원리) — 형식 확정(2026-11-26): 스크롤 단계 체험 + 맨 아래 작은 실험대 + 정리 한 칸
-     ① 스크롤 단계 체험 [data-sx]: 왼쪽 단계 글 · 가운데 고정 표면 그림(스크롤 양만큼 진행, 올리면 되돌아감) · 오른쪽 사이드 노트
+     ① 스크롤 단계 체험 [data-sx]: 왼쪽 단계 글 5개 · 가운데 고정 표면 그림 · 오른쪽 사이드 노트
+        (2026-11-26 변경) 단계 글이 화면 가운데에 오면 그 단계 장면이 저절로 반복 재생(스크롤을 멈춰도 계속). 내리면 다음 단계, 올리면 이전 단계
      ② 실험대 [data-bench]: 챔버 단면 + 손잡이 4개 + 실행 → 위치별 막 두께 막대 + 결과 문구 + 온도 창 그림 + 미션 3개
      동작은 js/sim/ald-scrolly.js. 표면 그림 계산은 js/sim/ald-surface.js(window.AldSurface)를 그대로 다시 씀.
      글(단계·메모·[검증 필요])은 출처 모으기(node tools/collect-pages.js)가 읽도록 이 HTML 안에 둔다.
-     움직임 줄이기·?still=1 → 스크롤 진행 대신 단계마다 정지 그림을 세로로 나열 -->
+     움직임 줄이기·?still=1 → 자동 재생 대신 단계마다 정지 그림을 세로로 나열 -->
 <body data-root="../../" data-process="ald" class="page-stage sec-page" data-equip="ald" data-section="principle">
   <header id="site-header"></header>
 
@@ -32,7 +33,7 @@
       <div class="sec-band-inner">
         <div class="sec-scrolly-head">
           <h2 id="sim">스크롤로 따라가는 한 사이클</h2>
-          <p>웨이퍼 표면을 아주 크게 확대한 단면입니다. 스크롤을 내리면 다음 단계로 넘어가고, 올리면 거꾸로 되돌아갑니다.</p>
+          <p>웨이퍼 표면을 아주 크게 확대한 단면입니다. 왼쪽 단계 글이 화면 가운데에 오면 그 단계 장면이 저절로 반복됩니다. 내리면 다음 단계, 올리면 이전 단계로 바뀝니다.</p>
         </div>
 
         <!-- ① 스크롤 단계 체험 -->
@@ -40,27 +41,19 @@
           <!-- 왼쪽: 단계 글 (짧게). 각 단계 안 <details>는 휴대폰·좁은 화면에서 보이는 접는 메모 = 넓은 화면 오른쪽 사이드 노트와 같은 내용 -->
           <div class="sx-steps" data-sx-steps>
             <article class="sx-step" data-beat="0">
-              <p class="sx-no"><b>1</b> / 7</p>
-              <h3>전구체 주입</h3>
+              <p class="sx-no"><b>1</b> / 5</p>
+              <h3>전구체 주입: 빈자리에 붙음</h3>
               <p>막의 재료가 되는 <strong>전구체</strong>(원료 분자)를 아주 짧게 넣습니다. 이 짧은 주입을 <strong>펄스</strong>라고 합니다.</p>
-              <details class="sx-note"><summary>메모: 펄스와 밸브</summary><div class="sx-note-body">
-                <p>전구체는 가열한 용기에서 기체로 만들어, ALD 밸브를 아주 짧게 열어 넣습니다. 전구체와 반응 기체를 <strong>동시에 넣지 않고 번갈아</strong> 넣는 것이 ALD의 핵심입니다.</p>
-                <p class="sx-links"><a href="../ald.html#part=precursor">전구체 공급부 패널</a><a href="../ald.html#part=ald-valve">ALD 밸브 패널</a></p>
-              </div></details>
-            </article>
-
-            <article class="sx-step" data-beat="1">
-              <p class="sx-no"><b>2</b> / 7</p>
-              <h3>빈자리에 붙음</h3>
               <p>표면에는 반응할 수 있는 <strong>빈자리</strong>(원자 자리)가 있습니다. 전구체는 빈자리에만 하나씩 붙습니다(흡착).</p>
-              <details class="sx-note"><summary>메모: 붙을 자리</summary><div class="sx-note-body">
+              <details class="sx-note"><summary>메모: 펄스와 붙을 자리</summary><div class="sx-note-body">
+                <p>전구체는 가열한 용기에서 기체로 만들어, ALD 밸브를 아주 짧게 열어 넣습니다. 전구체와 반응 기체를 <strong>동시에 넣지 않고 번갈아</strong> 넣는 것이 ALD의 핵심입니다.</p>
                 <p>붙을 자리는 표면에서 전구체와 반응할 수 있는 원자 자리입니다(예: 산화막 표면의 –OH) <span class="verify-tag">검증 필요</span>. 기체 분자가 표면에 붙는 것을 흡착이라고 하며, <a href="../../basics/thin-film-growth.html">박막 성장</a>의 첫 단계입니다.</p>
-                <p class="sx-links"><a href="../ald.html#part=pm">공정 챔버 패널</a></p>
+                <p class="sx-links"><a href="../ald.html#part=precursor">전구체 공급부 패널</a><a href="../ald.html#part=ald-valve">ALD 밸브 패널</a><a href="../ald.html#part=pm">공정 챔버 패널</a></p>
               </div></details>
             </article>
 
-            <article class="sx-step" data-beat="2" id="self-limiting">
-              <p class="sx-no"><b>3</b> / 7</p>
+            <article class="sx-step" data-beat="1" id="self-limiting">
+              <p class="sx-no"><b>2</b> / 5</p>
               <h3>자기 제한: 다 차면 더 안 붙음</h3>
               <p>자리가 모두 차면 더 들어온 분자는 붙을 곳이 없어 튕겨 나옵니다. 표면이 스스로 반응량을 정하는 이 성질을 <strong>자기 제한</strong>(self-limiting)이라고 합니다.</p>
               <details class="sx-note"><summary>메모: 그래서 고르게 덮인다</summary><div class="sx-note-body">
@@ -70,8 +63,8 @@
               </div></details>
             </article>
 
-            <article class="sx-step" data-beat="3">
-              <p class="sx-no"><b>4</b> / 7</p>
+            <article class="sx-step" data-beat="2">
+              <p class="sx-no"><b>3</b> / 5</p>
               <h3>퍼지</h3>
               <p>반응하지 않는 <strong>퍼지 가스</strong>(N<sub>2</sub>·Ar 등)로 떠 있던 전구체를 배기로 몰아냅니다. 그림 아래 작은 창은 퍼지가 부족할 때입니다.</p>
               <details class="sx-note"><summary>메모: 퍼지가 왜 두 번?</summary><div class="sx-note-body">
@@ -81,29 +74,21 @@
               </div></details>
             </article>
 
-            <article class="sx-step" data-beat="4">
-              <p class="sx-no"><b>5</b> / 7</p>
-              <h3>반응 기체 주입</h3>
+            <article class="sx-step" data-beat="3">
+              <p class="sx-no"><b>4</b> / 5</p>
+              <h3>반응 기체 → 퍼지: 한 층 완성</h3>
               <p><strong>반응 기체</strong>(산화제 등)가 붙어 있는 전구체와만 반응해 막 한 줄이 됩니다. 다 반응하면 여기서도 멈춥니다(두 번째 자기 제한).</p>
-              <details class="sx-note"><summary>메모: 대표 예 TMA + 물</summary><div class="sx-note-body">
+              <p>다시 퍼지로 남은 반응 기체와 부산물을 몰아내면 한 사이클이 끝납니다. 새 표면에는 다음 전구체가 붙을 빈자리가 다시 생깁니다.</p>
+              <details class="sx-note"><summary>메모: TMA + 물, 사이클당 성장량</summary><div class="sx-note-body">
                 <p>트라이메틸알루미늄(TMA)과 물로 알루미늄 산화막(Al<sub>2</sub>O<sub>3</sub>)을 만드는 공정이 대표 예입니다. 반응하면서 다음 전구체가 붙을 자리가 새로 생깁니다.</p>
                 <p>반응 기체 단계에서만 플라즈마를 켜는 PEALD는 더 낮은 온도에서 막을 만들 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
-                <p class="sx-links"><a href="../ald.html#part=reactant">반응 기체 공급부 패널</a><a href="../ald.html#part=peald-rf">플라즈마 소스 패널</a></p>
-              </div></details>
-            </article>
-
-            <article class="sx-step" data-beat="5">
-              <p class="sx-no"><b>6</b> / 7</p>
-              <h3>퍼지 → 한 층 완성</h3>
-              <p>남은 반응 기체와 부산물을 몰아내면 한 사이클이 끝납니다. 새 표면에는 다음 전구체가 붙을 빈자리가 다시 생깁니다.</p>
-              <details class="sx-note"><summary>메모: 사이클당 성장량</summary><div class="sx-note-body">
                 <p>한 사이클에 쌓이는 두께를 <strong>사이클당 성장량</strong>(GPC, growth per cycle)이라고 합니다. 그림은 한 줄씩 쌓이지만, 실제로는 전구체 분자 크기 때문에 한 사이클에 원자 한 층보다 얇게 쌓이는 경우가 많습니다 <span class="verify-tag">검증 필요</span>.</p>
-                <p class="sx-links"><a href="../ald.html#part=pm">공정 챔버 패널</a></p>
+                <p class="sx-links"><a href="../ald.html#part=reactant">반응 기체 공급부 패널</a><a href="../ald.html#part=peald-rf">플라즈마 소스 패널</a><a href="../ald.html#part=pm">공정 챔버 패널</a></p>
               </div></details>
             </article>
 
-            <article class="sx-step" data-beat="6">
-              <p class="sx-no"><b>7</b> / 7</p>
+            <article class="sx-step" data-beat="4">
+              <p class="sx-no"><b>5</b> / 5</p>
               <h3>사이클 반복: 층이 쌓인다</h3>
               <p>같은 네 단계를 반복하면 사이클마다 거의 같은 두께가 쌓입니다. 그래서 <strong>두께 = 사이클 수</strong>로 맞춥니다.</p>
               <details class="sx-note"><summary>메모: 느리지만 정밀하게</summary><div class="sx-note-body">
@@ -119,7 +104,7 @@
               <div class="sx-top">
                 <div class="sx-where">
                   <p class="sx-stage-name" data-sx-name aria-live="polite"></p>
-                  <ol class="sx-dots" data-sx-dots aria-hidden="true"><li></li><li></li><li></li><li></li><li></li><li></li><li></li></ol>
+                  <ol class="sx-dots" data-sx-dots aria-hidden="true"><li></li><li></li><li></li><li></li><li></li></ol>
                 </div>
                 <div class="sx-ch-box" data-sx-ch></div>
               </div>
@@ -128,7 +113,6 @@
                 <p class="sx-desc" data-sx-desc></p>
                 <div class="sx-demo" data-sx-demo hidden>
                   <div class="sx-demo-svg" data-sx-demo-svg></div>
-                  <p class="sx-demo-cap" data-demo-cap="bounce"><b>더 넣어 보면?</b> 자리가 다 차서 더 들어온 분자는 닿아도 튕겨 나갑니다.</p>
                   <p class="sx-demo-cap" data-demo-cap="bad"><b>퍼지가 부족하면</b> 남은 전구체가 반응 기체와 공중에서 만나 알갱이(파티클)가 됩니다 <span class="verify-tag">검증 필요</span></p>
                 </div>
               </div>

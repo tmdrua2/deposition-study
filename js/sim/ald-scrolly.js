@@ -1,18 +1,17 @@
 // =============================================================
 // ALD 원리 페이지 (equipment/ald/principle.html) — ① 스크롤 단계 체험 ② 맨 아래 작은 실험대
 //
-// ① 스크롤 단계 체험 [data-sx]
-//   왼쪽 단계 글 7개(article[data-beat])를 지나가는 만큼 가운데 표면 그림이 진행된다(scrub). 올리면 거꾸로.
-//   전구체 주입 → 빈자리에 붙음 → 자기 제한 → 퍼지 → 반응 기체 → 한 층 완성 → 사이클 반복(층이 쌓임)
+// ① 스크롤 단계 체험 [data-sx] — 단계 전환 + 자동 반복 재생 (2026-11-26 scrub 방식에서 변경)
+//   왼쪽 단계 글 5개(article[data-beat]) 중 화면 기준선에 걸린 글이 "지금 단계" → 가운데 표면 그림이 그 단계 장면을 저절로 반복.
+//   내리면 다음 단계, 올리면 이전 단계로 바뀜. 진행 표시(1/5)·작은 챔버 밸브 색·사이드 노트도 같은 순간에 바뀜.
+//   1 전구체 주입(빈자리에 붙음) → 2 자기 제한(튕겨 나감) → 3 퍼지(+ "퍼지가 부족하면" 작은 창) → 4 반응 기체 → 퍼지(한 층 완성) → 5 사이클 반복
 //   · 그림 계산은 js/sim/ald-surface.js의 pose()를 그대로 씀 (단계·진행·사이클 → 분자 위치)
-//   · 스크롤 위치 → "진행값 t"(0~7) → 매 프레임 조금씩 따라가며(부드럽게) 그림
-//   · 자기 제한 단계: 아래 작은 창에서 남은 분자가 튕겨 나가는 장면이 저절로 반복
-//     퍼지 단계: 작은 창에서 "퍼지가 부족하면" 장면이 저절로 반복 (스크롤을 멈춰도 계속)
-//   · 오른쪽 위 작은 챔버 단면: 지금 열린 밸브만 하늘색
+//   · 재생 시계는 gsap.ticker. 그림이 화면 밖이거나 탭이 숨겨지면 멈춤
+//   · 오른쪽 위 작은 챔버 단면: 지금 열린 밸브만 하늘색 (휴대폰은 글씨를 빼고 밸브만 크게)
 //   · 사이드 노트: 각 단계 안 <details> 메모를 오른쪽 칸으로 옮겨 보여 줌 (좁은 화면은 단계 안 접는 메모 그대로)
 // ② 실험대 [data-bench] (시안 A 일부): 손잡이 4개 → 실행 → 챔버 사이클 → 위치별 막 두께 막대 + 결과 문구(막대 바로 아래) + 온도 창 그림 + 미션
 //
-// 정지 화면(움직임 줄이기·?still=1 등): ① 스크롤 진행 대신 단계마다 정지 그림을 세로로 나열 ② 실행하면 바로 결과
+// 정지 화면(움직임 줄이기·?still=1 등): ① 자동 재생 대신 단계마다 정지 그림을 세로로 나열 ② 실행하면 바로 결과
 // 색은 css/style.css의 변수만 클래스로 씀 (JS에 색 없음)
 // 의존: vendor/gsap/gsap.min.js, ScrollTrigger.min.js, js/motion-pref.js, js/sim/ald-surface.js
 // =============================================================
@@ -51,6 +50,11 @@
       `<rect class="sx-ch-wafer" x="142" y="104" width="52" height="4" rx="1"/>` +
       `<path class="sx-ch-line is-thin" d="M206 120 V127"/>` +
       `</svg>`;
+    // 휴대폰(899px 이하): 글씨(전구체·반응 기체·퍼지)는 CSS로 숨기고, 밸브~챔버 부분만 잘라 크게 보여 줌
+    const svg = $("svg", holder), mq = window.matchMedia("(max-width: 899px)");
+    const fit = () => svg.setAttribute("viewBox", mq.matches ? "86 6 134 122" : "0 0 220 128");
+    fit();
+    if (mq.addEventListener) mq.addEventListener("change", fit); else if (mq.addListener) mq.addListener(fit);
     const valves = $$("[data-mvalve]", holder), flows = $$("[data-mflow]", holder);
     return (gas) => {
       valves.forEach((v) => v.classList.toggle("is-on", v.dataset.mvalve === gas));
@@ -59,60 +63,63 @@
   }
 
   // =============================================================
-  // ① 스크롤 단계 체험
+  // ① 스크롤 단계 체험 — 단계 전환 + 자동 반복 재생 (PECVD 원리 페이지와 같은 방식)
   // =============================================================
-  // 단계 7개: 표면 그림의 단계(step 0~3)와 그 안의 진행 구간(a→b). 마지막은 사이클 3번 더
-  const BEATS = [
-    { step: 0, a: 0, b: 0.3, gas: "prec" },
-    { step: 0, a: 0.3, b: 0.66, gas: "prec" },
-    { step: 0, a: 0.66, b: 1, gas: "prec", demo: "bounce" },
-    { step: 1, a: 0, b: 1, gas: "purge", demo: "bad" },
-    { step: 2, a: 0, b: 1, gas: "react" },
-    { step: 3, a: 0, b: 1, gas: "purge" },
-    { cycles: 3 }
-  ];
-  const NB = BEATS.length;
-  const GAS = ["prec", "purge", "react", "purge"];
+  // 왼쪽 단계 글이 화면 가운데 띠를 지나면 그 단계가 "지금 단계"가 되고,
+  // 가운데 그림은 그 단계 장면을 시간에 따라 저절로 반복한다(스크롤을 멈춰도 계속).
+  // 단계마다 "장면 조각(seg)" 목록: 표면 그림 단계 i(0~3), 진행 a→b, 걸리는 시간 d초, 사이클 k
   const STEP_NAME = ["전구체 주입", "퍼지", "반응 기체 주입", "퍼지"];
-  // 위쪽 진행 표시 (4단계 사이클 기준 번호)
-  const WHERE = ["1/4 전구체 주입", "1/4 전구체 주입", "1/4 전구체 주입 · 자기 제한", "2/4 퍼지", "3/4 반응 기체 주입", "4/4 퍼지 · 한 층 완성"];
+  const GAS = ["prec", "purge", "react", "purge"];      // 표면 그림 단계 i → 열린 밸브
+  const CYC_D = [1.7, 1.0, 1.7, 1.0];                   // 5단계(사이클 반복)에서 한 단계 시간
+  const LOOPS = [
+    { name: "전구체 주입 · 빈자리에 붙음", segs: [{ i: 0, a: 0, b: 1, d: 5 }], hold: 1.4 },
+    { name: "자기 제한 · 다 차면 튕겨 나감", segs: [{ bounce: true, d: 2.6 }], hold: 0 },
+    { name: "퍼지", segs: [{ i: 0, a: 1, b: 1, d: 0.8 }, { i: 1, a: 0, b: 1, d: 3.4 }], hold: 1.2, demo: "bad" },
+    { name: "반응 기체 → 퍼지 · 한 층 완성", segs: [{ i: 2, a: 0, b: 1, d: 4.2 }, { i: 3, a: 0, b: 1, d: 3 }], hold: 1.4 },
+    { name: "사이클 반복", segs: [1, 2, 3].flatMap((k) => [0, 1, 2, 3].map((i) => ({ i, a: 0, b: 1, d: CYC_D[i], k }))), hold: 1.8 }
+  ];
+  const NB = LOOPS.length;
+  LOOPS.forEach((L) => { L.total = L.segs.reduce((s, g) => s + g.d, 0) + L.hold; });
 
-  // 진행값 t(0~7) → 표면 그림 상태 {b: 단계 칸, i: 그림 단계, p: 진행, k: 사이클}
-  function at(t) {
-    t = clamp(t, 0, NB);
-    const b = Math.min(NB - 1, Math.floor(t));
-    const q = t - b;
-    const B = BEATS[b];
-    if (B.cycles) {
-      const x = Math.min(q * B.cycles, B.cycles - 1e-6);
-      const kk = Math.floor(x), r = (x - kk) * 4;
-      const i = Math.min(3, Math.floor(r));
-      return { b, i, p: r - i, k: 1 + kk };
+  // 단계 b의 반복 시간 t(초) → {i, p, k, bounce, ph}
+  function frameAt(b, t) {
+    const L = LOOPS[b];
+    let x = t % L.total;
+    for (const g of L.segs) {
+      if (x < g.d) return { i: g.i, p: lerp(g.a, g.b, x / g.d), k: g.k || 0, bounce: g.bounce, ph: x / g.d };
+      x -= g.d;
     }
-    return { b, i: B.step, p: lerp(B.a, B.b, q), k: 0 };
+    const g = L.segs[L.segs.length - 1];                // 끝에서 잠깐 멈춤(hold): 마지막 모습 그대로
+    return { i: g.i, p: g.b, k: g.k || 0, bounce: g.bounce, ph: 1 };
+  }
+  // 자기 제한 장면: 자리가 다 찬 표면 + 남는 분자만 다시 내려와 튕김
+  function bounceFrame(ph) {
+    const o = AldSurface.pose(0, 1, 0, false);
+    o.E = AldSurface.pose(0, 0.45 + 0.55 * ph, 0, false).E;
+    return o;
   }
 
-  function descFor(s, o) {
-    switch (s.b) {
-      case 0: return "ALD 밸브가 잠깐 열리고 전구체 분자가 챔버로 들어옵니다.";
-      case 1: return `전구체가 표면의 빈자리에만 하나씩 붙습니다. 채워진 자리 ${o.filled}/${AldSurface.N}`;
-      case 2: return o.filled < AldSurface.N ? `거의 다 찼습니다. 채워진 자리 ${o.filled}/${AldSurface.N}`
-        : "자리가 다 찼습니다. 더 들어온 분자는 표면에 닿아도 붙지 못하고 튕겨 나옵니다.";
-      case 3: return "퍼지 가스가 떠 있던 전구체를 배기 쪽으로 몰아냅니다. 표면에 붙은 전구체는 그대로입니다.";
-      case 4: return "반응 기체가 붙은 전구체와 반응해 막 한 줄이 됩니다. 반응에서 나온 부산물이 떨어져 나옵니다.";
-      case 5: return "남은 반응 기체와 부산물을 몰아내면 한 층 완성. 새 표면에 빈자리가 다시 생깁니다.";
-      default: return `같은 네 단계를 반복합니다. 사이클 ${s.k + 1} · 쌓인 층 ${o.layers}`;
+  function descFor(b, f, o) {
+    switch (b) {
+      case 0: return o.filled < AldSurface.N ? `전구체가 표면의 빈자리에만 하나씩 붙습니다. 채워진 자리 ${o.filled}/${AldSurface.N}`
+        : `빈자리가 모두 찼습니다. 채워진 자리 ${o.filled}/${AldSurface.N}`;
+      case 1: return "자리가 다 찼습니다. 더 들어온 분자는 표면에 닿아도 붙지 못하고 튕겨 나옵니다.";
+      case 2: return f.i === 0 ? "자리가 다 찬 뒤에도 붙지 못한 전구체가 떠 있습니다."
+        : "퍼지 가스가 떠 있던 전구체를 배기 쪽으로 몰아냅니다. 표면에 붙은 전구체는 그대로입니다.";
+      case 3: return f.i === 2 ? "반응 기체가 붙은 전구체와 반응해 막 한 줄이 됩니다. 반응에서 나온 부산물이 떨어져 나옵니다."
+        : "남은 반응 기체와 부산물을 몰아내면 한 층 완성. 새 표면에 빈자리가 다시 생깁니다.";
+      default: return `같은 네 단계를 반복합니다. 사이클 ${f.k + 1} · 쌓인 층 ${o.layers}`;
     }
   }
+  function nameFor(b, f) {
+    if (b === 3) return `${LOOPS[b].name} — 지금 ${STEP_NAME[f.i]}`;
+    if (b === 4) return `사이클 반복 · ${f.k + 1}번째 사이클 ${f.i + 1}/4 ${STEP_NAME[f.i]}`;
+    return LOOPS[b].name;
+  }
 
-  // 자동 시연 장면 (작은 창, 시간에 따라 반복). ph = 0~1
+  // 작은 창 자동 시연: 퍼지가 부족하면 → 반응 기체 단계에서 공중 알갱이
   const DEMO = {
-    bounce: { period: 2.6, frame(ph) {
-      const o = AldSurface.pose(0, 1, 0, false);                 // 자리가 다 찬 표면
-      o.E = AldSurface.pose(0, 0.45 + 0.55 * ph, 0, false).E;    // 남는 분자만 다시 내려와 튕김
-      return o;
-    } },
-    bad: { period: 4.2, frame(ph) {                                // 짧은 퍼지 → 반응 기체 단계에서 알갱이
+    bad: { period: 4.2, frame(ph) {
       return ph < 0.35 ? AldSurface.pose(1, ph / 0.35, 0, true) : AldSurface.pose(2, Math.min(0.92, (ph - 0.35) / 0.6), 0, true);
     } }
   };
@@ -125,7 +132,8 @@
     // 정지 화면: 단계마다 정지 그림을 글 위에 넣고, 고정 그림·사이드 노트 칸은 숨김
     if (isStill() || !window.gsap || !window.ScrollTrigger) { buildStill(root, steps); return; }
 
-    const svgEl = A.buildSvg($("[data-sx-svg]", root));
+    const svgBox = $("[data-sx-svg]", root);
+    const svgEl = A.buildSvg(svgBox);
     const setGas = miniChamber($("[data-sx-ch]", root));
     const nameEl = $("[data-sx-name]", root), descEl = $("[data-sx-desc]", root);
     const dots = $$("[data-sx-dots] li", root);
@@ -136,25 +144,48 @@
     if (demoEl.svg) { demoEl.svg.setAttribute("aria-hidden", "true"); demoEl.svg.removeAttribute("role"); }
     const caps = $$("[data-demo-cap]", root);
 
-    // ---- 그리기 ----
-    let lastB = -1, lastText = "", demoKind = null;
-    function render(t) {
-      const s = at(t);
-      const o = A.pose(s.i, s.p, s.k, false);
+    // ---- 그리기: 지금 단계 cur, 그 단계 안 반복 시간 loopT ----
+    let cur = -1, loopT = 0, demoT = 0, lastText = "", lastLap = 0;
+    function draw() {
+      const f = frameAt(cur, loopT);
+      const o = f.bounce ? bounceFrame(f.ph) : A.pose(f.i, f.p, f.k, false);
       A.apply(svgEl, o);
-      const name = s.b < 6 ? WHERE[s.b] : `사이클 반복 · ${s.k + 1}번째 사이클 ${s.i + 1}/4 ${STEP_NAME[s.i]}`;
-      const d = descFor(s, o);
-      const text = name + "|" + d;
-      if (text !== lastText) {
-        lastText = text;
-        nameEl.innerHTML = `<span class="sim-stage-num">${s.b + 1}/${NB}</span>${name}`;
+      const name = nameFor(cur, f), d = descFor(cur, f, o);
+      if (name + "|" + d !== lastText) {
+        lastText = name + "|" + d;
+        nameEl.innerHTML = `<span class="sim-stage-num">${cur + 1}/${NB}</span>${name}`;
         descEl.textContent = d;
-        setGas(s.b < 6 ? BEATS[s.b].gas : GAS[s.i]);
+        setGas(f.bounce ? "prec" : GAS[f.i]);           // 작은 챔버: 지금 열린 밸브만 하늘색
       }
-      if (s.b !== lastB) { lastB = s.b; onBeat(s.b); }
+      const D = LOOPS[cur].demo && DEMO[LOOPS[cur].demo];
+      if (D) A.apply(demoEl, D.frame((demoT / D.period) % 1));
     }
-    // 단계 칸이 바뀔 때: 글 강조 · 진행 점 · 사이드 노트 · 자동 시연
-    function onBeat(b) {
+    // 반복이 처음으로 돌아갈 때(예: 12/12 → 0/12) 툭 끊기지 않게 살짝 흐렸다가 밝힘
+    const soften = () => gsap.fromTo(svgBox, { opacity: 0.25 }, { opacity: 1, duration: 0.45, ease: "power1.out", overwrite: true });
+
+    // ---- 시계: 보이는 동안만 gsap.ticker로 시간을 더함 (화면 밖·탭 숨김이면 멈춤) ----
+    function tick(time, deltaTime) {
+      const dt = Math.min(deltaTime, 100) / 1000;       // 탭 복귀 직후 큰 점프 막기
+      loopT += dt; demoT += dt;
+      const lap = Math.floor(loopT / LOOPS[cur].total);
+      if (lap !== lastLap) { lastLap = lap; if (LOOPS[cur].hold) soften(); }
+      draw();
+    }
+    let onScreen = true, ticking = false;
+    function sync() {
+      const want = onScreen && !document.hidden;
+      if (want && !ticking) { gsap.ticker.add(tick); ticking = true; }
+      else if (!want && ticking) { gsap.ticker.remove(tick); ticking = false; }
+    }
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver((en) => { onScreen = en[en.length - 1].isIntersecting; sync(); }).observe($(".sx-stage", root));
+    }
+    document.addEventListener("visibilitychange", sync);
+
+    // ---- 단계 바꾸기: 글 강조 · 진행 점 · 사이드 노트 · 작은 창 · 그림 처음부터 ----
+    function activate(b) {
+      if (b === cur) return;
+      cur = b; loopT = 0; demoT = 0; lastLap = 0; lastText = "";
       steps.forEach((st, n) => st.classList.toggle("is-on", n === b));
       dots.forEach((li, n) => { li.classList.toggle("is-done", n < b); li.classList.toggle("is-on", n === b); });
       const det = $(".sx-note", steps[b]);
@@ -163,81 +194,49 @@
           $(".sx-note-body", det).innerHTML;
         noteEl.classList.remove("is-in"); void noteEl.offsetWidth; noteEl.classList.add("is-in");
       }
-      setDemo(BEATS[b].demo || null);
-    }
-
-    // ---- 자동 시연 (작은 창): 보이는 동안만 gsap 시계로 반복 ----
-    let demoT0 = 0, onScreen = true;
-    function demoTick() {
-      if (!demoKind || !onScreen || document.hidden) return;
-      const D = DEMO[demoKind];
-      const ph = ((performance.now() - demoT0) / 1000 / D.period) % 1;
-      A.apply(demoEl, D.frame(ph));
-    }
-    function setDemo(kind) {
-      if (kind === demoKind) return;
-      demoKind = kind;
+      const kind = LOOPS[b].demo || null;
       demoBox.hidden = !kind;
       root.classList.toggle("has-demo", !!kind);
       caps.forEach((c) => { c.hidden = c.dataset.demoCap !== kind; });
-      gsap.ticker.remove(demoTick);
-      if (kind) { demoT0 = performance.now(); demoTick(); gsap.ticker.add(demoTick); }
-    }
-    if ("IntersectionObserver" in window) {
-      new IntersectionObserver((en) => { onScreen = en[en.length - 1].isIntersecting; }).observe(root);
+      soften();
+      draw();
     }
 
-    // ---- 스크롤 → 목표 진행값 → 부드럽게 따라감 ----
-    let cur = 0, target = 0, follow = false;
-    function chase() {
-      const dlt = target - cur;
-      if (Math.abs(dlt) < 0.0008) { cur = target; render(cur); gsap.ticker.remove(chase); follow = false; return; }
-      cur += dlt * 0.16;
-      render(cur);
-    }
-    function setTarget(v) {
-      target = clamp(v, 0, NB);
-      if (!follow) { follow = true; gsap.ticker.add(chase); }
-    }
-    // 읽는 기준선(화면 위에서 62%)이 몇 번째 단계 글의 어디쯤을 지나는지 → t
-    const LINE = 0.62;
-    function measure() {
-      const y = window.innerHeight * LINE;
-      for (let n = 0; n < steps.length; n++) {
-        const r = steps[n].getBoundingClientRect();
-        if (y < r.bottom || n === steps.length - 1) {
-          return n + clamp((y - r.top) / Math.max(1, r.height), 0, 1);
-        }
-      }
-      return 0;
-    }
+    // ---- 스크롤: 단계 글이 화면의 기준선을 지나는 동안 그 단계가 켜짐 ----
+    //   넓은 화면은 화면 가운데(55%), 휴대폰은 위쪽 절반을 그림이 덮으므로 그 아래(72%)
     gsap.registerPlugin(ScrollTrigger);
-    const stepsBox = $("[data-sx-steps]", root);
-    ScrollTrigger.create({
-      trigger: stepsBox, start: `top ${LINE * 100}%`, end: `bottom ${LINE * 100}%`,
-      onUpdate: () => setTarget(measure()),
-      onLeave: () => setTarget(NB), onLeaveBack: () => setTarget(0),
-      onRefresh: () => setTarget(measure())
+    const line = () => (window.matchMedia("(max-width: 899px)").matches ? "72%" : "55%");
+    steps.forEach((st, n) => {
+      ScrollTrigger.create({
+        trigger: st, start: () => "top " + line(), end: () => "bottom " + line(),
+        onToggle: (self) => { if (self.isActive) activate(n); }
+      });
     });
-    cur = target = measure();
-    render(cur);
+    // 처음: 이미 지나간 단계가 있으면 그 단계(새로고침 위치), 아니면 1단계
+    const y = window.innerHeight * (parseFloat(line()) / 100);
+    let start = 0;
+    steps.forEach((st, n) => { if (st.getBoundingClientRect().top < y) start = n; });
+    activate(start);
+    sync();
   }
 
-  // 정지 화면: 각 단계 글 위에 그 단계 끝 모습 (+ 작은 챔버, 퍼지 단계는 "부족하면" 비교 그림)
+  // 정지 화면: 각 단계 글 위에 그 단계 대표 모습 (+ 작은 챔버, 퍼지 단계는 "부족하면" 비교 그림)
   function buildStill(root, steps) {
     const A = window.AldSurface;
     root.classList.add("is-still");
-    const ENDS = [[0, 0.3, 0], [0, 0.66, 0], [0, 1, 0], [1, 1, 0], [2, 1, 0], [3, 1, 0], [3, 1, 3]];
+    const ENDS = [[0, 1, 0], [0, 1, 0], [1, 1, 0], [2, 1, 0], [3, 1, 3]];
+    const STILL_GAS = ["prec", "prec", "purge", "react", "purge"];
+    const STILL_NAME = ["전구체 주입 · 빈자리가 다 참", "자기 제한", "퍼지", "반응 기체 · 막 한 줄", "사이클 반복 · 4층"];
     steps.forEach((st, b) => {
       const fig = document.createElement("figure");
       fig.className = "sx-still-fig";
-      fig.innerHTML = `<div class="sx-still-top"><p class="sx-stage-name">${b < 6 ? WHERE[b] : "사이클 반복 · 4층"}</p><div class="sx-ch-box"></div></div><div class="sx-svg-box"></div>`;
+      fig.innerHTML = `<div class="sx-still-top"><p class="sx-stage-name">${STILL_NAME[b]}</p><div class="sx-ch-box"></div></div><div class="sx-svg-box"></div>`;
       st.insertBefore(fig, $("h3", st));
       const el = A.buildSvg($(".sx-svg-box", fig));
       const [i, p, k] = ENDS[b];
-      A.apply(el, A.pose(i, p, k, false));
-      miniChamber($(".sx-ch-box", fig))(BEATS[b].gas || "purge");
-      if (BEATS[b].demo === "bad") {             // 비교: 퍼지가 부족하면 → 공중에서 알갱이
+      A.apply(el, b === 1 ? bounceFrame(0.55) : A.pose(i, p, k, false));
+      miniChamber($(".sx-ch-box", fig))(STILL_GAS[b]);
+      if (LOOPS[b].demo === "bad") {             // 비교: 퍼지가 부족하면 → 공중에서 알갱이
         const cmp = document.createElement("div");
         cmp.className = "sx-demo is-still";
         cmp.innerHTML = `<div class="sx-demo-svg"></div>`;
@@ -310,8 +309,8 @@
     };
     // 결과 아래 한 줄: 다시 볼 곳
     const MORE = {
-      ok: '<a href="#self-limiting">위 3단계: 자기 제한 다시 보기</a>',
-      purge: '<a href="#sim">위 4단계: 퍼지 다시 보기</a> · 현장에서는 파티클이 갑자기 늘면 퍼지 유량·시간·ALD 밸브부터 의심합니다 <span class="verify-tag">검증 필요</span>',
+      ok: '<a href="#self-limiting">위 2단계: 자기 제한 다시 보기</a>',
+      purge: '<a href="#sim">위 3단계: 퍼지 다시 보기</a> · 현장에서는 파티클이 갑자기 늘면 퍼지 유량·시간·ALD 밸브부터 의심합니다 <span class="verify-tag">검증 필요</span>',
       pulse: '레시피를 정할 때는 펄스를 늘려 가며 두께가 더 늘지 않는 지점(포화)을 찾습니다 <span class="verify-tag">검증 필요</span> · <a href="parameters.html">공정변수</a>',
       cold: "아래 그림처럼 응축이 아니라 <b>반응 부족</b>으로 가면 오히려 얇아집니다. 어느 쪽인지는 전구체에 따라 다릅니다.",
       hot: "아래 그림처럼 분해가 아니라 <b>이탈</b>로 가면 오히려 얇아집니다. 어느 쪽인지는 전구체에 따라 다릅니다."
