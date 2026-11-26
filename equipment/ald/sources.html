@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>출처 | ALD 장비 | LAYER BY LAYER · 증착 공정 노트</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<!-- ALD 섹션 하위 페이지 (07 출처) — 표준 형식 "자동 모음": PECVD 출처 페이지와 같은 틀
+     내용은 직접 쓰지 않고 데이터에서 모음 (js/figs/collect.js → js/figs/sources-index.js, body의 data-equip="ald")
+       · 부품 패널: data/platform.js + data/ald.js 의 sources · [검증 필요]
+       · 하위 페이지·기초 페이지: data/pecvd-pages.js (node tools/collect-pages.js가 HTML에서 뽑음)
+     ① 한눈에 보기(숫자) ② 종류별 출처 ③ 페이지·패널별 출처 ④ [검증 필요] 모음(문장마다 원래 위치 링크) -->
+<body data-root="../../" data-process="ald" class="page-stage sec-page" data-equip="ald" data-section="sources">
+  <header id="site-header"></header>
+
+  <section class="sec-hero">
+    <div class="sec-hero-bg" aria-hidden="true"><div class="sec-hero-glow"></div><div class="stage-reed"></div></div>
+    <div class="sec-hero-inner">
+      <a class="sec-back" href="../ald.html#sections">ALD 장비로 돌아가기</a>
+      <p class="sec-kicker"><span class="sec-kicker-no">07</span><span class="sec-kicker-of">/ 07</span><span class="sec-kicker-en">Sources</span></p>
+      <h1 class="sec-title">출처</h1>
+      <p class="sec-lede">부품 패널과 섹션 페이지의 출처를 한곳에 모으고, [검증 필요] 문장을 원래 위치로 바로 가서 교과서와 대조할 수 있게 정리했습니다.</p>
+    </div>
+    <nav class="sec-rail-wrap" aria-label="ALD 섹션"><ol class="sec-rail" data-sec-rail></ol></nav>
+  </section>
+
+  <main class="sec-main">
+    <div class="sec-read">
+      <h2 id="about">이 페이지는 자동으로 모입니다</h2>
+      <p>ALD 장비의 <strong>부품 패널</strong>과 <strong>섹션 페이지</strong>(원리~문제와 점검), 기초 페이지에 적은 출처를 모아 같은 자료는 하나로 합쳤습니다. 패널이나 페이지에 출처를 더하면 여기에도 저절로 나타납니다(페이지 글을 고쳤다면 <code>node tools/collect-pages.js</code>를 한 번 실행).</p>
+      <p>출처 규칙: 실제로 열어 보고 확인한 자료만 주소와 확인 날짜를 적고, 확인하지 않은 일반 지식은 종류만 적었습니다(예: "일반 교과서 내용"). 확실하지 않은 문장에는 <span class="verify-tag">검증 필요</span>를 붙였고, 아래 <a href="#verify">[검증 필요] 모음</a>에서 하나씩 확인할 수 있습니다.</p>
+    </div>
+
+    <section class="sec-band" aria-labelledby="at-a-glance">
+      <div class="sec-scrolly-bg" aria-hidden="true"><div class="sec-scrolly-glow"></div><div class="stage-reed"></div></div>
+      <div class="sec-band-inner">
+        <div class="sec-scrolly-head">
+          <h2 id="at-a-glance">한눈에 보기</h2>
+          <p>숫자를 누르면 그 목록으로 이동합니다.</p>
+        </div>
+        <ul class="src-stats" data-src-stats>
+          <noscript><li>목록은 스크립트가 켜져 있어야 만들어집니다.</li></noscript>
+        </ul>
+      </div>
+    </section>
+
+    <div class="sec-read">
+      <h2 id="sources">출처</h2>
+      <p>종류별로 나눴습니다. <strong>일반 교과서</strong>는 직접 대조하지 않은 교과서 수준 지식의 주제, <strong>기타</strong>는 직접 열어 확인한 위키백과·공개 리뷰 논문(오픈 액세스)과 일반 현장 지식입니다. 자료마다 쓰인 패널·페이지가 붙어 있습니다.</p>
+      <div class="src-list" data-src-list></div>
+
+      <h2 id="by-page">페이지·패널별 출처</h2>
+      <p>같은 출처를 "어디에서 썼나" 기준으로 묶었습니다. 누르면 그 페이지·패널에서 쓴 자료와 확인한 내용이 펼쳐집니다.</p>
+      <div class="vf src-bypage" data-src-bypage></div>
+
+      <h2 id="verify">[검증 필요] 모음</h2>
+      <p>ALD 패널·페이지에서 <span class="verify-tag">검증 필요</span>를 붙인 문장을 모듈·페이지별로 모았습니다. "원래 위치 →"를 누르면 그 문장이 있는 단계·칸으로 갑니다. 교과서와 대조했으면 "대조함"에 표시해 두세요(이 브라우저에 저장).</p>
+      <div class="vf" data-verify-list></div>
+    </div>
+  </main>
+
+  <nav class="sec-pager" data-sec-pager></nav>
+
+  <footer><a href="../../index.html">← 목차로 돌아가기</a></footer>
+
+  <script src="../../js/pages.js"></script>
+  <script src="../../js/main.js"></script>
+  <script src="../../js/sections.js"></script>
+  <script src="../../data/platform.js"></script>     <!-- 공통 플랫폼 부품 (펌프 공용 묶음 포함) -->
+  <script src="../../data/ald.js"></script>          <!-- ALD 부품 데이터 (출처·[검증 필요]를 여기서 읽음) -->
+  <script src="../../data/pecvd-pages.js"></script>  <!-- 하위·기초 페이지에서 뽑은 글 (tools/collect-pages.js, 장비별로 나눠 씀) -->
+  <script src="../../js/figs/collect.js"></script>   <!-- 모으기 -->
+  <script src="../../js/figs/sources-index.js"></script>  <!-- 출처 목록·페이지별·[검증 필요] 모음 그리기 -->
+</body>
+</html>

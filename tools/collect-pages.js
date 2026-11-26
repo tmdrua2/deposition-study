@@ -30,11 +30,12 @@ const PAGES = [
   { path: "equipment/pecvd/flow.html",            group: "PECVD 공정 흐름",  equip: "pecvd", section: "flow" },
   { path: "equipment/pecvd/parameters.html",      group: "PECVD 공정변수",   equip: "pecvd", section: "parameters" },
   { path: "equipment/pecvd/troubleshooting.html", group: "PECVD 문제와 점검", equip: "pecvd", section: "troubleshooting" },
-  // ALD 하위 페이지 (2-1에서 4개. 문제와 점검은 2-2에서 만들면 추가) — 파일 이름은 pecvd-pages.js 그대로, equip 값으로 나눠 씀
+  // ALD 하위 페이지 (면접·출처는 모음 페이지라 뺌) — 파일 이름은 pecvd-pages.js 그대로, equip 값으로 나눠 씀
   { path: "equipment/ald/principle.html",         group: "ALD 원리",         equip: "ald", section: "principle" },
   { path: "equipment/ald/hardware.html",          group: "ALD 장비 구성",    equip: "ald", section: "hardware" },
   { path: "equipment/ald/flow.html",              group: "ALD 공정 흐름",    equip: "ald", section: "flow" },
   { path: "equipment/ald/parameters.html",        group: "ALD 공정변수",     equip: "ald", section: "parameters" },
+  { path: "equipment/ald/troubleshooting.html",   group: "ALD 문제와 점검",  equip: "ald", section: "troubleshooting" },
   { path: "basics/vacuum.html",                   group: "기초 · 진공" },
   { path: "basics/plasma.html",                   group: "기초 · 플라즈마" },
   { path: "basics/thin-film-growth.html",         group: "기초 · 박막 성장" },
@@ -214,7 +215,7 @@ const body =
 `// =============================================================
 // 자동 생성 파일 — 직접 고치지 말 것.  만드는 법: node tools/collect-pages.js  (만든 날: ${today})
 // 페이지(HTML) 글에서 뽑은 출처 · [검증 필요] 문장 · 면접 질문.
-// 쓰는 곳: equipment/pecvd/interview.html, equipment/pecvd/sources.html (js/figs/collect.js가 부품 데이터와 합침)
+// 쓰는 곳: equipment/pecvd/interview.html, equipment/pecvd/sources.html, equipment/ald/sources.html (js/figs/collect.js가 부품 데이터와 합침)
 //   path    = 사이트 맨 위 기준 경로, anchor = 그 페이지 안의 위치(id)
 // =============================================================
 window.SITE_PAGE_NOTES = ${JSON.stringify({ generated: today, pages }, null, 1)};

@@ -74,7 +74,8 @@
       const out = [];
       modules.forEach(m => (m.part.interview || []).forEach((it, i) => {
         if (!it || !it.q) return;
-        out.push({ key: `${m.id}|${it.q}`, q: plain(it.q), a: plain(it.a), cs: !!it.cs, module: m.id, from: m, index: i });
+        // cat = 카드 분류(원리·장비·공정·CS). 데이터에 없으면 CS 질문만 "CS", 나머지는 빈칸
+        out.push({ key: `${m.id}|${it.q}`, q: plain(it.q), a: plain(it.a), cs: !!it.cs, cat: it.cat || (it.cs ? "CS" : ""), module: m.id, from: m, index: i });
       }));
       // 하위 페이지 <h2 id="interview"> 아래 details (지금은 없음 → 생기면 저절로 들어옴)
       notes.filter(n => n.equip === equipId).forEach(n => (n.interview || []).forEach(it => {

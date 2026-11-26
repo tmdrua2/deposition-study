@@ -197,11 +197,33 @@
     const pSig = { valve: pulse(sigPath.valve, "k-sig"), heater: pulse(sigPath.heater, "k-sig"), throttle: pulse(sigPath.throttle, "k-sig") };
     const routeL = route.getTotalLength();
 
+    // ── 점검 표시 (문제와 점검 페이지가 씀): 부품 자리에 번호 고리 ──
+    const gMarks = mk("g", { class: "hx-marks" }, svg);
+
     let on = [];
-    function setStage(b) {
-      on = STAGES[b].sys;
+    function setSys(list) {
+      on = list.slice();
       ["supply", "vac", "heat", "xfer"].forEach((s) => svg.classList.toggle("is-" + s, on.includes(s)));
       svg.classList.toggle("is-meet", on.length === 4);
+    }
+    function setStage(b) { setSys(STAGES[b].sys); }
+
+    // marks = [{ spot: "valve", n: 1 }, …] → 같은 자리는 번호를 묶어 고리 하나로. 빈 목록이면 지움
+    function mark(marks) {
+      gMarks.textContent = "";
+      const bySpot = new Map();
+      (marks || []).forEach((m) => { if (SPOTS[m.spot]) bySpot.set(m.spot, (bySpot.get(m.spot) || []).concat(m.n)); });
+      bySpot.forEach((ns, spot) => {
+        const [x, y] = SPOTS[spot];
+        const gg = mk("g", { class: "hx-mark", transform: `translate(${x} ${y})` }, gMarks);
+        mk("circle", { r: 19, class: "hx-mark-ring" }, gg);
+        const label = ns.filter((n) => n != null).join("·");
+        if (label) {
+          const w = 10 + label.length * 7.5;
+          mk("rect", { x: 10, y: -30, width: w, height: 18, rx: 9, class: "hx-mark-tag" }, gg);
+          txt(10 + w / 2, -17, label, "hx-mark-n", gg, "middle");
+        }
+      });
     }
 
     function draw(b, t) {
@@ -260,8 +282,19 @@
       return { desc, zone: b === 3 ? zone : "vac", chip };
     }
 
-    return { svg, setStage, draw };
+    return { svg, setStage, setSys, mark, draw };
   }
+
+  // 부품 자리 (viewBox 좌표, 위 그림과 같은 자리) — 문제와 점검 페이지가 원인 후보를 고리로 표시할 때 씀
+  const SPOTS = {
+    canister: [78, 52], pline: [334, 52], rmfc: [78, 111], pmfc: [78, 159],
+    valve: [501, 199], shower: [500, 236], heater: [472, 326], ring: [544, 350], wall: [436, 258],
+    throttle: [560, 398], pump: [560, 444], scrub: [680, 444], gauge: [598, 240],
+    ctrl: [712, 52], slit: [420, 307], tm: [327, 306], ll: [224, 306], efem: [130, 306]
+  };
+
+  // 다른 페이지에서 계통도를 다시 쓸 수 있게 내보냄 (문제와 점검 페이지: js/sim/ald-trouble-sx.js)
+  window.AldHwMap = { make: makeMap, STAGES, FULL, SPOTS, SYS_NAME };
 
   // ---------------------------------------------------------
   // ① 스크롤 단계 체험
@@ -391,7 +424,7 @@
 
   function init() {
     if (!window.SxEngine) return;
-    const sx = document.querySelector("[data-sx]");
+    const sx = document.querySelector(".sx-hw[data-sx]");          // 장비 구성 페이지의 단계 체험만 (다른 페이지는 계통도만 빌려 씀)
     if (sx) initStory(sx);
     const atc = document.querySelector("[data-atc-root]");
     if (atc) initCompare(atc);

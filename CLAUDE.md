@@ -27,7 +27,7 @@ js/main.js            공통 동작: 헤더 메뉴, 목차, 검색, 페이지 �
 js/motion-pref.js     정지 화면 판정(움직임 줄이기·데이터 절약·저사양) — 공정 모션·장비 무대가 함께 씀
 js/sim/               공정 모션: sim-core.js(공용) + 공정별 장면(pvd.js 등) + scrolly.js(글 단계↔그림)
 js/figs/              하위 페이지 인터랙티브 그림: hardware-map.js(계통도) · wafer-route.js(웨이퍼 경로) · param-lab.js · trouble-flow.js
-                      collect.js(패널·페이지의 질문·출처·[검증 필요] 모으기) → interview-practice.js · sources-index.js
+                      collect.js(패널·페이지의 질문·출처·[검증 필요] 모으기) → interview-practice.js(PECVD) · iv-cards.js(카드 표준) · sources-index.js
 tools/collect-pages.js  (선택 도우미) HTML 글의 출처·[검증 필요]를 data/pecvd-pages.js로 뽑음 — 페이지 글을 고친 뒤 `node tools/collect-pages.js`
 js/explode/           장비 분해 연출: render-iso.js(그리기) · callouts.js(이름표) · stage.js(스크롤) · panel.js(부품 패널)
 data/                 장비 데이터: platform.js(공통 플랫폼) · pecvd.js · ald.js · pecvd-pages.js(자동 생성, 직접 고치지 않음)
@@ -84,9 +84,9 @@ PECVD는 본문을 **섹션 카드 7개 + 하위 페이지**(`equipment/pecvd/<i
 | 장비 구성 | 계통도 애니메이션(계통마다 켜짐, 마지막 "네 길이 만나는 곳") / 방식 비교 그림 |
 | 공정 흐름 | 웨이퍼 경로 + 챔버 안 단계 / 작은 실험 |
 | 공정변수 | 변수별 효과 애니메이션 / 조작 실험 + 미션 |
-| 문제·점검 | 점검 게임 |
-| 면접 | 카드 연습 |
-| 출처 | 자동 모음(`js/figs/collect.js`) |
+| 문제·점검 | 네 칸 틀 카드 4장(한 곳만? → 갑자기? → 원인 나누기 → 조치) + 장비 계통도 재사용(단계마다 계통·의심 부품 고리) / 점검 게임: 증상 → 한 챔버·전체 → 갑자기·서서히 → 후보가 좁혀지며 계통도 번호 고리 → 확인·조치. 게임 내용은 아래 증상별 `<details>`(후보 `data-scope·time·spot·sys`)에서 읽음 (기준: `equipment/ald/troubleshooting.html`) |
+| 면접 | 부품 패널 `interview: { cat: 원리·장비·공정·CS, cs, q, a }`에서 모음 → `js/figs/iv-cards.js`: 뒤집는 카드, 다시 볼 것/알겠음(저장), 분류·다시 볼 것만·섞기, 아래 전체 목록 details. 5개 이상, CS 1개 이상 |
+| 출처 | 자동 모음(`collect.js` → `sources-index.js`, `body[data-equip]`): 한눈에 숫자 · 종류별 · 페이지·패널별 · [검증 필요] 모음(문장마다 원래 위치 링크). 새 하위 페이지는 `tools/collect-pages.js` 목록에 추가 |
 
 ## 장비 데이터 규칙 (자세한 것은 `docs/equipment-redesign-plan.md`)
 - 부품 정보는 `data/*.js`에만 쓴다 (JSON 모양, `window.EQUIPMENT.<장비>`). 부품 추가 = 데이터 추가.

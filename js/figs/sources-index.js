@@ -1,5 +1,5 @@
 // =============================================================
-// 출처 모음 + [검증 필요] 모음 (equipment/pecvd/sources.html)
+// 출처 모음 + [검증 필요] 모음 (equipment/pecvd/sources.html · equipment/ald/sources.html — body의 data-equip로 장비를 고름)
 //
 // 데이터에서 자동으로 만든다 (js/figs/collect.js)
 //   [data-src-stats]  : 한눈에 보기 숫자 (공개 특허 · 일반 교과서 · 기타 · 검증 필요)
@@ -10,7 +10,8 @@
   "use strict";
 
   if (!window.SiteCollect) return;
-  const C = SiteCollect.make("pecvd");
+  // 어느 장비의 출처를 모을지: <body data-equip="ald"> (없으면 pecvd) — 장비마다 같은 출처 페이지 틀을 씀
+  const C = SiteCollect.make((document.body && document.body.dataset.equip) || "pecvd");
   if (!C) return;
 
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -21,7 +22,7 @@
   const GROUPS = [
     { id: "patent",   title: "공개 특허",   en: "Patents",   desc: "Google Patents에서 직접 열어 확인한 공개 특허·특허 출원 (확인 날짜 표시)" },
     { id: "textbook", title: "일반 교과서", en: "Textbooks", desc: "직접 대조하지 않은 교과서 수준 지식 — 어느 패널·페이지에서 어떤 주제로 썼는지" },
-    { id: "other",    title: "기타",       en: "Others",    desc: "위키백과(확인 날짜 표시) · 시험기관 공개 글 · 일반 현장 지식" }
+    { id: "other",    title: "기타",       en: "Others",    desc: "위키백과·공개 리뷰 논문(확인 날짜 표시) · 시험기관 공개 글 · 일반 현장 지식" }
   ];
   const by = id => sources.filter(s => s.group === id);
   const verifyTotal = groups.reduce((a, g) => a + g.items.length, 0);
@@ -54,6 +55,27 @@
         <ol class="src-items">${items.map(item).join("")}</ol>
       </section>`;
     }).join("");
+  }
+
+  // ---------- 페이지·패널별로 묶어 보기 [data-src-bypage] (있을 때만) ----------
+  //   같은 자료를 "어디에서 썼나" 기준으로 뒤집어 보여 줌: 섹션 페이지 → 부품 패널 → 기초 페이지 순
+  const byPage = document.querySelector("[data-src-bypage]");
+  if (byPage) {
+    const places = new Map();
+    sources.forEach(s => s.uses.forEach(u => {
+      if (!places.has(u.href)) places.set(u.href, { label: u.label, href: u.href, items: [] });
+      places.get(u.href).items.push({ s, note: u.note });
+    }));
+    const rank = p => (/#page-sources$/.test(p.href) ? (/basics\//.test(p.href) ? 2 : 0) : 1);
+    const KINDS = ["섹션 페이지", "부품 패널", "기초 페이지"];
+    const all = [...places.values()].sort((a, b) => rank(a) - rank(b));
+    byPage.innerHTML = all.map(p => `
+      <details class="vf-group src-place">
+        <summary><span class="vf-g-name"><span class="src-place-k">${KINDS[rank(p)]}</span>${esc(p.label)}</span><span class="vf-g-count">${p.items.length}</span></summary>
+        <ul class="src-place-items">${p.items.map(({ s, note }) => `
+          <li><span class="src-place-kind">${esc(s.kind)}</span>${s.url ? `<a href="${esc(s.url)}" rel="noopener">${esc(s.title)}</a>` : `<span>${esc(s.title)}</span>`}${s.checked ? ` <span class="src-checked">${esc(s.checked)} 확인</span>` : ""}${note ? `<span class="src-note">${esc(note)}</span>` : ""}</li>`).join("")}</ul>
+        <p class="vf-open"><a href="${esc(p.href)}">이 곳으로 가기 →</a></p>
+      </details>`).join("");
   }
 
   function item(s) {

@@ -63,6 +63,12 @@ const PAGES = [
     keywords: "ald 공정 흐름 웨이퍼 투입 가열 안정화 사이클 반복 퍼지 배출 반출 레시피 웨이퍼 경로 foup efem 로드락 tm 밸브 시간표 펄스" },
   { section: "equipment", title: "ALD 공정변수 (펄스 시간·퍼지 시간·온도·전구체 공급량)", path: "equipment/ald/parameters.html", hidden: true,
     keywords: "ald 공정변수 펄스 시간 pulse 퍼지 시간 purge 온도 전구체 공급량 dose 사이클당 성장 gpc 포화" },
+  { section: "equipment", title: "ALD 문제와 점검 (네 칸 점검 틀·점검 게임)", path: "equipment/ald/troubleshooting.html", hidden: true,
+    keywords: "ald 문제 점검 troubleshooting 두께 불균일 파티클 증착 속도 높음 퍼지 부족 전구체 소진 온도 저하 배관 막힘 응축 콜드 스팟 밸브 응답 cs 엔지니어 점검 게임" },
+  { section: "equipment", title: "ALD 면접 질문 (카드 연습)", path: "equipment/ald/interview.html", hidden: true,
+    keywords: "ald 면접 질문 interview 카드 자기 제한 ald pecvd 비교 퍼지 부족 단점 온도 창 한 층 cs 파티클" },
+  { section: "equipment", title: "ALD 출처 · [검증 필요] 모음", path: "equipment/ald/sources.html", hidden: true,
+    keywords: "ald 출처 sources 참고 자료 검증 필요 리뷰 논문 위키백과" },
   { section: "equipment", title: "Epi (에피택시)", short: "Epi", desc: "에피택시", path: "equipment/epi.html",
     keywords: "epi epitaxy 에피택시 에피 단결정 sige" },
   { section: "equipment", title: "전기도금 (ECD)", short: "ECD", desc: "전기도금", path: "equipment/ecd.html",
@@ -99,7 +105,7 @@ const EQUIP_SECTIONS = {
       { id: "sources",         title: "출처",       en: "Sources",         ready: true,  card: "출처와 [검증 필요] 문장 모음" },
     ],
   },
-  // ALD: 장비 분해 화면(1차) + 2-1에서 원리·장비 구성·공정 흐름·공정변수 완성. 나머지 3개는 2-2에서 → 만들면 ready: true
+  // ALD: 장비 분해 화면(1차) + 2-1에서 원리·장비 구성·공정 흐름·공정변수, 2-2(2026-11-26)에서 문제와 점검·면접·출처 → 7개 모두 완성
   ald: {
     name: "ALD",
     home: "equipment/ald.html",
@@ -109,9 +115,9 @@ const EQUIP_SECTIONS = {
       { id: "hardware",        title: "장비 구성",   en: "Hardware",        ready: true,  card: "모듈 역할과 장비 방식 비교" },
       { id: "flow",            title: "공정 흐름",   en: "Process flow",    ready: true,  card: "투입부터 반출까지 순서" },
       { id: "parameters",      title: "공정변수",    en: "Parameters",      ready: true,  card: "펄스·퍼지·온도를 직접 바꿔 보기" },
-      { id: "troubleshooting", title: "문제와 점검", en: "Troubleshooting", ready: false },
-      { id: "interview",       title: "면접 질문",   en: "Interview",       ready: false },
-      { id: "sources",         title: "출처",       en: "Sources",         ready: false },
+      { id: "troubleshooting", title: "문제와 점검", en: "Troubleshooting", ready: true,  card: "점검 틀 익히고 점검 게임 풀기" },
+      { id: "interview",       title: "면접 질문",   en: "Interview",       ready: true,  card: "질문 카드 뒤집으며 연습" },
+      { id: "sources",         title: "출처",       en: "Sources",         ready: true,  card: "출처와 [검증 필요] 문장 모음" },
     ],
   },
 };
