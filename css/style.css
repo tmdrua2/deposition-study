@@ -3817,3 +3817,154 @@ body[data-equip="ald"] .wr-plasma-b { stop-color: var(--ald-film); }
   .sx-ch-flow.is-on, .bn-flow.is-on { animation: none; stroke-dasharray: none; }
   .sx-step { transition: none; }
 }
+
+/* =============================================================
+   ALD 공정 흐름·공정변수 페이지 (2026-11-26) — 원리 페이지 형식(.sx · .bn)을 그대로 쓰고 필요한 것만 더함
+   흐름: js/sim/ald-flow-sx.js (평면도 + 밸브 시간표, 사이클 수 실험 .cb)
+   공정변수: js/sim/ald-param-sx.js (곡선 + 표면 + 막대 .ps, 조작 그림 .bn-pl)
+   ============================================================= */
+.sx-step em { color: var(--on-navy); font-style: normal; font-weight: 700; }
+
+/* 지금 웨이퍼가 있는 곳 칩: 대기 쪽 / 경계 / 진공 쪽 (진공은 채운 칩, 대기는 테두리만) */
+.sx-zone { flex: none; margin: 0; padding: 4px 12px; border: 1px solid rgba(244, 237, 224, 0.32); border-radius: 999px; color: var(--on-navy-soft); font-size: var(--fs-xs); font-weight: 700; white-space: nowrap; }
+.sx-zone[data-zone="edge"] { border-style: dashed; border-color: var(--c-cvd-bright); color: var(--on-navy); }
+.sx-zone[data-zone="vac"] { border-color: var(--c-cvd-bright); background: rgba(92, 194, 184, 0.16); color: var(--on-navy); }
+
+/* 흐름: 평면도는 세로로 길어서 화면 높이에 맞춤. 챔버 단계(.has-vt)는 그림을 줄이고 밸브 시간표를 아래에 */
+.sx-flow .sx-svg-box svg { max-height: calc(100svh - var(--header-h, 72px) - 250px); min-height: 220px; margin: 6px auto 0; }
+.sx-flow .sx-stage.has-vt .sx-svg-box svg { max-height: calc(100svh - var(--header-h, 72px) - 470px); min-height: 160px; }
+.sx-flow .sx-stage.has-vt .sx-desc { display: none; }
+.sx-flow .sx-desc { min-height: 3.2em; margin-top: 6px; }
+.sx-vt { margin-top: 8px; padding: 8px 10px 6px; border: 1px solid rgba(244, 237, 224, 0.12); border-radius: 14px; background: rgba(12, 21, 41, 0.3); }
+.sx-vt[hidden] { display: none; }
+.sx-vt .vt-title { margin: 0 0 2px; color: var(--on-navy-muted); font-size: var(--fs-xs); font-weight: 700; }
+.sx-vt .vt-cap { min-height: 2.6em; margin-top: 4px; }
+.sx-stage .sx-vt .vt-note { display: none; }
+.scrolly-legend .k-trail { width: 18px; height: 0; border-radius: 0; border-top: 2px dashed var(--c-cvd-bright); }
+.scrolly-legend .wr-k-ll { width: 22px; height: 10px; border-radius: 2px; }
+
+/* 사이클 수 실험 (.cb) — 원리 실험대 .bn 패널 모양 그대로 */
+.cb-grid { display: grid; grid-template-columns: minmax(0, 0.75fr) minmax(0, 0.8fr) minmax(0, 1.5fr); grid-template-areas: "knob film time" "take take time"; gap: 14px; align-items: start; }
+.cb-knobs { grid-area: knob; } .cb-film { grid-area: film; } .cb-time { grid-area: time; align-self: stretch; } .cb-take { grid-area: take; }
+.cb-svg { display: block; width: 100%; height: auto; }
+.cb-film .cb-svg { max-height: 240px; }
+.cb-t { font-family: Pretendard, -apple-system, sans-serif; fill: var(--on-navy-muted); font-size: 13px; font-weight: 600; }
+.cb-t.is-strong { fill: var(--on-navy); font-weight: 800; }
+.cb-t.is-faint { fill: var(--on-navy-faint); font-size: 11px; font-weight: 500; }
+.cb-t.is-in { fill: var(--navy-deep); font-size: 11px; }
+.cb-ghost { stroke: var(--on-navy-faint); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.cb-brace { fill: none; stroke: var(--c-cvd-bright); stroke-width: 1.6; }
+.cb-fix { fill: rgba(244, 237, 224, 0.55); }
+.cb-seg.k-prec { fill: var(--ald-prec); } .cb-seg.k-react { fill: var(--ald-react); } .cb-seg.k-purge { fill: var(--ald-purge); }
+.cb-seg.is-final { stroke: var(--on-navy); stroke-width: 1; }
+.cb-pdep { fill: none; stroke: var(--on-navy-soft); stroke-width: 1.4; stroke-dasharray: 4 3; }
+.cb-end { stroke: var(--c-cvd-bright); stroke-width: 2; }
+.cb-legend { margin: 4px 0 0; }
+.cb-legend .k-prec { background: var(--ald-prec); } .cb-legend .k-react { background: var(--ald-react); } .cb-legend .k-purge { background: var(--ald-purge); }
+.cb-legend .k-fix { border-radius: 2px; background: rgba(244, 237, 224, 0.55); }
+.cb-legend .k-pdep { width: 14px; border-radius: 2px; border: 1.4px dashed var(--on-navy-soft); background: none; }
+.cb-time .bn-verdict { margin-top: 12px; }
+
+/* 공정변수 그림 (.ps): 왼쪽 곡선 + 아래 막대 2개 | 오른쪽 표면 */
+.ps-box svg { max-height: none; min-height: 0; margin: 0; }
+.ps-fig { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 14px; align-items: start; margin-top: 8px; }
+.ps-fig[hidden] { display: none; }
+.ps-svg { display: block; width: 100%; height: auto; }
+.ps-svg text { font-family: Pretendard, -apple-system, sans-serif; }
+.ps-axis { fill: none; stroke: var(--on-navy-muted); stroke-width: 1.4; }
+.ps-axis-t { fill: var(--on-navy-muted); font-size: 14px; }
+.ps-ref { stroke: rgba(244, 237, 224, 0.14); stroke-width: 1; stroke-dasharray: 2 5; }
+.ps-curve { fill: none; stroke: var(--c-cvd-bright); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+.ps-curve.is-flat { stroke: var(--ald-film); }
+.ps-curve.is-branch { stroke-width: 2.4; stroke-dasharray: 7 5; opacity: 0.8; }
+.ps-mark { stroke: var(--on-navy-faint); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.ps-lab { fill: var(--on-navy); font-size: 15px; font-weight: 800; }
+.ps-zone-t { fill: var(--on-navy-muted); font-size: 14px; font-weight: 600; }
+.ps-flat-t { fill: var(--on-navy-faint); font-size: 15px; font-weight: 700; transition: fill 0.3s; }
+.ps-flat-t.is-on { fill: var(--on-navy); }
+.ps-svg.is-past .ps-curve.is-flat { stroke-width: 5; }
+.ps-band { fill: rgba(205, 232, 247, 0.08); }
+.ps-band-t { fill: var(--ald-film); font-size: 14px; font-weight: 700; text-anchor: middle; }
+.ps-dot { fill: var(--on-navy); stroke: var(--navy-deep); stroke-width: 2.5; }
+.ps-dot.is-alt { fill: none; stroke: var(--on-navy); stroke-width: 2; stroke-dasharray: 3 2; }
+.ps-dot.is-ghost { fill: var(--navy-deep); stroke: var(--on-navy-muted); stroke-width: 1.6; }
+.ps-ghost-t { fill: var(--on-navy-muted); font-size: 13px; font-weight: 700; }
+.ps-meters { display: grid; gap: 6px; margin-top: 8px; }
+.ps-meter { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); align-items: center; gap: 10px; }
+.ps-meter-n { color: var(--on-navy-muted); font-size: var(--fs-xs); font-weight: 600; }
+.ps-meter-tr { position: relative; height: 10px; border-radius: 5px; background: rgba(244, 237, 224, 0.08); overflow: hidden; }
+.ps-meter-tr i { position: absolute; inset: 0; border-radius: 5px; background: var(--c-cvd-bright); transform-origin: left; transform: scaleX(0); will-change: transform; }
+.ps-side { min-width: 0; padding: 8px 10px; border: 1px dashed rgba(244, 237, 224, 0.22); border-radius: 14px; background: rgba(12, 21, 41, 0.3); }
+.ps-side-h { margin: 0 0 4px; color: var(--on-navy-muted); font-size: var(--fs-xs); font-weight: 700; }
+.ps-surf svg { display: block; width: 100%; height: auto; }
+.ps-surf .asf-label, .ps-surf .asf-sub-t, .ps-surf .asf-exhaust { display: none; }
+.ps-surf[hidden], .ps-temp[hidden] { display: none; }
+.ps-temp { display: grid; gap: 6px; }
+.ps-tcard { margin: 0; }
+.ps-tcard .atw-pic svg { display: block; width: 100%; height: auto; }
+.ps-tcard figcaption { color: var(--on-navy); font-size: var(--fs-xs); font-weight: 700; }
+.ps-side-cap { min-height: 2.8em; margin: 6px 0 0; color: var(--on-navy); font-size: var(--fs-sm); line-height: 1.45; }
+.ps-gauge { display: grid; grid-template-columns: auto 120px auto; align-items: center; gap: 8px; color: var(--on-navy-muted); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
+.ps-gauge[hidden] { display: none; }
+.ps-gauge-tr { position: relative; height: 6px; border-radius: 3px; background: rgba(244, 237, 224, 0.18); }
+.ps-gauge-dot { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border: 2px solid var(--navy-deep); border-radius: 50%; background: var(--on-navy); }
+/* 마지막 단계: 얽힘 사슬 */
+.ps-chain { display: grid; gap: 12px; margin: 12px 0 4px; }
+.ps-chain[hidden] { display: none; }
+.ps-chain-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 6px; }
+.ps-node { padding: 8px 12px; border: 1px solid rgba(244, 237, 224, 0.16); border-radius: 12px; color: var(--on-navy-faint); font-size: var(--fs-sm); font-weight: 700; transition: color 0.3s, border-color 0.3s, background 0.3s; }
+.ps-node.is-on { border-color: rgba(244, 237, 224, 0.38); color: var(--on-navy-soft); }
+.ps-node.is-now { border-color: var(--c-cvd-bright); background: rgba(92, 194, 184, 0.14); color: var(--on-navy); }
+.ps-arrow { color: var(--on-navy-faint); }
+.ps-still-desc { margin: 8px 0 0; color: var(--on-navy-soft); font-size: var(--fs-sm); line-height: 1.6; }
+
+/* 조작 그림: 원리 실험대와 같은 패널 모양 + 미션 칸 */
+.bn-pl .pl { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); grid-template-areas: "ctl res" "mis res"; gap: 14px; }
+.bn-pl .pl-controls { grid-area: ctl; position: static; }
+.bn-pl .pl-results { grid-area: res; }
+.bn-pl .pl-missions { grid-area: mis; }
+.bn-pl .pl-panel { padding: 14px 16px; border-radius: 18px; background: rgba(12, 21, 41, 0.42); }
+.bn-pl .pl-panel-title { color: var(--on-navy); font-size: var(--fs-md); font-weight: 800; letter-spacing: -0.02em; }
+.bn-pl .pl-missions .bn-knob-note { margin-top: 8px; }
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  .cb-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "knob film" "time time" "take take"; }
+}
+@media (max-width: 900px) {
+  .cb-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "knob" "film" "time" "take"; }
+  .bn-pl .pl { grid-template-columns: minmax(0, 1fr); grid-template-areas: "ctl" "res" "mis"; }
+}
+@media (max-width: 760px) {
+  .sx-zone { padding: 2px 8px; font-size: var(--fs-2xs); }
+  .sx-flow .sx-svg-box svg { max-height: 30svh; min-height: 0; }
+  .sx-flow .sx-stage.has-vt .sx-svg-box svg { max-height: 16svh; min-height: 0; }
+  .sx-vt { margin-top: 4px; padding: 4px 6px; }
+  .sx-vt .vt-title { display: none; }
+  .sx-vt .vt-cap { min-height: 2.4em; margin-top: 2px; font-size: var(--fs-2xs); }
+  .sx-flow .sx-desc { min-height: 3.2em; }
+  .ps-fig { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 8px; margin-top: 4px; }
+  .ps-meters, .ps-side-h { display: none; }
+  .ps-side { padding: 4px 6px; }
+  .ps-side-cap { min-height: 2.6em; font-size: var(--fs-2xs); }
+  .ps-temp { gap: 2px; }
+  .ps-tcard figcaption { font-size: var(--fs-2xs); }
+  .ps-gauge { grid-template-columns: auto 52px auto; gap: 4px; font-size: var(--fs-2xs); }
+  .ps-chain { gap: 6px; margin-top: 6px; }
+  .ps-node { padding: 4px 8px; font-size: var(--fs-2xs); }
+  .sx.is-still .ps-meters, .sx.is-still .ps-side-h { display: grid; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ps-node, .ps-flat-t { transition: none; }
+}
+.sx-flow .sx-still-fig .sx-svg-box svg { max-height: 340px; min-height: 0; }
+.cb-legend { font-size: var(--fs-xs); }
+.cb-legend li { font-size: var(--fs-xs); color: var(--on-navy-muted); }
+/* 곡선 글자: 그림이 화면에서 줄어들어도 읽히게 크게 (2026-11-26 화면 점검 1회차) */
+.ps-axis-t { font-size: 19px; }
+.ps-lab { font-size: 21px; }
+.ps-zone-t { font-size: 19px; }
+.ps-flat-t { font-size: 20px; }
+.ps-band-t { font-size: 19px; }
+.ps-ghost-t { font-size: 18px; }
+.sx-param .sx-desc { margin-top: 10px; }
+.ps-fig { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }

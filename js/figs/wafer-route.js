@@ -163,20 +163,54 @@
     return `${f1(base[0])},${f1(base[1])} ${f1(mx)},${f1(my)} ${f1(tip[0])},${f1(tip[1])}`;
   }
 
-  function setup(root) {
-    const holder = root.querySelector(".wr-svg");
-    if (!holder) return;
-    // 장비별 내용 덮어쓰기 (없으면 PECVD 내용 그대로)
-    const over = window.WAFER_ROUTE_DATA && window.WAFER_ROUTE_DATA.steps;
+  // ---------- 평면도 하나 붙이기 (자동 재생 없이 "단계 i, 시간 t" 그림만) ----------
+  //   다른 그림(ALD 공정 흐름 스크롤 체험 js/sim/ald-flow-sx.js)도 씀: window.WaferRoute.mount(holder, "접두어")
+  //   접두어: 한 페이지에 평면도를 여러 장 그릴 때(정지 화면) SVG 안 id가 겹치지 않게
+  //   draw(i, t, trail) — trail(점 목록)을 주면 이번 단계 경로 대신 그 경로 전체를 점선으로 (빈 목록 = 점선 없음)
+  function applyOverrides() {
+    const over = window.WAFER_ROUTE_DATA && window.WAFER_ROUTE_DATA.steps;   // 장비별 내용 (없으면 PECVD 그대로)
     if (over) Object.keys(over).forEach((k) => { if (STEPS[k]) Object.assign(STEPS[k], over[k]); });
-    holder.innerHTML = staticSvg();
-    const $ = (id) => holder.querySelector("#" + id);
+  }
+  function mount(holder, prefix) {
+    applyOverrides();
+    const p = prefix || "";
+    let svg = staticSvg();
+    if (p) svg = svg.replace(/id="wr-/g, `id="${p}wr-`).replace(/url\(#wr-/g, `url(#${p}wr-`).replace('aria-labelledby="wr-title"', `aria-labelledby="${p}wr-title"`);
+    holder.innerHTML = svg;
+    const $ = (id) => holder.querySelector("#" + p + id);
     const el = {
       wafer: $("wr-wafer"), film: $("wr-film"), notch: $("wr-notch"), arm: $("wr-arm"), trail: $("wr-trail"),
       glow: $("wr-glow"), scan: $("wr-scan"), llState: $("wr-ll-state"),
       ll1: $("wr-ll1-fill"), ll2: $("wr-ll2-fill"),
       doors: { "foup": $("wr-foup-door"), "ll1-atm": $("wr-ll1-atm"), "ll1-slit": $("wr-ll1-slit"), "ll2-slit": $("wr-ll2-slit"), "ll2-atm": $("wr-ll2-atm"), "pm-slit": $("wr-pm-slit") },
     };
+    function draw(step, t, trail) {
+      const o = stateAt(step, t);
+      el.wafer.setAttribute("transform", `translate(${f1(o.pos[0])} ${f1(o.pos[1])})`);
+      el.notch.setAttribute("transform", `rotate(${f1(o.notch + 90)})`);
+      el.film.setAttribute("opacity", f1(o.film));
+      el.arm.setAttribute("points", o.arm ? armPoints(o.arm, o.pos) : "");
+      const mv = STEPS[step].move;
+      el.trail.setAttribute("d", Array.isArray(trail) ? (trail.length > 1 ? "M" + trail.map((q) => `${f1(q[0])} ${f1(q[1])}`).join(" L") : "")
+        : mv ? `M${f1(mv[0][0])} ${f1(mv[0][1])} L${f1(mv[1][0])} ${f1(mv[1][1])}` : "");
+      el.glow.setAttribute("opacity", f1(o.glow * 0.9));
+      el.scan.setAttribute("opacity", o.scan >= 0 ? "1" : "0");
+      if (o.scan >= 0) { const y = 558 + o.scan * 40; el.scan.setAttribute("y1", f1(y)); el.scan.setAttribute("y2", f1(y)); }
+      el.ll1.style.opacity = f1(0.12 + 0.5 * o.ll1);
+      el.ll2.style.opacity = f1(0.12 + 0.5 * o.ll2);
+      el.llState.textContent = o.llText;
+      el.llState.setAttribute("x", step === 3 ? "200" : "400");
+      el.llState.setAttribute("text-anchor", step === 3 ? "end" : "start");
+      Object.keys(el.doors).forEach((k) => el.doors[k].classList.toggle("is-open", !!o.door[k]));
+    }
+    return { draw, svg: holder.querySelector("svg") };
+  }
+  window.WaferRoute = { mount, STEPS, MOVE_T, durOf };
+
+  function setup(root) {
+    const holder = root.querySelector(".wr-svg");
+    if (!holder) return;
+    const fig = mount(holder, "");
     const cap = root.querySelector(".wr-cap");
     const playBtn = root.querySelector("[data-wr-play]");
     const stepBtns = Array.from(root.querySelectorAll("[data-wr-step]"));
@@ -189,22 +223,7 @@
     let step = 0, t = 0;
 
     function draw() {
-      const o = stateAt(step, t);
-      el.wafer.setAttribute("transform", `translate(${f1(o.pos[0])} ${f1(o.pos[1])})`);
-      el.notch.setAttribute("transform", `rotate(${f1(o.notch + 90)})`);
-      el.film.setAttribute("opacity", f1(o.film));
-      el.arm.setAttribute("points", o.arm ? armPoints(o.arm, o.pos) : "");
-      const mv = STEPS[step].move;
-      el.trail.setAttribute("d", mv ? `M${f1(mv[0][0])} ${f1(mv[0][1])} L${f1(mv[1][0])} ${f1(mv[1][1])}` : "");
-      el.glow.setAttribute("opacity", f1(o.glow * 0.9));
-      el.scan.setAttribute("opacity", o.scan >= 0 ? "1" : "0");
-      if (o.scan >= 0) { const y = 558 + o.scan * 40; el.scan.setAttribute("y1", f1(y)); el.scan.setAttribute("y2", f1(y)); }
-      el.ll1.style.opacity = f1(0.12 + 0.5 * o.ll1);
-      el.ll2.style.opacity = f1(0.12 + 0.5 * o.ll2);
-      el.llState.textContent = o.llText;
-      el.llState.setAttribute("x", step === 3 ? "200" : "400");
-      el.llState.setAttribute("text-anchor", step === 3 ? "end" : "start");
-      Object.keys(el.doors).forEach((k) => el.doors[k].classList.toggle("is-open", !!o.door[k]));
+      fig.draw(step, t);
       // 다른 그림(ALD 밸브 시간표 등)에 지금 단계·진행을 알림
       root.dispatchEvent(new CustomEvent("wr:step", { detail: { i: step, t, move: STEPS[step].move ? MOVE_T : 0, act: STEPS[step].act, playing } }));
     }

@@ -13,7 +13,7 @@
 //
 // 정지 화면(움직임 줄이기·?still=1 등): ① 자동 재생 대신 단계마다 정지 그림을 세로로 나열 ② 실행하면 바로 결과
 // 색은 css/style.css의 변수만 클래스로 씀 (JS에 색 없음)
-// 의존: vendor/gsap/gsap.min.js, ScrollTrigger.min.js, js/motion-pref.js, js/sim/ald-surface.js
+// 의존: vendor/gsap/gsap.min.js, ScrollTrigger.min.js, js/motion-pref.js, js/sim/sx-engine.js(단계 전환·시계), js/sim/ald-surface.js
 // =============================================================
 (function () {
   "use strict";
@@ -130,23 +130,21 @@
     if (!A || !steps.length) return;
 
     // 정지 화면: 단계마다 정지 그림을 글 위에 넣고, 고정 그림·사이드 노트 칸은 숨김
-    if (isStill() || !window.gsap || !window.ScrollTrigger) { buildStill(root, steps); return; }
+    if (isStill() || !window.gsap || !window.ScrollTrigger || !window.SxEngine) { buildStill(root, steps); return; }
 
     const svgBox = $("[data-sx-svg]", root);
     const svgEl = A.buildSvg(svgBox);
     const setGas = miniChamber($("[data-sx-ch]", root));
     const nameEl = $("[data-sx-name]", root), descEl = $("[data-sx-desc]", root);
-    const dots = $$("[data-sx-dots] li", root);
-    const noteEl = $("[data-sx-note]", root);
     const demoBox = $("[data-sx-demo]", root);
     const demoEl = A.buildSvg($("[data-sx-demo-svg]", root));
     demoEl.svg = $("[data-sx-demo-svg] svg", root);
     if (demoEl.svg) { demoEl.svg.setAttribute("aria-hidden", "true"); demoEl.svg.removeAttribute("role"); }
     const caps = $$("[data-demo-cap]", root);
 
-    // ---- 그리기: 지금 단계 cur, 그 단계 안 반복 시간 loopT ----
-    let cur = -1, loopT = 0, demoT = 0, lastText = "", lastLap = 0;
-    function draw() {
+    // ---- 그리기: 지금 단계 cur, 그 단계 안 반복 시간 loopT (시계·스크롤은 js/sim/sx-engine.js) ----
+    let lastText = "";
+    function draw(cur, loopT) {
       const f = frameAt(cur, loopT);
       const o = f.bounce ? bounceFrame(f.ph) : A.pose(f.i, f.p, f.k, false);
       A.apply(svgEl, o);
@@ -158,66 +156,19 @@
         setGas(f.bounce ? "prec" : GAS[f.i]);           // 작은 챔버: 지금 열린 밸브만 하늘색
       }
       const D = LOOPS[cur].demo && DEMO[LOOPS[cur].demo];
-      if (D) A.apply(demoEl, D.frame((demoT / D.period) % 1));
+      if (D) A.apply(demoEl, D.frame((loopT / D.period) % 1));
     }
-    // 반복이 처음으로 돌아갈 때(예: 12/12 → 0/12) 툭 끊기지 않게 살짝 흐렸다가 밝힘
-    const soften = () => gsap.fromTo(svgBox, { opacity: 0.25 }, { opacity: 1, duration: 0.45, ease: "power1.out", overwrite: true });
 
-    // ---- 시계: 보이는 동안만 gsap.ticker로 시간을 더함 (화면 밖·탭 숨김이면 멈춤) ----
-    function tick(time, deltaTime) {
-      const dt = Math.min(deltaTime, 100) / 1000;       // 탭 복귀 직후 큰 점프 막기
-      loopT += dt; demoT += dt;
-      const lap = Math.floor(loopT / LOOPS[cur].total);
-      if (lap !== lastLap) { lastLap = lap; if (LOOPS[cur].hold) soften(); }
-      draw();
-    }
-    let onScreen = true, ticking = false;
-    function sync() {
-      const want = onScreen && !document.hidden;
-      if (want && !ticking) { gsap.ticker.add(tick); ticking = true; }
-      else if (!want && ticking) { gsap.ticker.remove(tick); ticking = false; }
-    }
-    if ("IntersectionObserver" in window) {
-      new IntersectionObserver((en) => { onScreen = en[en.length - 1].isIntersecting; sync(); }).observe($(".sx-stage", root));
-    }
-    document.addEventListener("visibilitychange", sync);
-
-    // ---- 단계 바꾸기: 글 강조 · 진행 점 · 사이드 노트 · 작은 창 · 그림 처음부터 ----
-    function activate(b) {
-      if (b === cur) return;
-      cur = b; loopT = 0; demoT = 0; lastLap = 0; lastText = "";
-      steps.forEach((st, n) => st.classList.toggle("is-on", n === b));
-      dots.forEach((li, n) => { li.classList.toggle("is-done", n < b); li.classList.toggle("is-on", n === b); });
-      const det = $(".sx-note", steps[b]);
-      if (noteEl && det) {
-        noteEl.innerHTML = `<p class="sx-note-k">${b + 1}단계 옆 메모</p><h3>${$("summary", det).textContent.replace(/^메모:\s*/, "")}</h3>` +
-          $(".sx-note-body", det).innerHTML;
-        noteEl.classList.remove("is-in"); void noteEl.offsetWidth; noteEl.classList.add("is-in");
-      }
+    // ---- 단계가 바뀐 순간: 작은 창(퍼지 부족) 보이기/숨기기 ----
+    function onActivate(b) {
+      lastText = "";
       const kind = LOOPS[b].demo || null;
       demoBox.hidden = !kind;
       root.classList.toggle("has-demo", !!kind);
       caps.forEach((c) => { c.hidden = c.dataset.demoCap !== kind; });
-      soften();
-      draw();
     }
 
-    // ---- 스크롤: 단계 글이 화면의 기준선을 지나는 동안 그 단계가 켜짐 ----
-    //   넓은 화면은 화면 가운데(55%), 휴대폰은 위쪽 절반을 그림이 덮으므로 그 아래(72%)
-    gsap.registerPlugin(ScrollTrigger);
-    const line = () => (window.matchMedia("(max-width: 899px)").matches ? "72%" : "55%");
-    steps.forEach((st, n) => {
-      ScrollTrigger.create({
-        trigger: st, start: () => "top " + line(), end: () => "bottom " + line(),
-        onToggle: (self) => { if (self.isActive) activate(n); }
-      });
-    });
-    // 처음: 이미 지나간 단계가 있으면 그 단계(새로고침 위치), 아니면 1단계
-    const y = window.innerHeight * (parseFloat(line()) / 100);
-    let start = 0;
-    steps.forEach((st, n) => { if (st.getBoundingClientRect().top < y) start = n; });
-    activate(start);
-    sync();
+    SxEngine.story(root, { total: (b) => LOOPS[b].total, lapSoften: (b) => !!LOOPS[b].hold, draw, onActivate });
   }
 
   // 정지 화면: 각 단계 글 위에 그 단계 대표 모습 (+ 작은 챔버, 퍼지 단계는 "부족하면" 비교 그림)

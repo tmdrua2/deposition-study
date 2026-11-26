@@ -71,8 +71,9 @@
     return s + "</svg>";
   }
 
-  function setup(box) {
-    const route = box.closest("[data-wafer-route]") || document.querySelector("[data-wafer-route]");
+  // 시간표 하나 붙이기 → show(d) 돌려줌. d = 웨이퍼 경로의 단계 정보 { i, t, move, act, playing }
+  //   (스크롤 체험 js/sim/ald-flow-sx.js는 웨이퍼 경로 대신 직접 show를 부름)
+  function mount(box) {
     box.innerHTML = `<p class="vt-title">공정 챔버 안 밸브 시간표</p><div class="vt-chart">${chartSvg()}</div>` +
       `<p class="vt-cap" aria-live="polite"></p>` +
       `<p class="vt-note">칸 길이는 실제 시간 비율이 아닙니다. 장비에 따라 퍼지 가스를 계속 흘리면서 그 사이에 전구체·반응 기체를 짧게 끼워 넣기도 합니다 <span class="verify-tag">검증 필요</span>.</p>`;
@@ -101,8 +102,18 @@
       cap.textContent = mode === "before" ? CAP_BEFORE : mode === "after" ? CAP_AFTER : mode === "all" ? CAP_ALL : SEGS[n].cap;
     }
     show({ i: 0, t: 0, move: 0, act: 1, playing: true });
+    return show;
+  }
+  function setup(box) {
+    const route = box.closest("[data-wafer-route]") || document.querySelector("[data-wafer-route]");
+    const show = mount(box);
     if (route) route.addEventListener("wr:step", (e) => show(e.detail));
   }
+
+  // 레시피 안 구간 경계 (0~1, 시간표 왼쪽 끝 = 0): 안정화 | 사이클 반복(… 포함) | 마지막 퍼지
+  const q = (x) => (x - X0) / WIDTH;
+  const fin = SEGS[SEGS.length - 1];
+  window.AldValveTimeline = { mount, PM_STEP, ranges: { stab: [0, q(SEGS[1].x)], cycles: [q(SEGS[1].x), q(fin.x)], final: [q(fin.x), 1] } };
 
   document.querySelectorAll("[data-valve-timeline]").forEach(setup);
 })();

@@ -6,9 +6,13 @@
   <title>공정 흐름 | ALD 장비 | LAYER BY LAYER · 증착 공정 노트</title>
   <link rel="stylesheet" href="../../css/style.css">
 </head>
-<!-- ALD 섹션 하위 페이지 (03 공정 흐름). 장비 페이지 틀대로 공정 흐름은 순서 목록 <ol>.
-     사이클 그림은 js/figs/ald-cycle.js의 작은 계통도를 재사용([data-ald-mini]).
-     맨 앞 띠: 웨이퍼 경로(js/figs/wafer-route.js) + 밸브 시간표(js/figs/ald-valve-timeline.js) -->
+<!-- ALD 섹션 하위 페이지 (03 공정 흐름) — 원리 페이지와 같은 형식(2026-11-26): 스크롤 단계 체험 + 맨 아래 작은 실험 + 정리 한 칸
+     ① 스크롤 단계 체험 [data-sx]: 왼쪽 단계 글 8개 · 가운데 웨이퍼 경로 평면도(+ 챔버 단계는 밸브 시간표) · 오른쪽 사이드 노트 "왜 이런 순서일까"
+        단계 글이 화면 가운데에 오면 그 구간이 저절로 반복 재생. 동작은 js/sim/ald-flow-sx.js (단계 전환 공용: js/sim/sx-engine.js)
+     ② 작은 실험 [data-cyc-bench]: 사이클 수 → 막 두께와 공정 시간이 함께 늘어남 (숫자 없이 길이만)
+     장비 페이지 틀대로 공정 흐름 순서 목록 <ol>은 "정리"(#flow)에 있음. 레시피 표 #recipe는 공정변수 페이지가 링크함
+     글(단계·메모·[검증 필요])은 출처 모으기(node tools/collect-pages.js)가 읽도록 이 HTML 안에 둔다.
+     움직임 줄이기·?still=1 → 단계마다 정지 그림을 세로로 나열 -->
 <body data-root="../../" data-process="ald" class="page-stage sec-page" data-equip="ald" data-section="flow">
   <header id="site-header"></header>
 
@@ -24,83 +28,203 @@
   </section>
 
   <main class="sec-main">
-    <!-- 0) 웨이퍼 경로 + 밸브 시간표 (하늘색 띠). 평면도: js/figs/wafer-route.js(PECVD와 같은 플랫폼, ALD 내용만 바꿈)
-            시간표: js/figs/ald-valve-timeline.js (웨이퍼가 PM에 있는 동안 재생선이 지나감) -->
-    <section class="sec-band vt-band" aria-labelledby="route">
+    <section class="sec-band sx-band" aria-labelledby="sim">
       <div class="sec-scrolly-bg" aria-hidden="true"><div class="sec-scrolly-glow"></div><div class="stage-reed"></div></div>
       <div class="sec-band-inner">
         <div class="sec-scrolly-head">
-          <h2 id="route">웨이퍼 경로와 밸브 시간표</h2>
-          <p>장비를 위에서 본 그림입니다. 웨이퍼가 FOUP에서 공정 챔버까지 들어갔다 나오는 동안, 챔버 안에서는 밸브가 번갈아 열립니다. 단계를 누르면 그 단계로 건너뜁니다.</p>
+          <h2 id="sim">스크롤로 따라가는 웨이퍼 한 장</h2>
+          <p>장비를 위에서 본 그림입니다. 왼쪽 단계 글이 화면 가운데에 오면 그 구간이 저절로 반복됩니다. 공정 챔버에 들어간 뒤에는 그림이 챔버 쪽으로 당겨지고, 밸브 시간표가 함께 움직입니다.</p>
         </div>
-        <div class="wr" data-wafer-route>
-          <figure class="wr-fig">
-            <div class="wr-svg"></div>
-            <figcaption class="wr-bar">
-              <p class="wr-cap"></p>
-              <span class="wr-legend"><i class="wr-k-ll" aria-hidden="true"></i>LL 칠: 옅음 = 대기, 진함 = 진공</span>
-              <button type="button" class="scrolly-pause" data-wr-play aria-pressed="false">일시정지</button>
-            </figcaption>
-          </figure>
-          <div class="wr-side">
-            <div class="vt" data-valve-timeline></div>
-            <ol class="wr-steps">
-              <li><button type="button" data-wr-step="0"><span class="wr-no">01</span><span class="wr-name">FOUP 문 열기 · 매핑</span>
-                <span class="wr-desc">대기 쪽: 로드포트가 FOUP 문을 열고, 칸마다 웨이퍼가 있는지 확인합니다(매핑) <span class="verify-tag">검증 필요</span>.</span></button></li>
-              <li><button type="button" data-wr-step="1"><span class="wr-no">02</span><span class="wr-name">ATM 로봇이 꺼냄</span>
-                <span class="wr-desc">EFEM의 대기 로봇이 웨이퍼 한 장을 꺼냅니다. 여기까지는 대기압입니다.</span></button></li>
-              <li><button type="button" data-wr-step="2"><span class="wr-no">03</span><span class="wr-name">얼라이너</span>
-                <span class="wr-desc">웨이퍼를 돌려 노치(방향 표시 홈) 방향과 중심을 맞춥니다.</span></button></li>
-              <li><button type="button" data-wr-step="3"><span class="wr-no">04</span><span class="wr-name">LL에 넣고 펌핑</span>
-                <span class="wr-desc">경계: 로드락의 대기 쪽 문으로 넣고 닫은 뒤 공기를 빼서(펌핑) 진공으로 만듭니다.</span></button></li>
-              <li><button type="button" data-wr-step="4"><span class="wr-no">05</span><span class="wr-name">TM으로</span>
-                <span class="wr-desc">진공 쪽: 슬릿 밸브가 열리면 진공 로봇이 웨이퍼를 트랜스퍼 모듈로 가져옵니다.</span></button></li>
-              <li><button type="button" data-wr-step="5"><span class="wr-no">06</span><span class="wr-name">PM에서 ALD 사이클</span>
-                <span class="wr-desc">공정 챔버에 넣고 슬릿 밸브를 닫으면 가열·안정화 → 사이클 반복 → 마지막 퍼지가 진행됩니다. 이때 위 밸브 시간표가 움직입니다.</span></button></li>
-              <li><button type="button" data-wr-step="6"><span class="wr-no">07</span><span class="wr-name">TM으로 꺼냄</span>
-                <span class="wr-desc">마지막 퍼지가 끝나면 진공 로봇이 웨이퍼를 다시 TM으로 꺼냅니다.</span></button></li>
-              <li><button type="button" data-wr-step="7"><span class="wr-no">08</span><span class="wr-name">LL에서 벤트 · 냉각</span>
-                <span class="wr-desc">경계: 로드락에 가스를 채워(벤트) 대기압으로 되돌리며 웨이퍼를 식힙니다. 어느 LL을 쓰는지, 어디서 식히는지는 장비마다 다릅니다 <span class="verify-tag">검증 필요</span>.</span></button></li>
-              <li><button type="button" data-wr-step="8"><span class="wr-no">09</span><span class="wr-name">FOUP로</span>
-                <span class="wr-desc">대기 쪽: 대기 로봇이 웨이퍼를 원래 FOUP 칸에 넣습니다.</span></button></li>
-            </ol>
+
+        <!-- ① 스크롤 단계 체험 -->
+        <div class="sx sx-flow" data-sx>
+          <div class="sx-steps">
+            <article class="sx-step" data-beat="0">
+              <p class="sx-no"><b>1</b> / 8</p>
+              <h3>FOUP에서 꺼냄</h3>
+              <p><em>대기 쪽</em>: 로드포트가 FOUP(웨이퍼 운반 통) 문을 열고, 칸마다 웨이퍼가 있는지 확인합니다(매핑) <span class="verify-tag">검증 필요</span>. EFEM의 대기 로봇이 웨이퍼 한 장을 꺼냅니다.</p>
+              <details class="sx-note"><summary>메모: 왜 매핑부터 할까</summary><div class="sx-note-body">
+                <p>로봇은 칸 안을 보지 못합니다. 빈 칸, 두 장이 겹친 칸, 비스듬히 걸친 웨이퍼를 먼저 알아야 블레이드(웨이퍼를 받치는 손)를 넣다가 부딪히지 않습니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p>FOUP는 웨이퍼를 깨끗한 공기 속에 닫아 두는 통이라, 장비 앞에 놓인 뒤에만 문을 엽니다.</p>
+                <p class="sx-links"><a href="../ald.html#part=foup">FOUP 패널</a><a href="../ald.html#part=efem">EFEM 패널</a></p>
+              </div></details>
+            </article>
+
+            <article class="sx-step" data-beat="1">
+              <p class="sx-no"><b>2</b> / 8</p>
+              <h3>EFEM · 정렬</h3>
+              <p><em>대기 쪽</em>: 얼라이너가 웨이퍼를 돌려 노치(방향 표시 홈) 방향과 중심을 맞춥니다.</p>
+              <details class="sx-note"><summary>메모: 왜 대기 쪽에서 정렬할까</summary><div class="sx-note-body">
+                <p>진공 쪽 로봇은 받은 위치 그대로 공정 챔버에 내려놓습니다. 여기서 중심이 어긋나면 챔버 안에서도 히터 가운데에 놓이지 않아, 가장자리 막 두께가 달라질 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p>대기압에서 맞추는 편이 장치가 간단하고, 진공 쪽 시간을 아낄 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p class="sx-links"><a href="../ald.html#part=efem">EFEM 패널</a></p>
+              </div></details>
+            </article>
+
+            <article class="sx-step" data-beat="2">
+              <p class="sx-no"><b>3</b> / 8</p>
+              <h3>로드락 진공</h3>
+              <p><em>경계</em>: 로드락의 대기 쪽 문으로 넣고 닫은 뒤, 공기를 빼서(펌핑) <a href="../../basics/vacuum.html">진공</a>으로 만듭니다. 그림에서 로드락 칠이 진해지는 것이 진공이 되는 모습입니다.</p>
+              <details class="sx-note"><summary>메모: 왜 작은 방을 하나 더 거칠까</summary><div class="sx-note-body">
+                <p>트랜스퍼 모듈(TM)과 공정 챔버를 웨이퍼마다 대기로 열면, 다시 진공을 만드는 데 오래 걸리고 공기와 수분이 들어옵니다.</p>
+                <p>작은 로드락만 펌핑·벤트를 반복하면 진공 쪽은 늘 진공으로 남습니다. 대기와 진공을 잇는 "에어록" 역할입니다.</p>
+                <p class="sx-links"><a href="../ald.html#part=loadlock">로드락 패널</a><a href="../../basics/vacuum.html">기초: 진공</a></p>
+              </div></details>
+            </article>
+
+            <article class="sx-step" data-beat="3">
+              <p class="sx-no"><b>4</b> / 8</p>
+              <h3>TM으로 이송 → 공정 챔버</h3>
+              <p><em>진공 쪽</em>: 로드락의 TM 쪽 슬릿 밸브(출입문)가 열리면 진공 로봇이 웨이퍼를 가져와, 공정 챔버(PM) 슬릿 밸브를 지나 리프트 핀 위에 내려놓습니다. 핀이 내려가 웨이퍼가 히터 위에 놓이고 슬릿 밸브가 닫힙니다.</p>
+              <details class="sx-note"><summary>메모: 왜 문을 하나씩 열까</summary><div class="sx-note-body">
+                <p>로드락·TM·공정 챔버 문을 동시에 열지 않고 지나갈 문만 엽니다. 방마다 압력과 남은 기체가 달라, 한꺼번에 열면 기체와 파티클이 다른 방으로 넘어갈 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p class="sx-links"><a href="../ald.html#part=tm">TM 패널</a><a href="../ald.html#part=pm">공정 챔버 패널</a></p>
+              </div></details>
+            </article>
+
+            <article class="sx-step" data-beat="4">
+              <p class="sx-no"><b>5</b> / 8</p>
+              <h3>가열 · 안정화</h3>
+              <p>사이클을 바로 시작하지 않습니다. 퍼지 가스만 흘리며 웨이퍼가 히터 온도까지 데워지고, 스로틀 밸브로 챔버 압력이 레시피 값에 맞춰지기를 기다립니다.</p>
+              <details class="sx-note"><summary>메모: 왜 먼저 데우고 기다릴까</summary><div class="sx-note-body">
+                <p>자기 제한은 웨이퍼 온도가 <a href="principle.html#window">ALD 온도 창</a> 안일 때 제대로 일어납니다. 막 들어온 웨이퍼는 히터보다 차가워서, 바로 시작하면 처음 몇 사이클의 성장량이 달라질 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p>압력도 맞춰야 매 사이클 펄스와 퍼지가 같은 조건에서 반복됩니다.</p>
+                <p class="sx-links"><a href="../ald.html#part=pm">공정 챔버 패널 (히터·스로틀 밸브)</a></p>
+              </div></details>
+            </article>
+
+            <article class="sx-step" data-beat="5">
+              <p class="sx-no"><b>6</b> / 8</p>
+              <h3>ALD 사이클 반복</h3>
+              <p>전구체 주입 → 퍼지 → 반응 기체 주입 → 퍼지를 레시피에 정한 횟수만큼 반복합니다. 그동안 ALD 밸브가 쉬지 않고 열렸다 닫힙니다. 아래 밸브 시간표에서 지금 열린 칸이 밝아집니다.</p>
+              <details class="sx-note"><summary>메모: 왜 같은 일을 수없이 반복할까</summary><div class="sx-note-body">
+                <p>한 사이클에는 아주 얇게만 쌓이므로, 원하는 두께가 될 때까지 사이클을 되풀이합니다. 그래서 <strong>두께 = 사이클 수</strong>이고, 매 사이클 퍼지가 두 번 들어가 느립니다. <a href="#bench">맨 아래 실험</a>에서 확인할 수 있습니다.</p>
+                <p>막을 처음 쌓기 시작할 때는 표면 상태에 따라 처음 몇 사이클이 덜 쌓이기도 합니다(초기 지연) <span class="verify-tag">검증 필요</span>.</p>
+                <p class="sx-links"><a href="../ald.html#part=ald-valve">ALD 밸브 패널</a><a href="../ald.html#part=precursor">전구체 공급부 패널</a><a href="../ald.html#part=reactant">반응 기체·퍼지 공급부 패널</a></p>
+              </div></details>
+            </article>
+
+            <article class="sx-step" data-beat="6">
+              <p class="sx-no"><b>7</b> / 8</p>
+              <h3>마지막 퍼지</h3>
+              <p>마지막 사이클이 끝나면 퍼지 가스를 충분히 흘려, 챔버에 남은 전구체·반응 기체·부산물을 펌프 쪽으로 빼냅니다. 빠져나간 기체는 드라이 펌프를 지나 스크러버에서 처리됩니다.</p>
+              <details class="sx-note"><summary>메모: 왜 끝에 퍼지를 한 번 더 길게 할까</summary><div class="sx-note-body">
+                <p>남은 기체가 있는 채로 슬릿 밸브를 열면 TM으로 넘어가 다른 웨이퍼와 다른 챔버를 오염시키거나 파티클이 될 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p>그래서 장비는 압력이 충분히 내려갔는지 확인한 뒤에야 문을 엽니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p class="sx-links"><a href="../ald.html#part=pump">드라이 펌프·배기 패널</a><a href="../ald.html#part=ald-valve">ALD 밸브 패널</a></p>
+              </div></details>
+            </article>
+
+            <article class="sx-step" data-beat="7">
+              <p class="sx-no"><b>8</b> / 8</p>
+              <h3>반출</h3>
+              <p><em>진공 쪽</em>: 리프트 핀이 웨이퍼를 들어 올리면 진공 로봇이 꺼내 다른 로드락으로 옮깁니다. <em>경계</em>: 로드락에 질소를 채워(벤트) 대기압으로 돌립니다. <em>대기 쪽</em>: 대기 로봇이 웨이퍼를 FOUP의 원래 칸에 넣습니다.</p>
+              <details class="sx-note"><summary>메모: 왜 식혀서 내보낼까</summary><div class="sx-note-body">
+                <p>뜨거운 웨이퍼가 FOUP의 플라스틱과 대기 공기에 바로 닿지 않도록 로드락에서 식히기도 합니다. 어느 로드락을 쓰는지, 어디서 식히는지는 장비마다 다릅니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p>실제로는 한 챔버가 사이클을 도는 동안 로봇이 다른 챔버에 웨이퍼를 넣고 빼며 여러 장을 동시에 처리합니다.</p>
+                <p class="sx-links"><a href="../ald.html#part=loadlock">로드락 패널</a><a href="../ald.html#part=foup">FOUP 패널</a></p>
+              </div></details>
+            </article>
+          </div>
+
+          <!-- 가운데: 고정 그림 (진행 표시 + 지금 위치 칩 + 평면도 + 밸브 시간표) -->
+          <div class="sx-stage-col">
+            <figure class="sx-stage">
+              <div class="sx-top">
+                <div class="sx-where">
+                  <p class="sx-stage-name" data-sx-name aria-live="polite"></p>
+                  <ol class="sx-dots" data-sx-dots aria-hidden="true"><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li></ol>
+                </div>
+                <p class="sx-zone" data-sx-zone></p>
+              </div>
+              <div class="sx-svg-box" data-sx-svg></div>
+              <p class="sx-desc" data-sx-desc></p>
+              <div class="vt sx-vt" data-sx-vt hidden></div>
+              <figcaption class="sx-cap">
+                <ul class="scrolly-legend" aria-label="그림 범례">
+                  <li><i class="wr-k-ll"></i>로드락 칠: 옅음 = 대기, 진함 = 진공</li>
+                  <li><i class="k-trail"></i>이 단계에서 웨이퍼가 지나는 길</li>
+                </ul>
+                <p class="sx-cap-note">개념도: 대표적인 300mm 장비 구성이며 실제 치수·시간 비율이 아닙니다.</p>
+              </figcaption>
+            </figure>
+          </div>
+
+          <!-- 오른쪽: 사이드 노트 "왜 이런 순서일까" -->
+          <aside class="sx-notes-col" aria-label="보충 메모">
+            <div class="sx-notes"><div class="sx-note-live" data-sx-note aria-live="polite"></div></div>
+          </aside>
+        </div>
+
+        <!-- ② 맨 아래 작은 실험: 사이클 수 -->
+        <div class="bn cb" data-cyc-bench>
+          <div class="bn-head">
+            <h2 id="bench">직접 실험해 보기: 사이클 수</h2>
+            <p>사이클 수만 바꾸면 막 두께와 공정 시간이 함께 달라집니다. 숫자 없이 길이만 비교합니다.</p>
+          </div>
+          <div class="cb-grid">
+            <section class="bn-panel bn-knobs cb-knobs" aria-label="레시피 손잡이">
+              <div class="bn-panel-h"><h3>레시피 손잡이</h3></div>
+              <div class="bn-knob">
+                <label class="bn-knob-top" for="k-cyc">사이클 수 <b data-kv>보통</b></label>
+                <input id="k-cyc" type="range" min="0" max="4" step="1" value="2" data-cyc>
+                <div class="bn-ticks" aria-hidden="true"><span>적게</span><span>보통</span><span>많이</span></div>
+              </div>
+              <p class="bn-knob-note">펄스·퍼지 시간, 온도는 그대로입니다. 한 사이클에 쌓이는 양이 거의 같다는 가정입니다.</p>
+              <div class="bn-run"><button type="button" class="bn-btn" data-cb-run>다시 쌓기</button></div>
+            </section>
+
+            <section class="bn-panel cb-film" aria-label="막 두께">
+              <div class="bn-panel-h"><h3>막 두께</h3><p>한 줄 = 한 사이클</p></div>
+              <svg class="cb-svg" viewBox="0 0 270 220" role="img" aria-label="웨이퍼 단면. 사이클마다 막이 한 줄씩 쌓인다." data-cb-film></svg>
+            </section>
+
+            <section class="bn-panel cb-time" aria-label="공정 시간">
+              <div class="bn-panel-h"><h3>웨이퍼 한 장에 걸린 시간</h3></div>
+              <svg class="cb-svg" viewBox="0 0 580 168" role="img" aria-label="공정 시간 막대. ALD는 이송 뒤 사이클 칸이 사이클 수만큼 이어지고 마지막 퍼지와 반출이 붙는다. 아래 줄은 같은 두께를 한 번에 쌓는 PECVD 참고 막대." data-cb-time></svg>
+              <ul class="scrolly-legend cb-legend" aria-label="막대 범례">
+                <li><i class="k-prec"></i>전구체</li><li><i class="k-purge"></i>퍼지</li><li><i class="k-react"></i>반응 기체</li><li><i class="k-fix"></i>이송·반출</li><li><i class="k-pdep"></i>PECVD 증착</li>
+              </ul>
+              <div class="bn-verdict" aria-live="polite">
+                <ul class="bn-chips" data-cb-chips></ul>
+                <p class="bn-verdict-text" data-cb-verdict></p>
+                <p class="bn-more">PECVD 줄은 "같은 두께를 원료를 함께 넣어 한 번에 쌓으면 훨씬 짧다"는 경향만 보여 줍니다. 실제 시간 비는 막과 장비마다 다릅니다 <span class="verify-tag">검증 필요</span></p>
+              </div>
+            </section>
+
+            <section class="bn-panel bn-missions cb-take" aria-label="알아낼 것">
+              <div class="bn-panel-h"><h3>알아낼 것</h3><p class="bn-mcount"><span data-done>0</span>/2</p></div>
+              <ol>
+                <li class="bn-mission" data-m="thick"><span class="bn-mbox" aria-hidden="true"></span><span class="bn-mt"><b>ALD는 두께를 사이클 수로 정한다</b>사이클 수를 바꿔 막 두께가 따라 바뀌는지 보기</span></li>
+                <li class="bn-mission" data-m="slow"><span class="bn-mbox" aria-hidden="true"></span><span class="bn-mt"><b>그래서 느리다</b>사이클을 많이로 올려 ALD 시간 막대와 PECVD 참고 막대를 비교하기</span></li>
+              </ol>
+            </section>
           </div>
         </div>
       </div>
     </section>
 
     <div class="sec-read">
-      <h2 id="flow">한 장의 웨이퍼가 겪는 순서</h2>
-      <p>크게 다섯 단계 — <strong>투입 → 가열·안정화 → 사이클 반복 → 퍼지·배출 → 반출</strong>입니다. 웨이퍼를 옮기는 부분(1·5)은 PECVD와 같은 플랫폼을 쓰므로 거의 같고, ALD다운 부분은 가운데 2~4입니다.</p>
-      <ol class="flow-steps">
-        <li>
-          <strong>웨이퍼 투입</strong> — <em>대기 쪽</em>: FOUP가 로드포트에 놓이고 문이 열리면, EFEM의 대기 로봇이 웨이퍼를 꺼내 로드락에 넣습니다.
-          <em>경계</em>: 로드락 문을 닫고 공기를 빼(펌핑) 진공으로 만듭니다.
-          <em>진공 쪽</em>: 트랜스퍼 모듈의 진공 로봇이 웨이퍼를 받아 공정 챔버의 슬릿 밸브(출입문)를 지나 리프트 핀 위에 내려놓고, 핀이 내려가 히터 위에 웨이퍼가 놓입니다. 슬릿 밸브가 닫힙니다.
-          <span class="flow-links"><a href="../ald.html#part=foup">FOUP</a><a href="../ald.html#part=efem">EFEM</a><a href="../ald.html#part=loadlock">LL</a><a href="../ald.html#part=tm">TM</a></span>
-        </li>
-        <li>
-          <strong>가열·안정화</strong> — 웨이퍼가 히터 온도까지 데워질 시간을 줍니다. 그동안 퍼지 가스를 흘려 챔버 압력을 레시피 값에 맞춥니다(스로틀 밸브). 웨이퍼 온도가 <a href="principle.html#window">ALD 온도 창</a> 안에 들어와 고르게 되기 전에 사이클을 시작하면, 처음 몇 사이클의 성장량이 달라질 수 있습니다 <span class="verify-tag">검증 필요</span>.
-          <span class="flow-links"><a href="../ald.html#part=pm">공정 챔버 (히터·스로틀 밸브)</a></span>
-        </li>
-        <li>
-          <strong>사이클 반복</strong> — 전구체 주입 → 퍼지 → 반응 기체 주입 → 퍼지를 레시피에 정한 횟수만큼 반복합니다. 한 사이클이 막 한 층 정도이므로, 원하는 두께가 될 때까지 같은 네 단계를 아주 여러 번 되풀이합니다. 이 동안 ALD 밸브가 쉬지 않고 열렸다 닫힙니다. 막을 처음 쌓기 시작할 때 표면 상태에 따라 처음 몇 사이클은 덜 쌓이는 경우가 있습니다(초기 지연) <span class="verify-tag">검증 필요</span>.
-          <span class="flow-links"><a href="../ald.html#part=ald-valve">ALD 밸브</a><a href="../ald.html#part=precursor">전구체 공급부</a><a href="../ald.html#part=reactant">반응 기체·퍼지 공급부</a></span>
-          <div class="ald-mini" data-ald-mini></div>
-        </li>
-        <li>
-          <strong>마지막 퍼지·배출</strong> — 마지막 사이클이 끝나면 퍼지 가스를 충분히 흘려 챔버에 남은 전구체·반응 기체·부산물을 펌프 쪽으로 빼냅니다. 남은 기체가 있는 채로 문을 열면 트랜스퍼 모듈로 넘어가 오염이 될 수 있기 때문입니다 <span class="verify-tag">검증 필요</span>. 빠져나간 기체는 드라이 펌프를 지나 스크러버에서 처리됩니다.
-          <span class="flow-links"><a href="../ald.html#part=pump">드라이 펌프·배기</a></span>
-        </li>
-        <li>
-          <strong>반출</strong> — <em>진공 쪽</em>: 리프트 핀이 웨이퍼를 들어 올리고, 슬릿 밸브가 열리면 진공 로봇이 꺼내 로드락으로 옮깁니다.
-          <em>경계</em>: 로드락에 질소를 채워(벤트) 대기압으로 돌립니다. 이때 뜨거운 웨이퍼를 식히기도 합니다 <span class="verify-tag">검증 필요</span>.
-          <em>대기 쪽</em>: 대기 로봇이 웨이퍼를 FOUP의 원래 칸에 넣습니다.
-        </li>
-      </ol>
-      <p>트랜스퍼 모듈 둘레에 공정 챔버가 여러 개라서, 실제로는 한 챔버가 사이클을 도는 동안 로봇이 다른 챔버에 웨이퍼를 넣고 빼며 여러 장을 동시에 처리합니다. 장비 페이지 분해 끝에 그려지는 점선이 1번(투입) 경로입니다(<a href="../ald.html">ALD 장비</a>).</p>
-
-      <h2 id="recipe">레시피 한 장으로 보기</h2>
+      <h2 id="summary">정리</h2>
+      <div class="sum-card">
+        <div class="sum-item" id="flow">
+          <h3>한 장의 웨이퍼가 겪는 순서</h3>
+          <ol>
+            <li><strong>투입</strong> — 대기 쪽(FOUP → EFEM·정렬) → 경계(로드락 펌핑) → 진공 쪽(TM → 공정 챔버)</li>
+            <li><strong>가열·안정화</strong> — 퍼지 가스만 흘리며 온도·압력을 맞춤</li>
+            <li><strong>사이클 반복</strong> — 전구체 → 퍼지 → 반응 기체 → 퍼지를 정한 횟수만큼</li>
+            <li><strong>마지막 퍼지·배출</strong> — 남은 기체를 빼낸 뒤에야 슬릿 밸브를 엶</li>
+            <li><strong>반출</strong> — 진공 쪽(TM) → 경계(로드락 벤트·냉각) → 대기 쪽(FOUP)</li>
+          </ol>
+          <p>웨이퍼를 옮기는 1·5는 <a href="../pecvd/flow.html">PECVD</a>와 같은 플랫폼이라 거의 같고, ALD다운 부분은 가운데 2~4입니다.</p>
+        </div>
+        <div class="sum-item">
+          <h3>순서의 이유 한 줄씩</h3>
+          <p><strong>정렬을 대기 쪽에서</strong>: 진공 로봇은 받은 그대로 내려놓으므로. <strong>로드락</strong>: 진공 쪽을 늘 진공으로 두려고. <strong>먼저 가열·안정화</strong>: 온도 창 안에서 사이클을 시작하려고. <strong>마지막 퍼지</strong>: 남은 기체가 TM으로 넘어가지 않게. 자세한 이유는 위 단계의 메모에 있습니다.</p>
+          <p>"두께 = 사이클 수"이고 사이클마다 퍼지가 들어가므로, 같은 두께를 쌓는 데 PECVD보다 오래 걸립니다(<a href="#bench">실험</a>).</p>
+        </div>
+        <div class="sum-item is-wide" id="recipe">
+          <h3>레시피 한 장으로 보기</h3>
       <p>레시피(공정 조건표)는 위 순서를 단계별로 적은 것입니다. 숫자 대신 단계마다 무엇이 켜지고 무엇을 확인하는지만 적었습니다.</p>
       <div class="table-wrap">
         <table>
@@ -117,14 +241,27 @@
         </table>
       </div>
       <p>각 단계의 시간을 늘리고 줄이면 막이 어떻게 달라지는지는 다음 섹션 <a href="parameters.html">공정변수</a>에서 직접 바꿔 볼 수 있습니다. 챔버 벽에 쌓인 막을 정기적으로 세정하는 순서는 다음다음 섹션 문제와 점검(준비 중)에서 다룰 예정입니다.</p>
+        </div>
+      </div>
+
+      <h2 id="related">자세히 보기: 부품 패널</h2>
+      <p>웨이퍼가 지나가는 모듈입니다. 장비 페이지의 분해 그림에서 해당 부품 설명 패널이 열린 채로 시작합니다.</p>
+      <ul class="related-links">
+        <li><a href="../ald.html#part=efem"><span class="related-name">EFEM</span><span class="related-desc">대기 로봇·얼라이너, 대기 쪽</span></a></li>
+        <li><a href="../ald.html#part=loadlock"><span class="related-name">로드락</span><span class="related-desc">펌핑·벤트로 대기와 진공을 이음</span></a></li>
+        <li><a href="../ald.html#part=tm"><span class="related-name">트랜스퍼 모듈</span><span class="related-desc">진공 로봇, 슬릿 밸브</span></a></li>
+        <li><a href="../ald.html#part=pm"><span class="related-name">공정 챔버</span><span class="related-desc">가열·안정화, 사이클이 일어나는 곳</span></a></li>
+        <li><a href="../ald.html#part=ald-valve"><span class="related-name">ALD 밸브</span><span class="related-desc">사이클 동안 번갈아 열리는 밸브</span></a></li>
+      </ul>
 
       <h2 id="page-sources">이 페이지의 출처</h2>
       <ul class="source-list">
         <li>Wikipedia, "Atomic layer deposition" —
           <a href="https://en.wikipedia.org/wiki/Atomic_layer_deposition">https://en.wikipedia.org/wiki/Atomic_layer_deposition</a>
           (2026-11-25 확인). 확인한 내용: 주입–퍼지–주입–퍼지가 한 사이클이고 사이클 수로 두께를 조절. 웨이퍼 이송·가열·안정화 순서는 이 자료에서 확인하지 못함.</li>
-        <li>일반 교과서 내용 — 진공 장비의 웨이퍼 이송(FOUP → EFEM → LL → TM → PM), 로드락 펌핑·벤트, 레시피 단계 구성, 초기 지연</li>
+        <li>일반 교과서 내용 — 진공 장비의 웨이퍼 이송(FOUP → EFEM → LL → TM → PM), 매핑·정렬, 로드락 펌핑·벤트, 레시피 단계 구성, 마지막 퍼지, 초기 지연, ALD와 PECVD의 속도 비교</li>
         <li>이 사이트의 부품 패널 내용 — 플랫폼(FOUP·EFEM·LL·TM), ALD 공정 챔버·밸브·공급부, 드라이 펌프 (각 패널의 출처 칸 참고)</li>
+        <li>사이클 수 실험의 막대 길이는 경향만 보여 주는 개념도이며 실제 측정값이 아닙니다.</li>
       </ul>
     </div>
   </main>
@@ -136,9 +273,12 @@
   <script src="../../js/pages.js"></script>
   <script src="../../js/main.js"></script>
   <script src="../../js/sections.js"></script>
-  <script src="../../js/motion-pref.js"></script>   <!-- 정지 화면 판정 -->
-  <script src="../../js/figs/ald-cycle.js"></script>  <!-- 작은 사이클 그림 ([data-ald-mini]) -->
-  <script src="../../js/figs/ald-valve-timeline.js"></script>  <!-- 밸브 시간표 + 평면도용 ALD 내용 (wafer-route.js보다 먼저) -->
-  <script src="../../js/figs/wafer-route.js"></script>  <!-- 웨이퍼 경로 평면도 (공통) -->
+  <script src="../../js/motion-pref.js"></script>                 <!-- 정지 화면 판정 -->
+  <script src="../../vendor/gsap/gsap.min.js"></script>            <!-- 시계 -->
+  <script src="../../vendor/gsap/ScrollTrigger.min.js"></script>   <!-- 스크롤 위치 → 지금 단계 -->
+  <script src="../../js/sim/sx-engine.js"></script>               <!-- 단계 전환 + 자동 반복 재생 (공용) -->
+  <script src="../../js/figs/ald-valve-timeline.js"></script>     <!-- 밸브 시간표 + 평면도용 ALD 내용 (wafer-route.js보다 먼저) -->
+  <script src="../../js/figs/wafer-route.js"></script>            <!-- 웨이퍼 경로 평면도 (공통, WaferRoute.mount) -->
+  <script src="../../js/sim/ald-flow-sx.js"></script>             <!-- 스크롤 단계 체험 + 사이클 수 실험 -->
 </body>
 </html>
