@@ -6,8 +6,15 @@
   <title>장비 구성 | ALD 장비 | LAYER BY LAYER · 증착 공정 노트</title>
   <link rel="stylesheet" href="../../css/style.css">
 </head>
-<!-- ALD 섹션 하위 페이지 (02 장비 구성). 이 페이지 역할 = 장비 전체 "지도".
-     부품 하나하나의 자세한 설명은 장비 페이지의 부품 패널(../ald.html#part=부품id)로 보냄 (중복 금지) -->
+<!-- ALD 섹션 하위 페이지 (02 장비 구성) — 표준 형식(2026-11-26): 스크롤 단계 체험 + 맨 아래 작은 비교 그림 + 정리 한 칸
+     ① 스크롤 단계 체험 [data-sx]: PECVD 장비 구성의 "네 개의 길"을 ALD에 맞춤
+        공급(전구체·반응 기체·퍼지) / 진공·배기 / 가열·제어 / 이송 → 마지막 "네 길이 만나는 곳: 공정 챔버"
+        가운데 고정 그림 = ALD 계통도. 단계 글이 화면 가운데에 오면 그 계통만 하늘색으로 켜지고 흐름이 반복 재생
+     ② 비교 그림 [data-atc-root]: 매엽식·배치식·공간 분할 세 그림을 나란히, 기체가 바뀌거나 웨이퍼가 움직임
+     동작은 js/sim/ald-hw-sx.js (단계 전환·반복 재생은 js/sim/sx-engine.js)
+     부품 하나하나의 자세한 설명은 장비 페이지 부품 패널(../ald.html#part=부품id)로 보냄 — 사이드 노트의 링크
+     글(단계·메모·[검증 필요])은 출처 모으기(node tools/collect-pages.js)가 읽도록 이 HTML 안에 둔다.
+     움직임 줄이기·?still=1 → 단계마다 정지 그림을 세로로 나열 -->
 <body data-root="../../" data-process="ald" class="page-stage sec-page" data-equip="ald" data-section="hardware">
   <header id="site-header"></header>
 
@@ -17,103 +24,201 @@
       <a class="sec-back" href="../ald.html#sections">ALD 장비로 돌아가기</a>
       <p class="sec-kicker"><span class="sec-kicker-no">02</span><span class="sec-kicker-of">/ 07</span><span class="sec-kicker-en">Hardware</span></p>
       <h1 class="sec-title">장비 구성</h1>
-      <p class="sec-lede">장비 그림의 번호 순서대로 모듈이 하는 일을 정리합니다. 이름을 누르면 장비 그림에서 그 부품 패널이 열립니다.</p>
+      <p class="sec-lede">ALD 장비는 공급·진공 배기·가열 제어·이송, 네 개의 길로 나눠 보면 한눈에 들어옵니다. 스크롤하면 그 길만 켜지고, 네 길은 모두 공정 챔버에서 만납니다.</p>
     </div>
     <nav class="sec-rail-wrap" aria-label="ALD 섹션"><ol class="sec-rail" data-sec-rail></ol></nav>
   </section>
 
   <main class="sec-main">
+    <section class="sec-band sx-band" aria-labelledby="overview">
+      <div class="sec-scrolly-bg" aria-hidden="true"><div class="sec-scrolly-glow"></div><div class="stage-reed"></div></div>
+      <div class="sec-band-inner">
+        <div class="sec-scrolly-head">
+          <h2 id="overview">네 개의 길로 보는 장비</h2>
+          <p>장비 페이지의 분해 그림은 부품이 <em>어디에</em> 있는지, 이 계통도는 부품이 <em>무엇으로 이어져</em> 있는지 보여 줍니다. 대표적인 300mm 장비 구성을 단순하게 그린 것이고 실제 연결은 장비마다 다릅니다 <span class="verify-tag">검증 필요</span>.</p>
+        </div>
+
+        <!-- ① 스크롤 단계 체험 -->
+        <div class="sx sx-hw" data-sx>
+          <div class="sx-steps" data-sx-steps>
+            <article class="sx-step" data-beat="0" id="supply">
+              <p class="sx-no"><b>1</b> / 5</p>
+              <h3>공급: 따로 가는 세 기체</h3>
+              <p><strong>전구체</strong>(막의 재료가 되는 원료 분자)는 데운 용기에서 증기로 만들어 <strong>가열 배관</strong>으로 보냅니다. <strong>반응 기체</strong>와 <strong>퍼지 가스</strong>는 MFC(질량 유량 제어기, 흐르는 양을 재며 맞추는 장치)를 지나 각자의 배관으로 갑니다.</p>
+              <p>세 길은 챔버 뚜껑 위 <strong>ALD 밸브</strong>에서야 만나고, 밸브는 한 번에 하나씩 열립니다. 그림은 전구체 → 퍼지 → 반응 기체 → 퍼지 순서로 반복합니다.</p>
+              <details class="sx-note"><summary>메모: 배관을 왜 따로 둘까</summary><div class="sx-note-body">
+                <p>전구체와 반응 기체가 챔버 밖 배관에서 만나면 거기서 반응해 막이나 가루가 쌓입니다. 그래서 챔버에 들어가기 직전까지 서로 다른 배관으로 갑니다.</p>
+                <p>밸브를 챔버에 바짝 붙이는 이유: 밸브와 챔버 사이 배관이 길면 그 안에 기체가 남아 퍼지가 오래 걸리고, 퍼지에도 잘 안 빠지는 막다른 구간(데드 레그)이 생깁니다.</p>
+                <p>플라즈마 ALD(PEALD) 장비에는 반응 기체 단계에서 플라즈마를 켜는 소스가 더 붙습니다.</p>
+                <p class="sx-links"><a href="../ald.html#part=precursor">전구체 공급부 패널</a><a href="../ald.html#part=reactant">반응 기체·퍼지 공급부 패널</a><a href="../ald.html#part=ald-valve">ALD 밸브 패널</a><a href="../ald.html#part=peald-rf">플라즈마 소스 패널</a></p>
+              </div></details>
+            </article>
+
+            <article class="sx-step" data-beat="1" id="exhaust">
+              <p class="sx-no"><b>2</b> / 5</p>
+              <h3>진공·배기: 몰아낸 기체가 나가는 길</h3>
+              <p>퍼지 가스가 밀어낸 기체는 히터 둘레의 <strong>펌핑 링</strong>으로 빨려 나가 <strong>스로틀 밸브</strong> → 포어라인(챔버와 펌프를 잇는 배관) → 아래층 <strong>드라이 펌프</strong> → <strong>스크러버</strong>(배기 가스 처리 장치)로 갑니다.</p>
+              <p>펌프는 일정하게 돌고, 스로틀 밸브가 열림 정도를 바꿔 챔버 압력을 맞춥니다. <a href="../../basics/vacuum.html">진공</a>을 만드는 것도 이 길입니다.</p>
+              <details class="sx-note"><summary>메모: ALD에서 배기가 더 중요한 이유</summary><div class="sx-note-body">
+                <p>사이클마다 퍼지로 기체를 갈아 끼우므로, 기체가 빨리 빠질수록 퍼지 시간을 줄일 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p>배기 포트·펌핑 링에 막이 쌓이면 흐름이 한쪽으로 쏠려 균일도가 나빠질 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p>로드락과 트랜스퍼 모듈도 각자 펌프로 진공을 만들지만, 그림에는 공정 챔버의 배기만 그렸습니다.</p>
+                <p class="sx-links"><a href="../ald.html#part=pump">드라이 펌프 패널</a><a href="../ald.html#part=pm">펌핑 링·스로틀 밸브 (공정 챔버 패널)</a></p>
+              </div></details>
+            </article>
+
+            <article class="sx-step" data-beat="2" id="heat-control">
+              <p class="sx-no"><b>3</b> / 5</p>
+              <h3>가열·제어: 온도와 순서를 지키는 길</h3>
+              <p>ALD 장비는 웨이퍼만 데우지 않습니다. 전구체 <strong>용기</strong>, <strong>가열 배관</strong>, <strong>밸브 블록</strong>까지 데워 전구체가 식어서 붙는 것(응축)을 막습니다.</p>
+              <p><strong>제어기</strong>는 레시피대로 밸브를 열고 닫고, 히터 온도와 스로틀 밸브를 맞춥니다. 두 기체 밸브가 동시에 열리지 않게 막는 것(인터록)도 제어기가 맡습니다 <span class="verify-tag">검증 필요</span>.</p>
+              <details class="sx-note"><summary>메모: 차가운 곳 하나가 문제</summary><div class="sx-note-body">
+                <p>배관에 용기보다 차가운 곳(콜드 스팟)이 있으면 거기서 전구체가 응축해 쌓입니다. 그래서 챔버 쪽으로 갈수록 같거나 조금 더 따뜻하게 맞추는 구성이 흔합니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p>웨이퍼 온도는 자기 제한이 제대로 일어나는 범위(<a href="principle.html#window">ALD 온도 창</a>) 안에 둡니다.</p>
+                <p>밸브 개폐가 느리거나 들쭉날쭉하면 사이클마다 들어가는 기체 양이 달라져 사이클당 두께가 달라질 수 있습니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p class="sx-links"><a href="../ald.html#part=precursor">전구체 공급부 (가열)</a><a href="../ald.html#part=ald-valve">ALD 밸브 패널</a><a href="../ald.html#part=pm">히터 (공정 챔버 패널)</a><a href="../ald.html#part=hmi">조작 화면 패널</a></p>
+              </div></details>
+            </article>
+
+            <article class="sx-step" data-beat="3" id="transfer">
+              <p class="sx-no"><b>4</b> / 5</p>
+              <h3>이송: 웨이퍼가 대기에서 진공으로</h3>
+              <p><strong>대기 쪽</strong>: FOUP(웨이퍼 운반 용기)에서 EFEM(장비 전방 모듈)의 대기 로봇이 웨이퍼를 꺼냅니다. <strong>경계</strong>: 로드락이 공기를 빼고(펌핑) 채우며(벤트) 웨이퍼를 넘깁니다.</p>
+              <p><strong>진공 쪽</strong>: TM(트랜스퍼 모듈)의 진공 로봇이 슬릿 밸브를 지나 공정 챔버 히터 위에 웨이퍼를 놓습니다.</p>
+              <details class="sx-note"><summary>메모: 플랫폼은 PECVD와 같다</summary><div class="sx-note-body">
+                <p>FOUP·EFEM·로드락·TM은 PECVD 장비와 같은 구성을 씁니다. ALD는 사이클이 느려서 TM 둘레에 챔버 여러 개를 붙여 여러 장을 동시에 처리합니다(장비 그림은 4개).</p>
+                <p>웨이퍼가 어떤 순서로, 왜 그 순서로 지나가는지는 <a href="flow.html">공정 흐름</a>에서 봅니다.</p>
+                <p class="sx-links"><a href="../ald.html#part=foup">FOUP 패널</a><a href="../ald.html#part=efem">EFEM 패널</a><a href="../ald.html#part=loadlock">로드락 패널</a><a href="../ald.html#part=tm">트랜스퍼 모듈 패널</a></p>
+              </div></details>
+            </article>
+
+            <article class="sx-step" data-beat="4" id="meet">
+              <p class="sx-no"><b>5</b> / 5</p>
+              <h3>네 길이 만나는 곳: 공정 챔버</h3>
+              <p><strong>위</strong>에서 ALD 밸브·샤워헤드로 기체가 들어오고(공급), <strong>아래</strong> 히터가 웨이퍼를 데우며(가열), <strong>옆</strong> 슬릿 밸브로 웨이퍼가 드나들고(이송), <strong>둘레</strong> 펌핑 링으로 기체가 빠집니다(배기).</p>
+              <p>막이 이상할 때도 어느 길의 문제인지부터 나누면 점검할 곳이 좁혀집니다 <span class="verify-tag">검증 필요</span>.</p>
+              <details class="sx-note"><summary>메모: 길로 나눠 점검하기</summary><div class="sx-note-body">
+                <p>먼저 한 챔버만인지 모든 챔버인지 봅니다. 모든 챔버면 같이 쓰는 공급부부터, 한 챔버만이면 그 챔버의 히터·밸브부터 의심합니다 <span class="verify-tag">검증 필요</span>.</p>
+                <p>사이클당 두께가 변함 → 공급(용기 온도·잔량), 가열(히터 온도), 제어(밸브 개폐 기록). 파티클 증가 → 공급(퍼지 부족·밸브 누설), 배기(벽에 쌓인 막이 벗겨짐) <span class="verify-tag">검증 필요</span>.</p>
+                <p class="sx-links"><a href="../ald.html#part=pm">공정 챔버 패널 (문제와 점검)</a><a href="../ald.html#part=ald-valve">ALD 밸브 패널 (문제와 점검)</a></p>
+              </div></details>
+            </article>
+          </div>
+
+          <!-- 가운데: 고정 그림 (진행 표시 + 켜진 길 칩 + 계통도) -->
+          <div class="sx-stage-col">
+            <figure class="sx-stage">
+              <div class="sx-top">
+                <div class="sx-where">
+                  <p class="sx-stage-name" data-sx-name aria-live="polite"></p>
+                  <ol class="sx-dots" data-sx-dots aria-hidden="true"><li></li><li></li><li></li><li></li><li></li></ol>
+                </div>
+                <p class="sx-zone" data-sx-zone></p>
+              </div>
+              <div class="sx-svg-box" data-sx-svg></div>
+              <p class="sx-desc" data-sx-desc></p>
+              <figcaption class="sx-cap">
+                <ul class="scrolly-legend asf-legend hx-legend" aria-label="그림 범례">
+                  <li><i class="k-lit"></i>켜진 길</li><li><i class="k-prec"></i>전구체</li><li><i class="k-react"></i>반응 기체</li>
+                  <li><i class="k-purge"></i>퍼지 가스</li><li><i class="k-byp"></i>배기</li><li><i class="k-sig"></i>제어 신호</li>
+                </ul>
+                <p class="sx-cap-note">개념도: 위치·크기·속도는 실제 비율이 아닙니다. 하늘색 밸브가 지금 열린 밸브입니다.</p>
+              </figcaption>
+            </figure>
+          </div>
+
+          <aside class="sx-notes-col" aria-label="보충 메모">
+            <div class="sx-notes"><div class="sx-note-live" data-sx-note aria-live="polite"></div></div>
+          </aside>
+        </div>
+
+        <!-- ② 맨 아래 작은 비교 그림: 매엽식 · 배치식 · 공간 분할 -->
+        <div class="bn atc" data-atc-root>
+          <div class="bn-head">
+            <h2 id="types">장비 방식: 매엽식 · 배치식 · 공간 분할</h2>
+            <p>두 기체가 웨이퍼 위에서 동시에 만나지 않게 하는 원리는 같습니다. <em>시간</em>으로 나누느냐 <em>자리</em>로 나누느냐, 한 장이냐 여러 장이냐가 다릅니다. 이 사이트의 장비 그림은 매엽식입니다. 개념 비교입니다 <span class="verify-tag">검증 필요</span>.</p>
+          </div>
+          <div class="atc-grid">
+            <figure class="bn-panel atc-fig">
+              <div class="atc-svg" data-atc="single"></div>
+              <figcaption><strong>매엽식</strong> (single-wafer)<span>챔버 하나에 한 장. 작은 공간에서 기체를 시간으로 바꿈</span></figcaption>
+            </figure>
+            <figure class="bn-panel atc-fig">
+              <div class="atc-svg" data-atc="batch"></div>
+              <figcaption><strong>배치식</strong> (batch)<span>여러 장을 쌓아 한꺼번에. 공간이 커서 퍼지 칸이 김</span></figcaption>
+            </figure>
+            <figure class="bn-panel atc-fig">
+              <div class="atc-svg" data-atc="spatial"></div>
+              <figcaption><strong>공간 분할</strong> (spatial)<span>구역마다 기체가 고정, 웨이퍼가 구역 아래를 지나감</span></figcaption>
+            </figure>
+          </div>
+          <ul class="scrolly-legend asf-legend atc-legend" aria-label="그림 범례">
+            <li><i class="k-prec"></i>전구체</li><li><i class="k-react"></i>반응 기체</li><li><i class="k-purge"></i>퍼지</li><li><i class="k-film"></i>웨이퍼</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
     <div class="sec-read">
-      <h2 id="overview">한눈에 보기</h2>
-      <p>ALD 장비도 PECVD처럼 <strong>웨이퍼를 옮기는 플랫폼</strong>(FOUP·EFEM·로드락·트랜스퍼 모듈)에 <strong>공정 챔버 여러 개</strong>가 붙은 모양입니다. 플랫폼은 두 장비가 같은 그림·같은 설명을 씁니다. ALD만의 부분은 <em>기체를 아주 짧게, 번갈아, 정확히</em> 넣고 빼기 위한 장치들 — 작은 반응 공간, 챔버에 바짝 붙은 ALD 밸브, 데워지는 전구체 공급부입니다.</p>
-      <p>아래 표는 웨이퍼와 기체가 지나가는 자리에 따라 네 묶음으로 나눴습니다. <strong>대기 쪽</strong>(공기 중, 클린룸 압력)과 <strong>진공 쪽</strong>(<a href="../../basics/vacuum.html">진공</a>)은 로드락을 경계로 나뉩니다.</p>
-
-      <h3 class="hw-group">대기 쪽 — 웨이퍼가 장비에 들어오는 곳</h3>
-      <ul class="related-links">
-        <li><a href="../ald.html#part=foup"><span class="related-name">01 FOUP · 로드포트</span><span class="related-desc">웨이퍼 여러 장을 담은 밀폐 용기를 장비 앞에 올려 문을 여는 자리</span></a></li>
-        <li><a href="../ald.html#part=efem"><span class="related-name">02 EFEM</span><span class="related-desc">깨끗한 공기 속에서 대기 로봇이 FOUP ↔ 로드락으로 웨이퍼를 옮김</span></a></li>
-      </ul>
-
-      <h3 class="hw-group">진공 쪽 — 웨이퍼가 옮겨지고 막을 입는 곳</h3>
-      <ul class="related-links">
-        <li><a href="../ald.html#part=loadlock"><span class="related-name">03 LL 로드락</span><span class="related-desc">대기와 진공 사이의 문간방. 공기를 빼고(펌핑) 채우며(벤트) 웨이퍼를 넘김</span></a></li>
-        <li><a href="../ald.html#part=tm"><span class="related-name">04 TM 트랜스퍼 모듈</span><span class="related-desc">진공 로봇이 로드락 ↔ 공정 챔버로 웨이퍼를 나름</span></a></li>
-        <li><a href="../ald.html#part=pm"><span class="related-name">05 PM ALD 공정 챔버</span><span class="related-desc">작은 반응 공간 + 히터. 기체가 빨리 들어오고 빨리 빠지도록 안쪽 공간을 작게 만듦</span></a></li>
-        <li><a href="../ald.html#part=ald-valve"><span class="related-name">12 VALVE ALD 밸브</span><span class="related-desc">뚜껑 위 빠른 개폐 밸브 셋(전구체·반응 기체·퍼지). 네 단계를 켜고 끔</span></a></li>
-      </ul>
-
-      <h3 class="hw-group">공급 쪽 — 기체를 만드는 곳</h3>
-      <ul class="related-links">
-        <li><a href="../ald.html#part=precursor"><span class="related-name">06 PREC 전구체 공급부</span><span class="related-desc">전구체 용기를 데워 증기를 만들고, 가열 배관으로 밸브까지 보냄</span></a></li>
-        <li><a href="../ald.html#part=reactant"><span class="related-name">07 RG 반응 기체·퍼지 공급부</span><span class="related-desc">산화제 같은 반응 기체와 불활성 퍼지 가스를 MFC로 맞춰 보냄</span></a></li>
-        <li><a href="../ald.html#part=peald-rf"><span class="related-name">13 PEALD 플라즈마 소스 (선택)</span><span class="related-desc">플라즈마 ALD 장비에만. 반응 기체 단계에서 플라즈마를 켬</span></a></li>
-      </ul>
-
-      <h3 class="hw-group">배기 쪽 — 기체를 빼내는 곳</h3>
-      <ul class="related-links">
-        <li><a href="../ald.html#part=pump"><span class="related-name">08 PUMP 드라이 펌프 · 배기 배관</span><span class="related-desc">서브팹에서 챔버마다 하나씩. 퍼지로 밀려난 기체를 빼내고 스크러버로 보냄 (PECVD와 같은 펌프)</span></a></li>
-      </ul>
-      <p class="hw-note">09 시그널 타워 · 10 EMO(비상 정지) · 11 HMI(조작 화면)는 EFEM에 붙은 공통 부속입니다 — <a href="../ald.html#part=signal-tower">시그널 타워</a> · <a href="../ald.html#part=emo">EMO</a> · <a href="../ald.html#part=hmi">HMI</a> 패널.</p>
-
-      <h2 id="gas-path">기체가 지나가는 길</h2>
-      <p>ALD에서 가장 중요한 길은 웨이퍼 경로보다 <strong>기체 경로</strong>입니다. 전구체와 반응 기체는 <em>챔버 밖에서 절대 만나지 않게</em> 서로 다른 배관으로 따로 갑니다. 만나면 배관 안에서 반응해 막이나 가루가 쌓이기 때문입니다.</p>
-      <ol>
-        <li><strong>전구체</strong>: 데운 용기 → 가열 배관 → 전구체 밸브 → 챔버. 지나가는 길 어디든 차가우면 응축하므로 길 전체를 데웁니다.</li>
-        <li><strong>반응 기체·퍼지 가스</strong>: 가스 스틱(MFC·밸브·필터) → 각자의 밸브 → 챔버.</li>
-        <li><strong>배기</strong>: 챔버 둘레 펌핑 링 → 스로틀 밸브(압력 조절) → 포어라인 → 드라이 펌프 → 스크러버.</li>
-      </ol>
-      <p>밸브를 챔버 뚜껑에 바짝 붙이는 이유도 여기에 있습니다. 밸브와 챔버 사이 배관이 길면 그 안에 기체가 남아 퍼지가 오래 걸리고, 퍼지에도 잘 안 빠지는 막다른 구간이 생깁니다(<a href="../ald.html#part=ald-valve">ALD 밸브 패널</a> 원리 ③). 장비 그림에서 분해가 끝나면 이 길이 단계마다 점선으로 켜지는 것을 볼 수 있습니다(<a href="../ald.html">ALD 장비</a>).</p>
-
-      <h2 id="types">장비 방식: 매엽식 · 배치식 · 공간 분할</h2>
-      <p>"사이클을 어떻게 나누느냐"에 따라 장비 모양이 크게 셋으로 나뉩니다. 이 사이트의 장비 그림은 <strong>매엽식</strong>입니다. 아래는 개념만 비교했습니다 <span class="verify-tag">검증 필요</span>.</p>
-      <div class="ald-types">
-        <figure class="ald-type">
-          <svg viewBox="0 0 160 100" aria-hidden="true">
-            <rect class="at-ch" x="30" y="22" width="100" height="56" rx="8"/>
-            <rect class="at-wf" x="50" y="58" width="60" height="6" rx="2"/>
-            <path class="at-gas" d="M80 8 V40"/>
-          </svg>
-          <figcaption><strong>매엽식</strong> (single-wafer)<span>챔버 하나에 웨이퍼 한 장. 시간으로 기체를 바꿈</span></figcaption>
-        </figure>
-        <figure class="ald-type">
-          <svg viewBox="0 0 160 100" aria-hidden="true">
-            <rect class="at-ch" x="45" y="8" width="70" height="86" rx="10"/>
-            <g class="at-stack"><rect x="58" y="20" width="44" height="4"/><rect x="58" y="32" width="44" height="4"/><rect x="58" y="44" width="44" height="4"/><rect x="58" y="56" width="44" height="4"/><rect x="58" y="68" width="44" height="4"/><rect x="58" y="80" width="44" height="4"/></g>
-            <path class="at-gas" d="M30 50 H52"/>
-          </svg>
-          <figcaption><strong>배치식</strong> (batch)<span>웨이퍼 여러 장을 쌓아 한꺼번에. 시간으로 기체를 바꿈</span></figcaption>
-        </figure>
-        <figure class="ald-type">
-          <svg viewBox="0 0 160 100" aria-hidden="true">
-            <rect class="at-zone is-a" x="14" y="20" width="34" height="34"/>
-            <rect class="at-zone is-p" x="48" y="20" width="22" height="34"/>
-            <rect class="at-zone is-b" x="70" y="20" width="34" height="34"/>
-            <rect class="at-zone is-p" x="104" y="20" width="22" height="34"/>
-            <rect class="at-wf" x="30" y="66" width="60" height="6" rx="2"/>
-            <path class="at-move" d="M96 69 H140"/>
-          </svg>
-          <figcaption><strong>공간 분할</strong> (spatial)<span>기체마다 구역을 나누고 웨이퍼가 구역 사이를 이동</span></figcaption>
-        </figure>
+      <h2 id="summary">정리</h2>
+      <div class="sum-card">
+        <div class="sum-item is-wide" id="modules">
+          <h3>번호로 찾는 모듈</h3>
+          <p>장비 그림의 번호입니다. 이름을 누르면 장비 페이지에서 그 부품 패널이 열립니다. <strong>대기 쪽</strong>(공기 중)과 <strong>진공 쪽</strong>은 로드락을 경계로 나뉩니다.</p>
+          <div class="hw-mods">
+            <div><p class="hw-mods-h">대기 쪽 · 이송</p>
+              <p><a href="../ald.html#part=foup">01 FOUP · 로드포트</a> <a href="../ald.html#part=efem">02 EFEM</a></p></div>
+            <div><p class="hw-mods-h">진공 쪽 · 이송과 공정</p>
+              <p><a href="../ald.html#part=loadlock">03 LL 로드락</a> <a href="../ald.html#part=tm">04 TM 트랜스퍼 모듈</a> <a href="../ald.html#part=pm">05 PM ALD 공정 챔버</a> <a href="../ald.html#part=ald-valve">12 ALD 밸브</a></p></div>
+            <div><p class="hw-mods-h">공급</p>
+              <p><a href="../ald.html#part=precursor">06 PREC 전구체 공급부</a> <a href="../ald.html#part=reactant">07 RG 반응 기체·퍼지 공급부</a> <a href="../ald.html#part=peald-rf">13 PEALD 플라즈마 소스 (선택)</a></p></div>
+            <div><p class="hw-mods-h">배기</p>
+              <p><a href="../ald.html#part=pump">08 PUMP 드라이 펌프 · 배기 배관</a></p></div>
+          </div>
+          <p class="hw-note">09 시그널 타워 · 10 EMO(비상 정지) · 11 HMI(조작 화면)는 EFEM에 붙은 공통 부속입니다 — <a href="../ald.html#part=signal-tower">시그널 타워</a> · <a href="../ald.html#part=emo">EMO</a> · <a href="../ald.html#part=hmi">HMI</a> 패널.</p>
+        </div>
+        <div class="sum-item" id="gas-path">
+          <h3>기체가 지나가는 길</h3>
+          <ol>
+            <li><strong>전구체</strong>: 데운 용기 → 가열 배관 → 전구체 밸브 → 챔버. 길 어디든 차가우면 응축하므로 길 전체를 데웁니다.</li>
+            <li><strong>반응 기체·퍼지 가스</strong>: 가스 스틱(MFC·밸브·필터) → 각자의 밸브 → 챔버.</li>
+            <li><strong>배기</strong>: 펌핑 링 → 스로틀 밸브 → 포어라인 → 드라이 펌프 → 스크러버.</li>
+          </ol>
+          <p>전구체와 반응 기체는 <strong>챔버 밖에서 만나지 않게</strong> 따로 갑니다. 장비 페이지 그림에서도 분해가 끝나면 이 길이 단계마다 점선으로 켜집니다(<a href="../ald.html">ALD 장비</a>).</p>
+        </div>
+        <div class="sum-item" id="four-ways">
+          <h3>네 길과 점검</h3>
+          <ul>
+            <li><strong>공급</strong> — 공급량·퍼지: 사이클당 두께, 파티클</li>
+            <li><strong>진공·배기</strong> — 압력·흐름 쏠림: 균일도</li>
+            <li><strong>가열·제어</strong> — 온도 창·응축·밸브 순서: 두께, 막질</li>
+            <li><strong>이송</strong> — 웨이퍼 위치·대기/진공 경계</li>
+          </ul>
+          <p>증상과 길의 연결은 경향입니다 <span class="verify-tag">검증 필요</span>. 단계 순서는 <a href="flow.html">공정 흐름</a>에서 이어집니다.</p>
+        </div>
+        <div class="sum-item is-wide" id="types-table">
+          <h3>세 방식 비교</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>방식</th><th>기체를 나누는 방법</th><th>좋은 점</th><th>따져 볼 점</th></tr></thead>
+              <tbody>
+                <tr><td><strong>매엽식</strong></td><td>한 챔버 안에서 <em>시간</em>으로 — 주입·퍼지를 차례로</td><td>반응 공간이 작아 퍼지가 빠르고, 웨이퍼마다 조건을 정밀하게 맞추기 좋음</td><td>한 번에 한 장이라 처리량을 챔버 수로 늘림 <span class="verify-tag">검증 필요</span></td></tr>
+                <tr><td><strong>배치식</strong></td><td>큰 반응관 안에서 <em>시간</em>으로</td><td>여러 장을 한 번에 처리해 느린 사이클을 장 수로 메움</td><td>공간이 커서 퍼지가 오래 걸리고, 위·아래 웨이퍼끼리 차이를 관리해야 함 <span class="verify-tag">검증 필요</span></td></tr>
+                <tr><td><strong>공간 분할</strong></td><td>기체마다 다른 <em>자리</em>로 — 웨이퍼(또는 기체 머리)가 움직임</td><td>퍼지를 기다리는 시간이 줄어 빠름, 대량 생산에 맞춤</td><td>구역 사이를 기체가 새지 않게 막는 구조가 필요 <span class="verify-tag">검증 필요</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>방식</th><th>기체를 나누는 방법</th><th>좋은 점</th><th>따져 볼 점</th></tr></thead>
-          <tbody>
-            <tr><td><strong>매엽식</strong></td><td>한 챔버 안에서 <em>시간</em>으로 — 주입·퍼지를 차례로</td><td>반응 공간이 작아 퍼지가 빠르고, 웨이퍼마다 조건을 정밀하게 맞추기 좋음</td><td>한 번에 한 장이라 처리량을 챔버 수로 늘림 <span class="verify-tag">검증 필요</span></td></tr>
-            <tr><td><strong>배치식</strong></td><td>큰 반응관 안에서 <em>시간</em>으로</td><td>여러 장을 한 번에 처리해 느린 사이클을 장 수로 메움</td><td>공간이 커서 퍼지가 오래 걸리고, 위·아래 웨이퍼끼리 차이를 관리해야 함 <span class="verify-tag">검증 필요</span></td></tr>
-            <tr><td><strong>공간 분할</strong></td><td>기체마다 다른 <em>자리</em>로 — 웨이퍼(또는 기체 머리)가 움직임</td><td>퍼지를 기다리는 시간이 줄어 빠름, 대량 생산에 맞춤</td><td>구역 사이를 기체가 새지 않게 막는 구조가 필요 <span class="verify-tag">검증 필요</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p>세 방식 모두 원리는 같습니다 — 두 기체가 웨이퍼 위에서 동시에 만나지 않게 하는 것. 다른 점은 "시간으로 나누느냐, 공간으로 나누느냐"와 "한 장이냐 여러 장이냐"입니다.</p>
 
       <h2 id="page-sources">이 페이지의 출처</h2>
       <ul class="source-list">
         <li>Wikipedia, "Atomic layer deposition" —
           <a href="https://en.wikipedia.org/wiki/Atomic_layer_deposition">https://en.wikipedia.org/wiki/Atomic_layer_deposition</a>
           (2026-11-25 확인). 확인한 내용: 공간 분할 ALD는 기체를 서로 다른 위치로 넣어 공간으로 나누고, 대량 생산 라인에 맞는다는 설명. 매엽식과 배치식의 비교는 이 자료에서 확인하지 못함.</li>
-        <li>일반 교과서 내용 — ALD 장비 모듈 구성, 전구체·반응 기체 배관 분리, 매엽식·배치식 비교</li>
+        <li>일반 교과서 내용 — ALD 장비 모듈 구성, 전구체·반응 기체 배관 분리, 가열 배관·콜드 스팟, 스로틀 밸브 압력 제어, 밸브 인터록, 매엽식·배치식 비교</li>
         <li>이 사이트의 부품 패널 내용 — 플랫폼(FOUP·EFEM·LL·TM), ALD 공정 챔버·밸브·공급부·플라즈마 소스, 드라이 펌프 (각 패널의 출처 칸 참고)</li>
+        <li>계통도와 비교 그림은 연결 관계만 보여 주는 개념도이며 실제 장비 배치·속도가 아닙니다.</li>
       </ul>
     </div>
   </main>
@@ -125,5 +230,10 @@
   <script src="../../js/pages.js"></script>
   <script src="../../js/main.js"></script>
   <script src="../../js/sections.js"></script>
+  <script src="../../js/motion-pref.js"></script>                 <!-- 정지 화면 판정 -->
+  <script src="../../vendor/gsap/gsap.min.js"></script>            <!-- 시계 -->
+  <script src="../../vendor/gsap/ScrollTrigger.min.js"></script>   <!-- 스크롤 위치 → 단계 -->
+  <script src="../../js/sim/sx-engine.js"></script>               <!-- 단계 전환 + 자동 반복 재생 (공용) -->
+  <script src="../../js/sim/ald-hw-sx.js"></script>               <!-- 계통도 + 비교 그림 -->
 </body>
 </html>
