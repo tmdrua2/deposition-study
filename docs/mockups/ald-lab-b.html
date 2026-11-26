@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>시안 B · ALD 체험 스토리 | LAYER BY LAYER · 증착 공정 노트</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    /* =============================================================
+       시안 B: 체험 스토리형 — 왼쪽 단계 글(버튼을 눌러야 다음 단계가 열림) · 가운데 고정된 표면 그림 · 오른쪽 여백 사이드 노트
+       색은 style.css의 ALD 하늘색 값(body[data-equip="ald"])과 --ald-* 만 씀
+       ============================================================= */
+    body.story { margin: 0; color: var(--on-navy);
+      background: linear-gradient(180deg, var(--navy-deep) 0, var(--navy) 900px, var(--navy) calc(100% - 900px), var(--navy-deep) 100%); }
+    .story *, .story *::before, .story *::after { box-sizing: border-box; }
+    .story a { color: var(--on-navy); }
+    .story strong { color: var(--on-navy); }
+    .story .face-a strong { color: var(--ink); }
+    .story main li, .story .after li { margin: 0; }
+    .story .verify-tag { border-color: #F2D49B; color: #F2D49B; }
+
+    .mk-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px clamp(16px, 2.4vw, 32px);
+      border-bottom: 1px solid rgba(244, 237, 224, 0.14); font-size: var(--fs-xs); color: var(--on-navy-muted); }
+    .mk-bar b { color: var(--on-navy); font-weight: 700; }
+    .mk-bar nav { display: flex; gap: 14px; }
+
+    /* 첫 화면: 제목 + 시작 안내 (짧게) */
+    .intro { padding: clamp(28px, 5vh, 56px) 0 0; }
+    .intro h1 { max-width: 10em; margin: 0 0 14px; padding: 0; border: 0; color: var(--on-navy); font-size: var(--fs-3xl); font-weight: 800; letter-spacing: -0.04em; line-height: 1.12; }
+    .intro p { margin: 0; color: var(--on-navy-soft); font-size: var(--fs-md); line-height: 1.6; }
+
+    /* ---------- 이야기 무대: 단계 | 고정 그림 | 사이드 노트 ---------- */
+    .story main.tale { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr) 250px; gap: 0 clamp(20px, 2.6vw, 40px);
+      max-width: 1440px; margin: 0 auto; padding: 0 clamp(16px, 2.4vw, 32px) 40px; }
+    .steps { padding: 0 0 30vh; }
+    .steps .st:first-of-type { min-height: 0; padding-top: 40px; }
+    .stage-col { position: relative; }
+    .stage { position: sticky; top: 12px; height: calc(100svh - 24px); display: flex; flex-direction: column; justify-content: center; }
+    .notes-col { position: relative; }
+    .notes { position: sticky; top: 12px; height: calc(100svh - 24px); display: flex; flex-direction: column; justify-content: center; }
+
+    /* 단계 카드 */
+    .st { min-height: 78svh; display: flex; flex-direction: column; justify-content: center; padding: 24px 0; }
+    .st-no { margin: 0 0 6px; color: var(--on-navy-faint); font-family: var(--font-mono); font-size: var(--fs-sm); }
+    .st h2 { margin: 0 0 10px; padding: 0; border: 0; color: var(--on-navy); font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; }
+    .st p { margin: 0 0 14px; color: var(--on-navy-soft); font-size: var(--fs-md); line-height: 1.65; }
+    .btn { min-height: 44px; padding: 0 18px; border: 1px solid rgba(244, 237, 224, 0.34); border-radius: 999px; background: none; color: var(--on-navy);
+      font: inherit; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
+    .btn:hover:not([disabled]) { border-color: var(--c-cvd-bright); }
+    .btn:focus-visible { outline: 2px solid var(--c-cvd-bright); outline-offset: 2px; }
+    .btn[disabled] { opacity: 0.45; cursor: default; }
+    .btn-main { border: 0; background: var(--on-navy); color: var(--navy-deep); font-size: var(--fs-md); }
+    .btn-main:hover:not([disabled]) { background: #fff; }
+    .btn-main.is-done { background: rgba(244, 237, 224, 0.16); color: var(--on-navy); }
+    .st-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .st-lock { margin: 8px 0 0; color: var(--on-navy-faint); font-size: var(--fs-xs); }
+    .st.is-open .st-lock { display: none; }
+    .st:not(.is-open) h2, .st:not(.is-open) p, .st:not(.is-open) .st-try { opacity: 0.4; }
+    .try { margin-top: 18px; padding: 12px 14px 14px; border: 1px dashed rgba(244, 237, 224, 0.3); border-radius: 14px; }
+    .try[hidden] { display: none; }
+    .try-h { margin: 0 0 6px; color: var(--on-navy); font-size: var(--fs-sm); font-weight: 800; }
+    .try p { margin: 0 0 10px; font-size: var(--fs-sm); }
+    .try-out { margin: 10px 0 0 !important; color: var(--on-navy) !important; }
+    .try-out:empty { display: none; }
+    .next { margin-top: 14px; border-color: var(--c-cvd-bright); }
+    .next[hidden] { display: none; }
+
+    /* 자유 실험 손잡이 (칸 버튼) */
+    .seg { margin: 0 0 12px; padding: 0; border: 0; }
+    .seg legend { margin-bottom: 6px; padding: 0; color: var(--on-navy-muted); font-size: var(--fs-sm); }
+    .seg-row { display: flex; gap: 6px; }
+    .seg-row .btn { flex: 1; min-height: 38px; padding: 0 8px; font-size: var(--fs-xs); }
+    .seg-row .btn[aria-pressed="true"] { background: var(--on-navy); color: var(--navy-deep); border-color: var(--on-navy); }
+    .seg-row .btn.is-window { border-color: var(--c-cvd-bright); }
+
+    /* 고정 그림 (기존 표면 시뮬레이션) */
+    .stage .asf { padding: 14px 16px 12px; }
+    .stage .asf-svg-box svg { max-height: calc(100svh - 300px); min-height: 0; }
+    .stage .asf-hide { display: none; }
+    .stage .atw { display: block; margin: 0; padding: 14px 16px; }
+    .stage .atw-ctrl { display: none; }
+    .stage [hidden] { display: none !important; }
+    .stage-cap { margin: 10px 2px 0; color: var(--on-navy-muted); font-size: var(--fs-xs); line-height: 1.6; }
+    .stage-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 8px 0 0; padding: 0; list-style: none; color: var(--on-navy-muted); font-size: var(--fs-xs); }
+    .stage-legend li { display: flex; align-items: center; gap: 5px; }
+    .stage-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+    .stage-legend .k-prec { background: var(--ald-prec); } .stage-legend .k-react { background: var(--ald-react); }
+    .stage-legend .k-site { border: 1.5px solid var(--ald-site); } .stage-legend .k-grain { background: var(--ald-grain); box-shadow: 0 0 0 1.5px var(--ald-react); }
+    .stage-legend .k-purge { width: 8px; height: 8px; border: 1.5px solid var(--ald-purge); }
+    .stage-legend .k-film { width: 16px; height: 8px; border-radius: 2px; background: var(--ald-film); }
+
+    /* 사이드 노트: 지금 보고 있는 단계의 보충 설명 (여백 메모) */
+    .note { padding: 0 0 0 16px; border-left: 2px solid var(--c-cvd-bright); color: var(--on-navy-soft); font-size: var(--fs-sm); line-height: 1.7; }
+    .note-k { margin: 0 0 4px; color: var(--on-navy-faint); font-size: var(--fs-xs); }
+    .note h3 { margin: 0 0 6px; color: var(--on-navy); font-size: var(--fs-md); font-weight: 800; }
+    .note p { margin: 0 0 8px; }
+    .note a { font-weight: 700; }
+    .note-in { animation: note-in 0.35s ease both; }
+    @keyframes note-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .st-note { display: none; }   /* 휴대폰에서만 보이는 접는 메모 */
+
+    /* ---------- 아래: 면접 카드 뒤집기 예시 ---------- */
+    .after { max-width: 1100px; margin: 0 auto; padding: 40px clamp(16px, 2.4vw, 32px) 90px; }
+    .after-h { margin: 0 0 6px; padding: 0; border: 0; color: var(--on-navy); font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.03em; }
+    .after-lede { margin: 0 0 22px; max-width: 46em; color: var(--on-navy-muted); font-size: var(--fs-md); line-height: 1.6; }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+    .card { perspective: 1200px; }
+    .card-btn { position: relative; display: block; width: 100%; min-height: 330px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+    .card-btn:focus-visible { outline: 2px solid var(--c-cvd-bright); outline-offset: 4px; border-radius: 18px; }
+    .card-in { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.2, 1); }
+    .card.is-flip .card-in { transform: rotateY(180deg); }
+    .face { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 18px 20px; border-radius: 18px; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .face-q { border: 1px solid rgba(244, 237, 224, 0.2); background: rgba(12, 21, 41, 0.34); }
+    .face-a { transform: rotateY(180deg); background: var(--cream); color: var(--text); overflow: auto; }
+    .face-k { margin: 0 0 10px; color: var(--on-navy-faint); font-size: var(--fs-xs); }
+    .face-a .face-k { color: var(--muted); }
+    .face-q strong { color: var(--on-navy); font-size: var(--fs-xl); font-weight: 800; letter-spacing: -0.02em; line-height: 1.35; }
+    .face-hint { margin-top: auto; color: var(--on-navy-muted); font-size: var(--fs-xs); }
+    .face-a p { margin: 0 0 8px; font-size: var(--fs-sm); line-height: 1.65; }
+    .face-a .verify-tag { border-color: var(--todo); color: var(--todo); }
+    .face-cs { display: inline-block; margin-left: 6px; padding: 1px 8px; border: 1px solid var(--c-cvd-bright); border-radius: 999px; color: var(--on-navy); font-size: var(--fs-2xs); }
+    .after-foot { margin: 22px 0 0; color: var(--on-navy-muted); font-size: var(--fs-sm); line-height: 1.6; }
+
+    /* ---------- 좁은 화면: 그림이 위에 붙고, 노트는 단계 안 접는 메모 ---------- */
+    @media (max-width: 1100px) {
+      .story main.tale { grid-template-columns: minmax(0, 360px) minmax(0, 1fr); }
+      .notes-col { display: none; }
+      .st-note { display: block; margin-top: 16px; }
+    }
+    @media (max-width: 760px) {
+      .story main.tale { display: flex; flex-direction: column-reverse; padding-bottom: 20px; }
+      .stage-col { position: sticky; top: 0; z-index: 5; margin: 0 -16px; padding: 6px 16px 8px; background: var(--navy-deep); box-shadow: 0 10px 24px rgba(6, 28, 50, 0.35); }
+      .stage { position: static; height: auto; }
+      .stage .asf { padding: 8px 10px; }
+      .stage .asf-svg-box svg { max-height: 30svh; }
+      .stage .asf-desc { min-height: 3.2em; font-size: var(--fs-xs); }
+      .stage .asf-stage { font-size: var(--fs-sm); }
+      .stage .asf-count { font-size: var(--fs-xs); }
+      .stage .atw { padding: 8px; max-height: 44svh; overflow: auto; }
+      .stage .atw-draw { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+      .stage .atw-card { padding: 6px; }
+      .stage .atw-card figcaption { font-size: var(--fs-2xs); line-height: 1.45; }
+      .stage-cap, .stage-legend { display: none; }
+      .steps { padding: 0 0 20vh; }
+      .st { min-height: 0; padding: 36px 0 20px; }
+      .st h2 { font-size: var(--fs-xl); }
+      .cards { grid-template-columns: minmax(0, 1fr); }
+      .card-btn { min-height: 300px; }
+      .mk-bar nav a:first-child { display: none; }
+    }
+    .st-note summary { color: var(--on-navy); font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
+    .st-note .note { margin-top: 8px; }
+    @media (prefers-reduced-motion: reduce) {
+      .card-in { transition: none; }
+      .note-in { animation: none; }
+    }
+  </style>
+</head>
+<!-- 시안 B (체험 스토리형). 실제 페이지가 아님: docs/mockups/ — 방향을 고르기 위한 시안.
+     재사용: js/sim/ald-surface.js (고정 그림 = 표면 시뮬레이션·온도 창, 파일은 고치지 않음, ald-lab-shared.js로 조종)
+     새로 만든 것: 단계 잠금·직접 해보기·사이드 노트·자유 실험·면접 카드 예시 -->
+<body class="story" data-equip="ald" data-process="ald">
+  <div class="mk-bar">
+    <span><b>시안 B · 체험 스토리형</b> — ALD 원리 페이지를 직접 해 보는 이야기로 바꾸면</span>
+    <nav><a href="../../equipment/ald/principle.html">지금 원리 페이지</a><a href="ald-lab-a.html">시안 A 보기</a></nav>
+  </div>
+
+
+  <main class="tale">
+    <!-- 왼쪽: 단계 -->
+    <div class="steps">
+      <header class="intro">
+    <h1>막 한 층을 직접 쌓아 봅니다</h1>
+    <p>웨이퍼 표면을 아주 크게 확대했습니다. 버튼을 눌러야 다음 단계로 넘어갑니다. 단계마다 일부러 틀리게 해 보는 "직접 해보기"가 하나씩 있습니다.</p>
+  </header>
+      <article class="st is-open" data-st="0">
+        <p class="st-no">1 / 5</p>
+        <h2>전구체 넣기</h2>
+        <p>표면에 빈자리(반응할 수 있는 원자 자리) 열두 개가 있습니다. 막의 재료가 되는 <strong>전구체</strong>(원료 분자)를 넣어 봅니다.</p>
+        <div class="st-acts"><button type="button" class="btn btn-main" data-main="0">전구체 넣기</button></div>
+        <div class="try" data-try="0" hidden>
+          <p class="try-h">직접 해보기</p>
+          <p>전구체를 더 오래 넣으면 더 많이 붙을까요?</p>
+          <button type="button" class="btn" data-tryb="0">한 번 더 넣어 보기</button>
+          <p class="try-out" data-out="0"></p>
+        </div>
+        <button type="button" class="btn next" data-next="0" hidden>다음 단계로</button>
+        <details class="st-note"><summary>메모: 자기 제한</summary><div class="note" data-note-copy="0"></div></details>
+      </article>
+
+      <article class="st" data-st="1">
+        <p class="st-no">2 / 5</p>
+        <h2>퍼지하기</h2>
+        <p>붙지 못하고 떠 있는 전구체가 남았습니다. 반응하지 않는 <strong>퍼지 가스</strong>로 챔버 밖(배기)으로 몰아냅니다.</p>
+        <div class="st-acts"><button type="button" class="btn btn-main" data-main="1" disabled>퍼지하기</button></div>
+        <p class="st-lock">앞 단계 버튼을 먼저 눌러 보세요</p>
+        <div class="try" data-try="1" hidden>
+          <p class="try-h">직접 해보기</p>
+          <p>퍼지를 너무 빨리 끝내고 바로 반응 기체를 넣으면?</p>
+          <button type="button" class="btn" data-tryb="1">퍼지를 일찍 끝내 보기</button>
+          <p class="try-out" data-out="1"></p>
+        </div>
+        <button type="button" class="btn next" data-next="1" hidden>다음 단계로</button>
+        <details class="st-note"><summary>메모: 퍼지가 왜 두 번?</summary><div class="note" data-note-copy="1"></div></details>
+      </article>
+
+      <article class="st" data-st="2">
+        <p class="st-no">3 / 5</p>
+        <h2>반응 기체 넣기</h2>
+        <p>이제 <strong>반응 기체</strong>를 넣습니다. 표면에 붙어 있는 전구체와 반응해 막이 되고, 반응에서 나온 부산물이 떨어져 나갑니다.</p>
+        <div class="st-acts"><button type="button" class="btn btn-main" data-main="2" disabled>반응 기체 넣기</button></div>
+        <p class="st-lock">앞 단계 버튼을 먼저 눌러 보세요</p>
+        <div class="try" data-try="2" hidden>
+          <p class="try-h">직접 해보기</p>
+          <p>반응 기체도 더 오래 넣으면 막이 더 두꺼워질까요?</p>
+          <button type="button" class="btn" data-tryb="2">한 번 더 넣어 보기</button>
+          <p class="try-out" data-out="2"></p>
+        </div>
+        <button type="button" class="btn next" data-next="2" hidden>다음 단계로</button>
+        <details class="st-note"><summary>메모: 두 번째 자기 제한</summary><div class="note" data-note-copy="2"></div></details>
+      </article>
+
+      <article class="st" data-st="3">
+        <p class="st-no">4 / 5</p>
+        <h2>다시 퍼지 → 한 층 완성</h2>
+        <p>남은 반응 기체와 부산물을 몰아내면 한 사이클이 끝납니다. 새 표면에는 다음 전구체가 붙을 빈자리가 다시 생깁니다.</p>
+        <div class="st-acts"><button type="button" class="btn btn-main" data-main="3" disabled>퍼지하고 한 층 완성</button></div>
+        <p class="st-lock">앞 단계 버튼을 먼저 눌러 보세요</p>
+        <div class="try" data-try="3" hidden>
+          <p class="try-h">직접 해보기</p>
+          <p>원하는 두께가 될 때까지 같은 네 단계를 반복합니다.</p>
+          <button type="button" class="btn" data-tryb="3">사이클 세 번 더</button>
+          <p class="try-out" data-out="3"></p>
+        </div>
+        <button type="button" class="btn next" data-next="3" hidden>자유 실험으로</button>
+        <details class="st-note"><summary>메모: 두께 = 사이클 수</summary><div class="note" data-note-copy="3"></div></details>
+      </article>
+
+      <article class="st" data-st="4">
+        <p class="st-no">5 / 5</p>
+        <h2>자유 실험</h2>
+        <p>이제 손잡이를 마음대로 바꿔 봅니다. 숫자 대신 길고 짧음, 낮고 높음만 있습니다.</p>
+        <fieldset class="seg"><legend>펄스 시간</legend><div class="seg-row" data-seg="pulse">
+          <button type="button" class="btn" data-v="0" aria-pressed="false">짧게</button><button type="button" class="btn" data-v="1" aria-pressed="true">충분히</button></div></fieldset>
+        <fieldset class="seg"><legend>퍼지 시간</legend><div class="seg-row" data-seg="purge">
+          <button type="button" class="btn" data-v="0" aria-pressed="false">짧게</button><button type="button" class="btn" data-v="1" aria-pressed="true">충분히</button></div></fieldset>
+        <fieldset class="seg"><legend>웨이퍼 온도</legend><div class="seg-row" data-seg="temp">
+          <button type="button" class="btn" data-v="0" aria-pressed="false">낮음</button><button type="button" class="btn is-window" data-v="1" aria-pressed="true">ALD 온도 창</button><button type="button" class="btn" data-v="2" aria-pressed="false">높음</button></div></fieldset>
+        <div class="st-acts"><button type="button" class="btn btn-main" data-main="4" disabled>이 조건으로 돌려 보기</button></div>
+        <p class="st-lock">앞 단계 버튼을 먼저 눌러 보세요</p>
+        <p class="try-out" data-out="4"></p>
+        <details class="st-note"><summary>메모: 손잡이마다 무엇이 바뀌나</summary><div class="note" data-note-copy="4"></div></details>
+      </article>
+    </div>
+
+    <!-- 가운데: 고정 그림 -->
+    <div class="stage-col">
+      <div class="stage">
+        <figure class="asf" data-ald-surface>
+          <div class="asf-top">
+            <p class="scrolly-stage asf-stage" data-asf-stage aria-live="polite"></p>
+            <p class="asf-count">사이클 <b data-asf-cycle>1</b><span aria-hidden="true"> · </span>쌓인 층 <b data-asf-layers>0</b></p>
+          </div>
+          <div class="asf-svg-box"></div>
+          <p class="asf-desc" data-asf-desc></p>
+          <div class="asf-hide">
+            <p data-asf-warn hidden></p>
+            <button type="button" data-asf-play aria-pressed="false"></button>
+            <button type="button" data-asf-prev></button><button type="button" data-asf-next></button>
+            <button type="button" data-asf-step="0"></button><button type="button" data-asf-step="1"></button>
+            <button type="button" data-asf-step="2"></button><button type="button" data-asf-step="3"></button>
+            <button type="button" data-asf-bad aria-pressed="false"></button>
+          </div>
+        </figure>
+        <div class="atw asf" data-ald-temp hidden>
+          <div class="atw-ctrl"><span data-atw-zone></span><input type="range" min="0" max="100" value="50" aria-label="온도 (그림용)" tabindex="-1"></div>
+          <div class="atw-draw" data-atw-draw aria-live="polite"></div>
+        </div>
+        <ul class="stage-legend" aria-label="범례">
+          <li><i class="k-site"></i>빈자리</li><li><i class="k-prec"></i>전구체</li><li><i class="k-react"></i>반응 기체</li><li><i class="k-purge"></i>퍼지 가스</li><li><i class="k-film"></i>쌓인 막</li><li><i class="k-grain"></i>파티클</li>
+        </ul>
+        <p class="stage-cap">개념도: 크기·개수·속도는 실제 비율이 아닙니다. 실제로는 한 사이클에 원자 한 층보다 얇게 쌓이는 경우가 많습니다 <span class="verify-tag">검증 필요</span></p>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 사이드 노트 (지금 단계에 맞춰 바뀜) -->
+    <aside class="notes-col" aria-label="보충 설명">
+      <div class="notes"><div class="note" data-note aria-live="polite"></div></div>
+    </aside>
+  </main>
+
+  <!-- 아래: 이 방식이면 면접은 이렇게 보임 -->
+  <section class="after" aria-labelledby="after-h">
+    <h2 class="after-h" id="after-h">이 방식이면 면접 질문은 이렇게 보입니다</h2>
+    <p class="after-lede">이야기 끝에 카드 뒤집기 연습을 둡니다. 앞면 질문에 소리 내어 30초 답해 보고, 눌러서 뒷면 모범 답변과 비교합니다. 아래는 세 장만 넣은 예시이고, 실제 면접 페이지는 다섯 장(CS 관점 1장 이상)입니다.</p>
+    <ul class="cards" data-cards>
+      <li class="card"><button type="button" class="card-btn" aria-pressed="false">
+        <span class="card-in">
+          <span class="face face-q"><span class="face-k">질문 1</span><strong>ALD가 PECVD보다 단차 피복이 좋은 이유는?</strong><span class="face-hint">30초 답해 본 뒤 눌러서 뒤집기</span></span>
+          <span class="face face-a"><span class="face-k">모범 답변</span>
+            <p>ALD는 전구체와 반응 기체를 번갈아 넣고, 표면 자리가 다 차면 반응이 스스로 멈추는 자기 제한 반응을 씁니다.</p>
+            <p>기체가 늦게 닿는 깊은 구멍 안쪽도 자리가 다 찰 때까지 기다리기 때문에 입구와 바닥의 두께가 거의 같습니다. PECVD는 기체가 먼저 닿는 윗면·입구에 더 쌓이기 쉽습니다 <span class="verify-tag">검증 필요</span>.</p></span>
+        </span></button></li>
+      <li class="card"><button type="button" class="card-btn" aria-pressed="false">
+        <span class="card-in">
+          <span class="face face-q"><span class="face-k">질문 2</span><strong>퍼지 시간을 줄이면 무엇을 얻고 무엇을 잃나요?</strong><span class="face-hint">30초 답해 본 뒤 눌러서 뒤집기</span></span>
+          <span class="face face-a"><span class="face-k">모범 답변</span>
+            <p>얻는 것은 처리량입니다. 사이클마다 퍼지가 두 번 들어가서 퍼지가 사이클 시간의 큰 부분이기 때문입니다.</p>
+            <p>잃는 것은 막 품질입니다. 남은 전구체와 반응 기체가 공중에서 만나면 CVD처럼 반응해 파티클이 생기고 두께가 고르지 않게 됩니다. 그래서 퍼지를 줄여 가며 파티클과 균일도가 나빠지지 않는 지점을 찾습니다 <span class="verify-tag">검증 필요</span>.</p></span>
+        </span></button></li>
+      <li class="card"><button type="button" class="card-btn" aria-pressed="false">
+        <span class="card-in">
+          <span class="face face-q"><span class="face-k">질문 3 <span class="face-cs">CS 관점</span></span><strong>고객사에서 ALD 챔버 하나만 파티클이 늘었다고 합니다. 무엇부터 보나요?</strong><span class="face-hint">30초 답해 본 뒤 눌러서 뒤집기</span></span>
+          <span class="face face-a"><span class="face-k">모범 답변</span>
+            <p>먼저 정말 그 챔버 하나만인지 같은 장비의 다른 챔버 데이터와 비교합니다. 다음으로 갑자기 생겼는지, 최근 정비·부품 교체·레시피 변경이 있었는지 이력을 봅니다.</p>
+            <p>한 챔버에서 갑자기라면 퍼지 유량 기록과 ALD 밸브 동작부터, 서서히라면 챔버 세정 주기를 확인합니다. 조치 뒤에는 시험 웨이퍼로 파티클이 돌아왔는지 확인하고 고객에게 원인과 조치를 공유합니다 <span class="verify-tag">검증 필요</span>.</p></span>
+        </span></button></li>
+    </ul>
+    <p class="after-foot">문제와 점검도 같은 이야기 방식으로: "증상 하나 → 단계마다 버튼을 눌러 한 가지씩 확인 → 원인이 남음" 순서로 풀어 갑니다.</p>
+  </section>
+
+  <script src="../../js/motion-pref.js"></script>
+  <script src="../../vendor/gsap/gsap.min.js"></script>
+  <script src="../../js/sim/ald-surface.js"></script>   <!-- 기존 표면 시뮬레이션 (그대로 재사용) -->
+  <script src="ald-lab-shared.js"></script>              <!-- 시뮬레이션 조종 도우미 -->
+  <script>
+  // =============================================================
+  // 시안 B 동작: 단계 버튼 → 그림이 그 단계만 재생하고 멈춤 → 다음 단계가 열림 · 사이드 노트 바뀜 · 자유 실험 · 카드 뒤집기
+  // =============================================================
+  (function () {
+    "use strict";
+    const $ = (s, r) => (r || document).querySelector(s);
+    const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+    const P = "../../equipment/ald/principle.html";
+
+    // 사이드 노트 내용 (원리 페이지 글을 짧게 줄인 것)
+    const NOTES = [
+      { k: "1단계 옆 메모", t: "자기 제한 (self-limiting)", b: `<p>전구체는 빈자리에만 붙습니다. 열두 자리가 다 차면 더 들어온 분자는 붙을 곳이 없어 떠 있기만 합니다.</p><p>그래서 조금 더 오래 넣어도 쌓이는 양이 거의 같습니다 <span class="verify-tag">검증 필요</span>. 가스가 고르게 퍼지지 않아도 막이 고른 이유입니다.</p><a href="${P}#self-limiting">원리 페이지에서 더 보기</a>` },
+      { k: "2단계 옆 메모", t: "퍼지가 왜 두 번?", b: `<p>남은 전구체와 다음 반응 기체가 공중에서 만나면 그 자리에서 반응해 버립니다. 표면 반응이 아니라 CVD처럼 되고, 공중에서 생긴 알갱이는 파티클이 됩니다 <span class="verify-tag">검증 필요</span>.</p><p>두 기체가 챔버에 함께 있는 순간이 없도록 사이에 퍼지를 끼웁니다.</p><a href="${P}#cycle">4단계 사이클</a>` },
+      { k: "3단계 옆 메모", t: "두 번째 자기 제한", b: `<p>반응 기체도 붙어 있는 전구체와만 반응합니다. 전구체가 다 반응하면 더 넣어도 막은 그대로입니다.</p><p>대표 예: 트라이메틸알루미늄(TMA) + 물 → 알루미늄 산화막. 반응하면서 다음 전구체가 붙을 자리가 새로 생깁니다.</p>` },
+      { k: "4단계 옆 메모", t: "두께 = 사이클 수", b: `<p>한 사이클에 쌓이는 두께를 사이클당 성장량(GPC)이라고 합니다. 사이클마다 거의 같아서 원하는 두께를 사이클 수로 맞춥니다.</p><p>대신 매 사이클 퍼지 시간이 들어가 PECVD보다 느립니다.</p><a href="${P}#vs-pecvd">PECVD와 비교</a>` },
+      { k: "자유 실험 옆 메모", t: "손잡이마다 바뀌는 것", b: `<p><strong>펄스가 짧으면</strong> 자리가 다 차기 전에 끝나 빈자리가 남습니다(포화 전).</p><p><strong>퍼지가 짧으면</strong> 공중 반응 → 파티클·울퉁불퉁.</p><p><strong>온도가 창 밖이면</strong> 낮은 쪽은 응축·반응 부족, 높은 쪽은 분해·이탈. 어느 쪽인지는 전구체에 따라 다릅니다 <span class="verify-tag">검증 필요</span>.</p><a href="${P}#window">ALD 온도 창</a>` }
+    ];
+    const noteHtml = (n) => `<p class="note-k">${n.k}</p><h3>${n.t}</h3>${n.b}`;
+    $$("[data-note-copy]").forEach((el) => { el.innerHTML = noteHtml(NOTES[+el.dataset.noteCopy]); });
+
+    const surf = window.AldSurf($("[data-ald-surface]"));
+    const asfFig = $("[data-ald-surface]"), tempBox = $("[data-ald-temp]"), tempIn = $("input", tempBox);
+    function showSurface() { asfFig.hidden = false; tempBox.hidden = true; }
+    let busy = false;
+    const lockAll = (v) => { busy = v; $$(".st .btn").forEach((b) => { if (v) b.dataset.wasDisabled = b.disabled ? "1" : ""; b.disabled = v ? true : b.dataset.wasDisabled === "1"; }); };
+    async function act(fn) { if (busy) return; lockAll(true); try { await fn(); } finally { lockAll(false); } }
+
+    // ---------- 단계 주 버튼 ----------
+    const done = [false, false, false, false, false];
+    const MAIN = [
+      () => surf.playStep(0),
+      () => surf.playStep(1),
+      async () => { surf.setBad(false); await surf.playStep(2); },
+      () => surf.playStep(3),
+      () => freeRun()
+    ];
+    function unlock(i) {
+      const st = $(`[data-st="${i}"]`); if (!st) return;
+      st.classList.add("is-open");
+      const m = $(`[data-main="${i}"]`);
+      m.disabled = false; m.dataset.wasDisabled = "";   // 잠금 해제 (act가 끝날 때 다시 잠그지 않게)
+    }
+    $$("[data-main]").forEach((b) => b.addEventListener("click", () => act(async () => {
+      const i = +b.dataset.main;
+      if (i < 4 && i > 0 && surf.isBad()) { surf.setBad(false); surf.show(i - 1); }   // 직접 해보기에서 망가뜨린 상태면 정상으로 되돌리고 진행
+      showSurface();
+      await MAIN[i]();
+      if (i < 4) {
+        done[i] = true;
+        b.classList.add("is-done");
+        b.textContent = "다시 보기";
+        const t = $(`[data-try="${i}"]`); if (t) t.hidden = false;
+        const n = $(`[data-next="${i}"]`); if (n) n.hidden = false;
+        unlock(i + 1);
+      }
+    })));
+    // 다음 단계로: 다음 카드로 부드럽게 스크롤 (움직임 줄이기면 바로)
+    $$("[data-next]").forEach((b) => b.addEventListener("click", () => {
+      const nx = $(`[data-st="${+b.dataset.next + 1}"]`);
+      nx.scrollIntoView({ behavior: window.aldStill() ? "auto" : "smooth", block: "center" });
+      setTimeout(() => $("[data-main]", nx).focus({ preventScroll: true }), 400);
+    }));
+
+    // ---------- 직접 해보기 ----------
+    const out = (i, html) => { $(`[data-out="${i}"]`).innerHTML = html; };
+    const TRY = [
+      async () => { showSurface(); await surf.playStep(0); out(0, "다시 넣어도 <strong>12/12</strong>에서 멈춥니다. 자리가 다 차서 더 붙을 곳이 없습니다."); },
+      async () => {
+        showSurface(); surf.setBad(true); await surf.playStep(1); await surf.playStep(2);
+        out(1, '남은 전구체와 반응 기체가 공중에서 만나 <strong>알갱이(파티클)</strong>가 생기고 아무 데나 떨어졌습니다 <span class="verify-tag">검증 필요</span>. 다음 단계를 누르면 정상 퍼지로 돌아갑니다.');
+      },
+      async () => { showSurface(); await surf.playStep(2); out(2, "막은 그대로 한 줄입니다. 붙어 있던 전구체가 다 반응하면 반응 기체도 더 할 일이 없습니다."); },
+      async () => { showSurface(); await surf.playCycles(3); out(3, "사이클마다 정확히 한 줄씩 늘었습니다. 두께를 사이클 수로 맞추는 이유입니다."); }
+    ];
+    $$("[data-tryb]").forEach((b) => b.addEventListener("click", () => act(TRY[+b.dataset.tryb])));
+
+    // ---------- 자유 실험 ----------
+    const seg = (k) => +$(`[data-seg="${k}"] [aria-pressed="true"]`).dataset.v;
+    $$("[data-seg]").forEach((row) => row.addEventListener("click", (e) => {
+      const b = e.target.closest(".btn"); if (!b) return;
+      $$(".btn", row).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    }));
+    async function freeRun() {
+      const s = { pulse: seg("pulse"), purge: seg("purge"), temp: seg("temp") };
+      if (s.temp !== 1) {
+        surf.stop(); asfFig.hidden = true; tempBox.hidden = false;
+        tempIn.value = s.temp === 0 ? 15 : 85; tempIn.dispatchEvent(new Event("input"));
+        out(4, (s.temp === 0 ? "온도가 창보다 낮습니다. 응축 또는 반응 부족 중 하나가 일어납니다." : "온도가 창보다 높습니다. 분해 또는 이탈 중 하나가 일어납니다.") +
+          ' 온도 문제가 먼저 보이도록 펄스·퍼지 결과는 생략했습니다 <span class="verify-tag">검증 필요</span>');
+        return;
+      }
+      showSurface();
+      surf.setBad(s.purge === 0);
+      if (s.pulse === 0) {
+        await surf.playPartial(7);
+        out(4, "펄스가 짧아 자리가 다 차기 전에 끝났습니다. 빈자리가 남은 곳은 이번 사이클에 막이 덜 생깁니다(포화 전) <span class=\"verify-tag\">검증 필요</span>" +
+          (s.purge === 0 ? " 퍼지도 짧게 골랐습니다. 펄스를 충분히로 바꾸면 퍼지 부족 결과를 볼 수 있습니다." : ""));
+        return;
+      }
+      surf.loop();
+      out(4, s.purge === 0 ? "퍼지가 짧아 사이클마다 파티클이 생기고 막이 울퉁불퉁해집니다. 계속 돌려 보며 층이 어떻게 되는지 보세요."
+        : "온도 창 안, 펄스·퍼지 충분: 사이클마다 고른 한 줄. 계속 돌아갑니다.");
+    }
+
+    // ---------- 사이드 노트: 화면 가운데 단계에 맞춰 바뀜 ----------
+    const noteEl = $("[data-note]");
+    let shownNote = -1;
+    function setNote(i) {
+      if (i === shownNote) return;
+      shownNote = i;
+      noteEl.classList.remove("note-in"); void noteEl.offsetWidth; noteEl.classList.add("note-in");
+      noteEl.innerHTML = noteHtml(NOTES[i]);
+    }
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((en) => {
+        en.forEach((e) => { if (e.isIntersecting) setNote(+e.target.dataset.st); });
+      }, { rootMargin: "-45% 0px -45% 0px" });
+      $$("[data-st]").forEach((st) => io.observe(st));
+    }
+    setNote(0);
+
+    // ---------- 면접 카드 뒤집기 ----------
+    $$("[data-cards] .card-btn").forEach((b) => b.addEventListener("click", () => {
+      const on = b.closest(".card").classList.toggle("is-flip");
+      b.setAttribute("aria-pressed", String(on));
+    }));
+
+    // ---------- 시작: 그림은 빈자리만 있는 처음 모습에서 멈춤 ----------
+    document.addEventListener("DOMContentLoaded", () => { surf.stop(); });
+  })();
+  </script>
+</body>
+</html>

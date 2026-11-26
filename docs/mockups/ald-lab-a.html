@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>시안 A · ALD 실험대 | LAYER BY LAYER · 증착 공정 노트</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    /* =============================================================
+       시안 A: 실험실형 — 첫 화면 = 실험대 (챔버 단면 + 조절 손잡이 + 결과 + 미션), 이론은 오른쪽 서랍
+       색은 style.css의 ALD 하늘색 값(body[data-equip="ald"])과 --ald-* 만 씀
+       ============================================================= */
+    body.lab { margin: 0; min-height: 100vh; color: var(--on-navy);
+      background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 46%, var(--navy-lift) 130%); }
+    .lab *, .lab *::before, .lab *::after { box-sizing: border-box; }
+    .lab a { color: var(--on-navy); }
+    .lab .verify-tag { border-color: #F2D49B; color: #F2D49B; }   /* 하늘색 위에서 읽히는 밝은 황토 */
+
+    /* 맨 위 얇은 줄: 시안 표시 */
+    .mk-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px clamp(16px, 2.4vw, 32px);
+      border-bottom: 1px solid rgba(244, 237, 224, 0.14); font-size: var(--fs-xs); color: var(--on-navy-muted); }
+    .mk-bar b { color: var(--on-navy); font-weight: 700; }
+    .mk-bar nav { display: flex; gap: 14px; }
+
+    /* ---------- 첫 화면: 실험대 ---------- */
+    .bench { max-width: none; margin: 0; display: grid; gap: 14px; padding: 14px clamp(16px, 2.4vw, 32px) 18px;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 300px;
+      grid-template-areas: "chamber zoom knobs" "result result missions";
+      grid-template-rows: minmax(0, 1fr) auto; min-height: calc(100svh - 41px); }
+    .panel { position: relative; min-width: 0; padding: 14px 16px; border: 1px solid rgba(244, 237, 224, 0.14); border-radius: 18px;
+      background: rgba(12, 21, 41, 0.34); }
+    .panel-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 0 8px; }
+    .panel-h h2, .panel-h h1 { margin: 0; padding: 0; border: 0; color: var(--on-navy); font-size: var(--fs-md); font-weight: 800; letter-spacing: -0.02em; }
+    .panel-h h1 { font-size: var(--fs-lg); }
+    .panel-h p { margin: 0; color: var(--on-navy-muted); font-size: var(--fs-xs); }
+    .chamber { grid-area: chamber; display: flex; flex-direction: column; }
+    .zoom { grid-area: zoom; display: flex; flex-direction: column; }
+    .knobs { grid-area: knobs; display: flex; flex-direction: column; gap: 12px; }
+    .result { grid-area: result; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+    .missions { grid-area: missions; }
+
+    /* 챔버 단면 그림 */
+    .ch-svg { display: block; width: 100%; height: auto; flex: 1; min-height: 0; max-height: 46svh; }
+    .ch-svg text { font-family: Pretendard, -apple-system, sans-serif; fill: var(--on-navy-muted); font-size: 13px; font-weight: 600; }
+    .ch-svg .t-strong { fill: var(--on-navy); }
+    .ch-wall { fill: rgba(12, 21, 41, 0.35); stroke: var(--on-navy-muted); stroke-width: 1.6; }
+    .ch-line { fill: none; stroke: rgba(244, 237, 224, 0.32); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .ch-flow { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2 9; opacity: 0; transition: opacity 0.2s; }
+    .ch-flow.is-on { opacity: 1; animation: ch-dash 0.7s linear infinite; }
+    @keyframes ch-dash { to { stroke-dashoffset: -11; } }
+    .ch-flow.k-prec { stroke: var(--ald-prec); } .ch-flow.k-react { stroke: var(--ald-react); }
+    .ch-flow.k-purge { stroke: var(--ald-purge); } .ch-flow.k-exh { stroke: var(--on-navy-muted); }
+    .ch-valve { fill: rgba(12, 21, 41, 0.6); stroke: var(--on-navy-muted); stroke-width: 1.4; transition: fill 0.2s; }
+    .ch-valve.is-on.k-prec { fill: var(--ald-prec); } .ch-valve.is-on.k-react { fill: var(--ald-react); } .ch-valve.is-on.k-purge { fill: var(--ald-purge); }
+    .ch-shower { fill: rgba(244, 237, 224, 0.18); stroke: var(--on-navy-muted); stroke-width: 1.2; }
+    .ch-hole { stroke: var(--navy-deep); stroke-width: 2.4; stroke-dasharray: 3 9; }
+    .ch-heater { fill: var(--sim-wafer); }
+    .ch-heat { fill: none; stroke: var(--ald-prec); stroke-width: 1.6; stroke-linecap: round; opacity: 0.25; transition: opacity 0.3s, stroke 0.3s; }
+    .ch-wafer { fill: var(--ald-film); stroke: var(--ald-film-edge); stroke-width: 1; }
+    .ch-cloud { opacity: 0; }
+    .ch-cloud.k-prec { fill: var(--ald-prec); } .ch-cloud.k-react { fill: var(--ald-react); } .ch-cloud.k-purge { fill: var(--ald-purge); }
+    .ch-dot.k-prec { fill: var(--ald-prec); stroke: var(--navy-deep); stroke-width: 1; }
+    .ch-dot.k-react { fill: var(--ald-react); stroke: var(--navy-deep); stroke-width: 1; }
+    .ch-dot.k-grain { fill: var(--ald-grain); stroke: var(--ald-react); stroke-width: 1.4; }
+    .ch-dot { will-change: transform, opacity; }
+    .ch-lens { fill: none; stroke: var(--c-cvd-bright); stroke-width: 1.6; stroke-dasharray: 4 4; }
+    .ch-step { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+    .ch-step li { padding: 3px 10px; border: 1px solid rgba(244, 237, 224, 0.16); border-radius: 999px; color: var(--on-navy-faint); font-size: var(--fs-xs); }
+    .ch-step li span { margin-right: 4px; font-family: var(--font-mono); }
+    .ch-step li.is-on { border-color: var(--c-cvd-bright); color: var(--on-navy); }
+    .ch-count { color: var(--on-navy-muted); font-size: var(--fs-xs); }
+    .ch-count b { color: var(--on-navy); font-family: var(--font-mono); font-weight: 600; }
+
+    /* 확대 창: 기존 표면 시뮬레이션 + 온도 창 그림을 그대로 넣음 */
+    .zoom .asf { flex: 1; display: flex; flex-direction: column; padding: 0; border: 0; background: none; }
+    .zoom .asf-svg-box svg { max-height: 34svh; min-height: 0; margin-top: 2px; }
+    .zoom .asf-stage { font-size: var(--fs-sm); }
+    .zoom .asf-desc { min-height: 3.2em; font-size: var(--fs-sm); }
+    .zoom .asf-hide { display: none; }
+    .zoom .atw { display: block; margin: 0; padding: 0; border: 0; background: none; }
+    .zoom .atw-ctrl { display: none; }
+    .zoom .atw-card figcaption { font-size: var(--fs-xs); }
+    .zoom [hidden] { display: none !important; }
+    .zoom-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: auto 0 0; padding: 8px 0 0; list-style: none; color: var(--on-navy-muted); font-size: var(--fs-xs); }
+    .zoom-legend li { display: flex; align-items: center; gap: 5px; }
+    .zoom-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+    .zoom-legend .k-prec { background: var(--ald-prec); } .zoom-legend .k-react { background: var(--ald-react); }
+    .zoom-legend .k-site { border: 1.5px solid var(--ald-site); } .zoom-legend .k-grain { background: var(--ald-grain); box-shadow: 0 0 0 1.5px var(--ald-react); }
+    .zoom-legend .k-film { width: 16px; height: 8px; border-radius: 2px; background: var(--ald-film); }
+
+    /* 조절 손잡이: 숫자 없는 눈금 막대 (칸마다 멈춤) */
+    .knob { margin: 0; padding: 0; border: 0; }
+    .knob legend, .knob-top { display: flex; width: 100%; justify-content: space-between; gap: 8px; padding: 0; color: var(--on-navy-muted); font-size: var(--fs-sm); }
+    .knob-top b { color: var(--on-navy); font-weight: 700; }
+    .knob input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 30px; margin: 2px 0 0; background: transparent; cursor: pointer; }
+    .knob input::-webkit-slider-runnable-track { height: 8px; border-radius: 999px; background: var(--trk, rgba(244, 237, 224, 0.22)); }
+    .knob input::-moz-range-track { height: 8px; border-radius: 999px; background: var(--trk, rgba(244, 237, 224, 0.22)); }
+    .knob input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -7px; border: 2px solid var(--navy-deep); border-radius: 50%; background: var(--on-navy); }
+    .knob input::-moz-range-thumb { width: 18px; height: 18px; border: 2px solid var(--navy-deep); border-radius: 50%; background: var(--on-navy); }
+    .knob input:focus-visible { outline: 2px solid var(--c-cvd-bright); outline-offset: 3px; border-radius: 999px; }
+    .knob-ticks { display: flex; justify-content: space-between; color: var(--on-navy-faint); font-size: var(--fs-2xs); }
+    .knob.is-temp input { --trk: linear-gradient(90deg, rgba(244, 237, 224, 0.2) 0 20%, var(--c-cvd-bright) 20% 80%, rgba(244, 237, 224, 0.2) 80% 100%); }
+    .run { display: flex; gap: 8px; margin-top: auto; }
+    .btn { min-height: 42px; padding: 0 16px; border: 1px solid rgba(244, 237, 224, 0.32); border-radius: 999px; background: none; color: var(--on-navy);
+      font: inherit; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
+    .btn:hover { border-color: var(--c-cvd-bright); }
+    .btn:focus-visible { outline: 2px solid var(--c-cvd-bright); outline-offset: 2px; }
+    .btn-run { flex: 1; border: 0; background: var(--on-navy); color: var(--navy-deep); font-size: var(--fs-md); }
+    .btn-run:hover { background: #fff; }
+    .btn-run[disabled] { opacity: 0.55; cursor: progress; }
+    .knob-note { margin: 0; color: var(--on-navy-faint); font-size: var(--fs-xs); line-height: 1.5; }
+
+    /* 결과: 웨이퍼 위치별 막 두께 막대 (눈금 숫자 없음) */
+    .bars { display: block; width: 100%; height: auto; max-height: 150px; }
+    .bars text { font-family: Pretendard, -apple-system, sans-serif; fill: var(--on-navy-faint); font-size: 11px; }
+    .bar { fill: var(--ald-film); stroke: var(--ald-film-edge); stroke-width: 1; }
+    .bar-base { stroke: var(--on-navy-muted); stroke-width: 1.4; }
+    .bar-target { stroke: var(--on-navy-faint); stroke-width: 1; stroke-dasharray: 3 4; }
+    .bar-grain { fill: var(--ald-grain); stroke: var(--ald-react); stroke-width: 1.2; }
+    .verdict { margin: 0; }
+    .verdict-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; padding: 0; list-style: none; }
+    .verdict-chips li { padding: 3px 10px; border-radius: 999px; background: rgba(244, 237, 224, 0.12); color: var(--on-navy); font-size: var(--fs-xs); font-weight: 700; }
+    .verdict-chips li.is-bad { background: rgba(242, 196, 109, 0.2); }
+    .verdict-text { margin: 0 0 10px; color: var(--on-navy); font-size: var(--fs-md); line-height: 1.55; }
+    .verdict-idle { color: var(--on-navy-muted); }
+    .why { border-color: var(--c-cvd-bright); }
+
+    /* 미션 카드 */
+    .lab main li, .lab .after li { margin: 0; }   /* 공통 CSS의 목록 간격 끄기 */
+    .missions ol { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .mission { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start; padding: 6px 10px; border-radius: 12px;
+      background: rgba(244, 237, 224, 0.06); font-size: var(--fs-xs); line-height: 1.4; color: var(--on-navy-muted); }
+    .mission-box { width: 20px; height: 20px; margin-top: 1px; border: 1.5px solid var(--on-navy-faint); border-radius: 6px; display: grid; place-items: center; }
+    .mission-box svg { width: 13px; height: 13px; opacity: 0; transform: scale(0.4); transition: opacity 0.25s, transform 0.25s; }
+    .mission.is-done .mission-box { border-color: var(--c-cvd-bright); background: var(--c-cvd-bright); }
+    .mission.is-done .mission-box svg { opacity: 1; transform: none; }
+    .mission.is-done .mission-t { color: var(--on-navy-muted); }
+    .mission-t b { display: block; color: var(--on-navy); font-size: var(--fs-sm); }
+    .mission.is-done .mission-t b { color: var(--on-navy-muted); }
+    .mission-count { color: var(--on-navy-muted); font-family: var(--font-mono); font-size: var(--fs-xs); }
+
+    /* ---------- 이론 서랍 (휴대폰: 아래 시트) ---------- */
+    .drawer { position: fixed; z-index: 50; top: 12px; right: 12px; bottom: 12px; width: min(380px, calc(100vw - 24px)); overflow: auto;
+      padding: 20px 22px 24px; border-radius: 20px; background: var(--cream); color: var(--text); box-shadow: 0 24px 60px rgba(6, 28, 50, 0.4);
+      transform: translateX(calc(100% + 24px)); visibility: hidden; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 0.35s; }
+    .drawer.is-open { transform: none; visibility: visible; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s; }
+    .drawer a { color: var(--sky-deep); }
+    .drawer .verify-tag { border-color: var(--todo); color: var(--todo); }
+    .drawer-close { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border: 1px solid var(--line-strong); border-radius: 50%; background: none; color: var(--ink); font-size: 18px; cursor: pointer; }
+    .drawer-kind { margin: 0 0 4px; color: var(--muted); font-size: var(--fs-xs); }
+    .drawer h2 { margin: 0 40px 12px 0; padding: 0; border: 0; color: var(--ink); font-size: var(--fs-xl); font-weight: 800; letter-spacing: -0.02em; line-height: 1.3; }
+    .drawer p, .drawer li { font-size: var(--fs-sm); line-height: 1.7; }
+    .drawer h3 { margin: 18px 0 6px; font-size: var(--fs-md); }
+    .drawer-link { display: inline-block; margin-top: 10px; font-size: var(--fs-sm); font-weight: 700; }
+
+    /* ---------- 아래: 이 방식이면 문제·점검은 이렇게 ---------- */
+    .after { max-width: 1100px; margin: 0 auto; padding: 56px clamp(16px, 2.4vw, 32px) 80px; }
+    .after-h { margin: 0 0 6px; padding: 0; border: 0; color: var(--on-navy); font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.03em; }
+    .after-lede { margin: 0 0 22px; max-width: 46em; color: var(--on-navy-muted); font-size: var(--fs-md); line-height: 1.6; }
+    .tg { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px; }
+    .tg-q { margin: 0 0 8px; color: var(--on-navy); font-size: var(--fs-md); font-weight: 800; }
+    .tg-opts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+    .tg-opts .btn[aria-pressed="true"] { background: var(--on-navy); color: var(--navy-deep); border-color: var(--on-navy); }
+    .tg-opts .btn[disabled] { opacity: 0.4; cursor: default; }
+    .tg-path { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; padding: 0; list-style: none; color: var(--on-navy-muted); font-size: var(--fs-xs); }
+    .tg-path li::after { content: "›"; margin-left: 6px; }
+    .tg-path li:last-child::after { content: ""; }
+    .tg-cands { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .tg-cand { padding: 10px 12px; border: 1px solid rgba(244, 237, 224, 0.16); border-radius: 12px; font-size: var(--fs-sm); line-height: 1.55; transition: opacity 0.3s; }
+    .tg-cand b { display: block; color: var(--on-navy); }
+    .tg-cand.is-out { opacity: 0.28; }
+    .tg-cand.is-out b { text-decoration: line-through; }
+    .tg-act { margin: 12px 0 0; padding: 10px 12px; border-left: 3px solid var(--c-cvd-bright); background: rgba(12, 21, 41, 0.3); font-size: var(--fs-sm); line-height: 1.6; }
+    .tg-act[hidden] { display: none; }
+    .after-foot { margin: 22px 0 0; color: var(--on-navy-muted); font-size: var(--fs-sm); line-height: 1.6; }
+
+    /* ---------- 좁은 화면 ---------- */
+    @media (max-width: 1180px) {
+      .bench { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "chamber zoom" "knobs knobs" "result result" "missions missions"; min-height: 0; }
+      .knobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; }
+      .knobs .panel-h, .knobs .run, .knobs .knob-note { grid-column: 1 / -1; }
+      .missions ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      .bench { grid-template-columns: minmax(0, 1fr); grid-template-areas: "chamber" "knobs" "zoom" "result" "missions"; padding-top: 10px; }
+      .knobs { grid-template-columns: minmax(0, 1fr); }
+      .result { grid-template-columns: minmax(0, 1fr); }
+      .missions ol { grid-template-columns: minmax(0, 1fr); }
+      .ch-svg { max-height: none; }
+      .zoom .asf-svg-box svg { max-height: none; }
+      .tg { grid-template-columns: minmax(0, 1fr); }
+      .mk-bar nav a:first-child { display: none; }
+      .drawer { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 62svh; border-radius: 20px 20px 0 0; transform: translateY(100%); }
+      .drawer::before { content: ""; display: block; width: 40px; height: 4px; margin: -8px auto 12px; border-radius: 4px; background: var(--line-strong); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .drawer, .drawer.is-open, .mission-box svg { transition: none; }
+      .ch-flow.is-on { animation: none; stroke-dasharray: none; }
+    }
+  </style>
+</head>
+<!-- 시안 A (실험실형). 실제 페이지가 아님: docs/mockups/ — 방향을 고르기 위한 시안.
+     재사용: js/sim/ald-surface.js (확대 창의 표면 시뮬레이션·온도 창 그림, 파일은 고치지 않음, ald-lab-shared.js로 조종)
+     새로 만든 것: 챔버 단면 그림(이 파일), 손잡이 → 결과 막대, 미션, 이론 서랍, 점검 게임 예시 -->
+<body class="lab" data-equip="ald" data-process="ald">
+  <div class="mk-bar">
+    <span><b>시안 A · 실험실형</b> — ALD 원리 페이지를 실험대로 바꾸면</span>
+    <nav><a href="../../equipment/ald/principle.html">지금 원리 페이지</a><a href="ald-lab-b.html">시안 B 보기</a></nav>
+  </div>
+
+  <main class="bench">
+    <!-- ① 챔버 단면 -->
+    <section class="panel chamber" aria-labelledby="ch-h">
+      <div class="panel-h">
+        <h1 id="ch-h">ALD 챔버 실험대</h1>
+        <p class="ch-count">사이클 <b data-ch-cycle>0</b> / <span data-ch-total>보통</span></p>
+      </div>
+      <svg class="ch-svg" viewBox="0 0 600 372" role="img" aria-label="ALD 챔버 단면. 왼쪽에서 전구체, 반응 기체, 퍼지 가스 배관이 각자 밸브를 지나 챔버 위 샤워헤드로 들어가고, 웨이퍼는 히터 위에 놓여 있으며, 챔버 오른쪽 아래 배기구로 펌프에 연결된다.">
+        <!-- 배관 3줄 + 밸브 -->
+        <text x="20" y="34" class="t-strong">전구체</text>
+        <text x="20" y="74" class="t-strong">반응 기체</text>
+        <text x="20" y="114" class="t-strong">퍼지 가스</text>
+        <path class="ch-line" d="M20 44 H330 V150"/><path class="ch-line" d="M20 84 H330"/><path class="ch-line" d="M20 124 H330"/>
+        <path class="ch-flow k-prec" data-flow="prec" d="M20 44 H330 V150"/>
+        <path class="ch-flow k-react" data-flow="react" d="M20 84 H330 V150"/>
+        <path class="ch-flow k-purge" data-flow="purge" d="M20 124 H330 V150"/>
+        <path class="ch-valve k-prec" data-valve="prec" d="M148 36 L168 52 V36 L148 52 Z"/>
+        <path class="ch-valve k-react" data-valve="react" d="M148 76 L168 92 V76 L148 92 Z"/>
+        <path class="ch-valve k-purge" data-valve="purge" d="M148 116 L168 132 V116 L148 132 Z"/>
+        <text x="158" y="148" text-anchor="middle" style="font-size:11px">ALD 밸브</text>
+        <!-- 챔버 -->
+        <rect class="ch-wall" x="170" y="150" width="320" height="176" rx="12"/>
+        <rect class="ch-cloud" data-cloud x="176" y="172" width="308" height="146" rx="8"/>
+        <rect class="ch-shower" x="214" y="160" width="232" height="10" rx="3"/>
+        <path class="ch-hole" d="M222 170 H440"/>
+        <text x="458" y="168" style="font-size:11px">샤워헤드</text>
+        <!-- 히터 + 웨이퍼 -->
+        <rect class="ch-heater" x="232" y="270" width="196" height="22" rx="4"/>
+        <rect class="ch-heater" x="318" y="292" width="24" height="34"/>
+        <path class="ch-heat" data-heat d="M250 281 q8 -6 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0"/>
+        <rect class="ch-wafer" x="246" y="262" width="168" height="8" rx="2"/>
+        <text x="186" y="284" style="font-size:11px">히터</text>
+        <text x="330" y="258" text-anchor="middle" class="t-strong" style="font-size:12px">웨이퍼</text>
+        <circle class="ch-lens" cx="392" cy="264" r="18"/>
+        <text x="414" y="246" style="font-size:11px">확대 →</text>
+        <!-- 배기 -->
+        <path class="ch-line" d="M462 326 V350 H586"/>
+        <path class="ch-flow k-exh" data-flow="exh" d="M440 300 L462 326 V350 H586"/>
+        <text x="586" y="342" text-anchor="end">배기 → 펌프</text>
+        <g data-dots></g>
+      </svg>
+      <ol class="ch-step" aria-label="지금 단계">
+        <li data-chs="0"><span>1</span>전구체</li><li data-chs="1"><span>2</span>퍼지</li><li data-chs="2"><span>3</span>반응 기체</li><li data-chs="3"><span>4</span>퍼지</li>
+      </ol>
+    </section>
+
+    <!-- ② 확대 창: 기존 표면 시뮬레이션 (조작 버튼은 숨기고 시안이 대신 누름) -->
+    <section class="panel zoom" aria-labelledby="zoom-h">
+      <div class="panel-h"><h2 id="zoom-h">웨이퍼 표면 확대</h2><p data-zoom-mode>단면 개념도</p></div>
+      <figure class="asf" data-ald-surface>
+        <p class="scrolly-stage asf-stage" data-asf-stage aria-live="polite"></p>
+        <div class="asf-svg-box"></div>
+        <p class="asf-desc" data-asf-desc></p>
+        <div class="asf-hide">
+          <span data-asf-cycle></span><span data-asf-layers></span><p data-asf-warn hidden></p>
+          <button type="button" data-asf-play aria-pressed="false"></button>
+          <button type="button" data-asf-prev></button><button type="button" data-asf-next></button>
+          <button type="button" data-asf-step="0"></button><button type="button" data-asf-step="1"></button>
+          <button type="button" data-asf-step="2"></button><button type="button" data-asf-step="3"></button>
+          <button type="button" data-asf-bad aria-pressed="false"></button>
+        </div>
+      </figure>
+      <div class="atw" data-ald-temp hidden>
+        <div class="atw-ctrl"><span data-atw-zone></span><input type="range" min="0" max="100" value="50" aria-label="온도 (확대 창용)" tabindex="-1"></div>
+        <div class="atw-draw" data-atw-draw aria-live="polite"></div>
+      </div>
+      <ul class="zoom-legend" aria-label="범례">
+        <li><i class="k-site"></i>빈자리</li><li><i class="k-prec"></i>전구체</li><li><i class="k-react"></i>반응 기체</li><li><i class="k-film"></i>막</li><li><i class="k-grain"></i>파티클</li>
+      </ul>
+    </section>
+
+    <!-- ③ 조절 손잡이 -->
+    <section class="panel knobs" aria-labelledby="knob-h">
+      <div class="panel-h"><h2 id="knob-h">레시피 손잡이</h2><p>숫자 없이 길고 짧음만</p></div>
+      <div class="knob">
+        <label class="knob-top" for="k-pulse">펄스 시간 <b data-kv="pulse">보통</b></label>
+        <input id="k-pulse" type="range" min="0" max="2" step="1" value="1" data-k="pulse">
+        <div class="knob-ticks" aria-hidden="true"><span>짧게</span><span>보통</span><span>길게</span></div>
+      </div>
+      <div class="knob">
+        <label class="knob-top" for="k-purge">퍼지 시간 <b data-kv="purge">보통</b></label>
+        <input id="k-purge" type="range" min="0" max="2" step="1" value="1" data-k="purge">
+        <div class="knob-ticks" aria-hidden="true"><span>짧게</span><span>보통</span><span>길게</span></div>
+      </div>
+      <div class="knob is-temp">
+        <label class="knob-top" for="k-temp">웨이퍼 온도 <b data-kv="temp">온도 창 안</b></label>
+        <input id="k-temp" type="range" min="0" max="4" step="1" value="2" data-k="temp">
+        <div class="knob-ticks" aria-hidden="true"><span>낮음</span><span>ALD 온도 창</span><span>높음</span></div>
+      </div>
+      <div class="knob">
+        <label class="knob-top" for="k-cyc">사이클 수 <b data-kv="cyc">보통</b></label>
+        <input id="k-cyc" type="range" min="0" max="2" step="1" value="1" data-k="cyc">
+        <div class="knob-ticks" aria-hidden="true"><span>적게</span><span>보통</span><span>많이</span></div>
+      </div>
+      <p class="knob-note">밝은 띠가 온도 창입니다. 실제 값은 전구체와 장비마다 다릅니다 <span class="verify-tag">검증 필요</span></p>
+      <div class="run">
+        <button type="button" class="btn btn-run" data-run>실행</button>
+        <button type="button" class="btn" data-reset>처음 조건</button>
+      </div>
+    </section>
+
+    <!-- ④ 결과 -->
+    <section class="panel result" aria-labelledby="res-h">
+      <div>
+        <div class="panel-h"><h2 id="res-h">막 두께 (웨이퍼 위치별)</h2><p>높고 낮음만 · 점선 = 처음 조건 두께</p></div>
+        <svg class="bars" viewBox="0 0 400 150" role="img" aria-label="웨이퍼 위치별 막 두께 막대그래프" data-bars></svg>
+      </div>
+      <div class="verdict" aria-live="polite">
+        <ul class="verdict-chips" data-chips></ul>
+        <p class="verdict-text verdict-idle" data-verdict>손잡이를 정하고 <b>실행</b>을 누르면 여기에 결과가 나옵니다.</p>
+        <button type="button" class="btn why" data-why hidden>왜 이렇게 됐는지 보기</button>
+      </div>
+    </section>
+
+    <!-- ⑤ 미션 -->
+    <section class="panel missions" aria-labelledby="mis-h">
+      <div class="panel-h"><h2 id="mis-h">미션</h2><p class="mission-count"><span data-done>0</span>/4</p></div>
+      <ol>
+        <li class="mission" data-m="base"><span class="mission-box"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5 L5.5 11 L12 3.5" fill="none" stroke="#174668" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+          <span class="mission-t"><b>처음 조건으로 실행</b>고르게 쌓이는 막을 먼저 봅니다</span></li>
+        <li class="mission" data-m="purge"><span class="mission-box"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5 L5.5 11 L12 3.5" fill="none" stroke="#174668" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+          <span class="mission-t"><b>퍼지를 줄여 보세요</b>막 표면과 파티클이 어떻게 되나요</span></li>
+        <li class="mission" data-m="cold"><span class="mission-box"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5 L5.5 11 L12 3.5" fill="none" stroke="#174668" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+          <span class="mission-t"><b>온도를 낮춰 보세요</b>온도 창 밖에서는 무엇이 달라지나요</span></li>
+        <li class="mission" data-m="sat"><span class="mission-box"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5 L5.5 11 L12 3.5" fill="none" stroke="#174668" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+          <span class="mission-t"><b>펄스를 늘려도 두께가 같은지</b>나머지는 처음 조건으로 두고 확인</span></li>
+      </ol>
+    </section>
+  </main>
+
+  <!-- 이론 서랍 -->
+  <aside class="drawer" data-drawer aria-labelledby="dr-h" aria-hidden="true">
+    <button type="button" class="drawer-close" data-close aria-label="설명 닫기">×</button>
+    <p class="drawer-kind">방금 실험과 연결된 설명</p>
+    <h2 id="dr-h" data-dr-title></h2>
+    <div data-dr-body></div>
+  </aside>
+
+  <!-- 아래: 이 방식이면 문제·점검은 이렇게 보임 -->
+  <section class="after" aria-labelledby="after-h">
+    <h2 class="after-h" id="after-h">이 방식이면 문제와 점검은 이렇게 보입니다</h2>
+    <p class="after-lede">같은 실험대 감각으로 "증상을 고르면 원인이 좁혀지는" 점검 게임을 만듭니다. 순서는 사이트 공통 점검 순서(한 곳만인지 → 갑자기인지 → 원인 나누기 → 조치)를 그대로 따릅니다. 아래는 증상 두 개만 넣은 작은 예시입니다.</p>
+    <div class="tg" data-tg>
+      <div class="panel">
+        <p class="tg-q">증상을 고르세요</p>
+        <div class="tg-opts" data-tg-sym>
+          <button type="button" class="btn" data-v="particle" aria-pressed="false">파티클이 늘었다</button>
+          <button type="button" class="btn" data-v="thin" aria-pressed="false">막이 얇아졌다</button>
+        </div>
+        <p class="tg-q">한 챔버만인가요?</p>
+        <div class="tg-opts" data-tg-where>
+          <button type="button" class="btn" data-v="one" aria-pressed="false" disabled>한 챔버만</button>
+          <button type="button" class="btn" data-v="all" aria-pressed="false" disabled>모든 챔버</button>
+        </div>
+        <p class="tg-q">갑자기인가요, 서서히인가요?</p>
+        <div class="tg-opts" data-tg-when>
+          <button type="button" class="btn" data-v="sudden" aria-pressed="false" disabled>갑자기</button>
+          <button type="button" class="btn" data-v="slow" aria-pressed="false" disabled>서서히</button>
+        </div>
+        <button type="button" class="btn" data-tg-reset>다시 고르기</button>
+      </div>
+      <div class="panel">
+        <ul class="tg-path" data-tg-path><li>증상을 고르면 원인 후보가 나옵니다</li></ul>
+        <ul class="tg-cands" data-tg-cands></ul>
+        <p class="tg-act" data-tg-act hidden></p>
+      </div>
+    </div>
+    <p class="after-foot">면접 연습도 같은 실험대 말투로: 질문 카드를 열면 "직접 해 볼 손잡이"가 같이 나와, 답하기 전에 실험으로 확인하게 할 수 있습니다. 원인 후보·조치는 장비와 공정마다 다른 예시입니다 <span class="verify-tag">검증 필요</span></p>
+  </section>
+
+  <script src="../../js/motion-pref.js"></script>
+  <script src="../../vendor/gsap/gsap.min.js"></script>
+  <script src="../../js/sim/ald-surface.js"></script>   <!-- 기존 표면 시뮬레이션 (그대로 재사용) -->
+  <script src="ald-lab-shared.js"></script>              <!-- 시뮬레이션 조종 도우미 -->
+  <script>
+  // =============================================================
+  // 시안 A 동작: 손잡이 → 실행 → 챔버 사이클(GSAP 타임라인) + 확대 창 → 막대 결과 → 미션·서랍
+  // =============================================================
+  (function () {
+    "use strict";
+    const $ = (s, r) => (r || document).querySelector(s);
+    const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+    const SVGNS = "http://www.w3.org/2000/svg";
+    const mk = (tag, attrs, parent) => { const n = document.createElementNS(SVGNS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent && parent.appendChild(n); return n; };
+
+    const NAMES = {
+      pulse: ["짧게", "보통", "길게"], purge: ["짧게", "보통", "길게"], cyc: ["적게", "보통", "많이"],
+      temp: ["창보다 낮음", "온도 창 안", "온도 창 안", "온도 창 안", "창보다 높음"]
+    };
+    const DEFAULT = { pulse: 1, purge: 1, temp: 2, cyc: 1 };
+    const knob = (k) => +$(`[data-k="${k}"]`).value;
+
+    // ---------- 손잡이 이름 표시 ----------
+    function syncKnobs() {
+      Object.keys(NAMES).forEach((k) => {
+        const v = knob(k), el = $(`[data-k="${k}"]`);
+        $(`[data-kv="${k}"]`).textContent = NAMES[k][v];
+        el.setAttribute("aria-valuetext", NAMES[k][v]);
+      });
+      $("[data-ch-total]").textContent = NAMES.cyc[knob("cyc")];
+    }
+    $$("[data-k]").forEach((el) => el.addEventListener("input", syncKnobs));
+
+    // ---------- 결과 계산 (그림용 경향, 실제 값 아님) ----------
+    const NB = 9;                                  // 막대 9개: 가장자리 … 가운데 … 가장자리
+    const noise = (j, s) => { const x = Math.sin(j * 12.9898 + s * 78.233) * 43758.5453; return x - Math.floor(x); };
+    function outcome(s) {
+      const tags = [], bad = [];
+      let kind = "ok";
+      const cycH = [0.38, 0.6, 0.86][s.cyc];
+      const prof = [];
+      for (let j = 0; j < NB; j++) {
+        const x = (j - (NB - 1) / 2) / ((NB - 1) / 2);       // -1 … 1
+        let m = 1;
+        if (s.pulse === 0) m *= 1 - 0.42 * Math.pow(Math.abs(x), 1.4);          // 포화 전: 가장자리가 덜 참
+        if (s.purge === 0) m *= 1.12 + 0.34 * noise(j, 3);                      // 공중 반응: 울퉁불퉁
+        if (s.temp === 0) m *= 1.38 + 0.16 * noise(j, 5);                       // 응축: 두껍고 조금 고르지 않음
+        if (s.temp === 4) m *= 1.12 + 0.42 * (1 - Math.abs(x));                 // 분해: 기체가 먼저 닿는 가운데가 두꺼움
+        prof.push(Math.min(1, cycH * m));
+      }
+      const grains = s.purge === 0 ? [1, 4, 6] : [];
+      if (s.temp === 0) { kind = "cold"; tags.push("두꺼움"); bad.push("온도 창보다 낮음"); }
+      else if (s.temp === 4) { kind = "hot"; tags.push("가운데 두꺼움"); bad.push("온도 창보다 높음"); }
+      if (s.purge === 0) { if (kind === "ok") kind = "purge"; tags.push("울퉁불퉁", "파티클"); bad.push("퍼지 부족"); }
+      if (s.pulse === 0) { if (kind === "ok") kind = "pulse"; tags.push("가장자리 얇음"); bad.push("포화 전"); }
+      if (kind === "ok") tags.push("고름", ["얇게", "중간", "두껍게"][s.cyc]);
+      return { kind, prof, grains, tags, bad, cycH };
+    }
+
+    const TEXT = {
+      ok: (s) => s.pulse === 2 ? "펄스를 늘렸는데도 두께가 그대로입니다. 자리가 다 차면 더 붙지 않기 때문입니다(자기 제한)."
+        : s.purge === 2 ? "막은 똑같이 고릅니다. 퍼지를 길게 하면 깨끗하지만 사이클마다 시간이 늘어 웨이퍼 처리량이 줄어듭니다."
+        : "웨이퍼 어디서나 같은 높이입니다. 두께는 사이클 수로 정해집니다.",
+      purge: () => "막이 울퉁불퉁하고 위에 파티클이 얹혔습니다. 퍼지가 짧아 남은 전구체와 반응 기체가 공중에서 만났습니다.",
+      pulse: () => "가운데보다 가장자리가 얇습니다. 펄스가 짧아 표면 자리가 다 차기 전에 끝났습니다(포화 전).",
+      cold: () => "막이 한 층 몫보다 두껍게 쌓였습니다. 차가운 표면에 전구체가 이슬처럼 맺혔습니다(응축).",
+      hot: () => "가운데가 볼록하게 두꺼워졌습니다. 전구체가 열로 스스로 쪼개져 CVD처럼 쌓였습니다(분해)."
+    };
+
+    // 서랍 내용 — 방금 결과와 연결 (원리 페이지 글을 짧게 줄인 것)
+    const P = "../../equipment/ald/principle.html";
+    const DRAWER = {
+      ok: { t: "자기 제한: 표면이 다 차면 멈춘다", b: `<p>전구체 분자는 웨이퍼 표면의 <strong>붙을 자리</strong>에만 붙습니다. 자리가 다 차면 더 들어온 분자는 붙을 곳이 없어 퍼지 때 빠져나갑니다.</p>
+        <p>그래서 펄스를 조금 더 길게 해도 한 사이클에 쌓이는 양은 거의 같고, <strong>두께 = 사이클 수</strong>로 맞춥니다 <span class="verify-tag">검증 필요</span>.</p>
+        <h3>트레이드오프</h3><ul><li>펄스·퍼지를 길게: 막은 같지만 사이클마다 시간이 늘어 처리량이 줄어듦</li><li>전구체를 더 씀 → 원료 비용</li></ul>
+        <a class="drawer-link" href="${P}#self-limiting">원리 페이지: 자기제한 반응</a>` },
+      purge: { t: "퍼지가 짧으면 CVD처럼 자란다", b: `<p>퍼지는 남은 전구체를 챔버 밖으로 몰아내는 단계입니다. 짧게 끝나면 <strong>남은 전구체와 다음 반응 기체가 공중에서 만나</strong> 그 자리에서 반응합니다.</p>
+        <p>공중에서 생긴 알갱이가 웨이퍼에 떨어져 <strong>파티클</strong>이 되고, 자기 제한 없이 아무 데나 쌓여 막이 울퉁불퉁해집니다 <span class="verify-tag">검증 필요</span>.</p>
+        <h3>현장에서는</h3><p>파티클이 갑자기 늘면 퍼지 유량·퍼지 시간·ALD 밸브 동작부터 의심합니다. 아래 점검 게임에서 이어집니다.</p>
+        <a class="drawer-link" href="${P}#cycle">원리 페이지: 4단계 사이클</a>` },
+      pulse: { t: "펄스가 짧으면 포화 전에 끝난다", b: `<p>자기 제한은 <strong>자리가 다 찰 만큼</strong> 전구체를 넣었을 때 성립합니다. 펄스가 너무 짧으면 기체가 먼저 닿는 곳만 차고, 늦게 닿는 곳은 빈자리가 남습니다.</p>
+        <p>그래서 레시피를 정할 때 펄스를 늘려 가며 두께가 더 늘지 않는 지점(포화)을 찾고, 거기에 여유를 둡니다 <span class="verify-tag">검증 필요</span>. 기체가 어디부터 닿는지는 챔버 구조마다 다릅니다.</p>
+        <a class="drawer-link" href="../../equipment/ald/parameters.html">공정변수 페이지: 포화 곡선</a>` },
+      cold: { t: "온도 창보다 낮으면: 응축 또는 반응 부족", b: `<p>자기 제한이 제대로 일어나는 온도 범위를 <strong>ALD 온도 창</strong>이라고 합니다.</p>
+        <ul><li><strong>응축</strong>: 차가운 표면에 전구체가 이슬처럼 맺혀 한 층보다 많이 쌓임 (이 실험의 결과)</li>
+        <li><strong>반응 부족</strong>: 반응 에너지가 모자라 덜 반응한 조각이 불순물로 남고 오히려 얇아짐</li></ul>
+        <p>어느 쪽으로 가는지는 전구체와 조건에 따라 다릅니다 <span class="verify-tag">검증 필요</span>. 배관·밸브에 차가운 곳이 있어도 응축이 생기므로 장비는 공급 길 온도도 관리합니다.</p>
+        <a class="drawer-link" href="${P}#window">원리 페이지: ALD 온도 창</a>` },
+      hot: { t: "온도 창보다 높으면: 분해 또는 이탈", b: `<p>온도가 너무 높으면 표면 자리와 상관없이 일이 벌어집니다.</p>
+        <ul><li><strong>분해</strong>: 전구체가 열로 스스로 쪼개져 쌓임 → CVD처럼 두껍고 고르지 않음 (이 실험의 결과)</li>
+        <li><strong>이탈</strong>: 붙었던 분자나 반응 자리가 열로 떨어져 나가 오히려 얇아짐</li></ul>
+        <p>어느 쪽으로 가는지는 전구체와 조건에 따라 다릅니다 <span class="verify-tag">검증 필요</span>.</p>
+        <a class="drawer-link" href="${P}#window">원리 페이지: ALD 온도 창</a>` }
+    };
+
+    // ---------- 막대 그래프 ----------
+    const bars = $("[data-bars]");
+    const BX = 24, BW = 32, BG = 8.5, BASEY = 128, MAXH = 104;
+    mk("line", { class: "bar-target", x1: 14, x2: 386, y1: BASEY - MAXH * 0.6, y2: BASEY - MAXH * 0.6 }, bars);
+    const barEls = [];
+    for (let j = 0; j < NB; j++) barEls.push(mk("rect", { class: "bar", x: BX + j * (BW + BG), y: BASEY - MAXH, width: BW, height: MAXH, rx: 3 }, bars));
+    mk("line", { class: "bar-base", x1: 14, x2: 386, y1: BASEY, y2: BASEY }, bars);
+    const tx = (x, s, a) => { const t = mk("text", { x, y: 145, "text-anchor": a }, bars); t.textContent = s; };
+    tx(BX, "가장자리", "start"); tx(200, "가운데", "middle"); tx(386 - 14, "가장자리", "end");
+    const grainG = mk("g", {}, bars);
+    gsap.set(barEls, { scaleY: 0, transformOrigin: "50% 100%" });
+
+    function drawBars(o, frac, instant) {
+      barEls.forEach((b, j) => gsap.to(b, { scaleY: o.prof[j] * frac, duration: instant ? 0 : 0.35, ease: "power2.out" }));
+      grainG.innerHTML = "";
+      if (frac >= 1) o.grains.forEach((j) => {
+        const cx = BX + j * (BW + BG) + BW / 2, top = BASEY - MAXH * o.prof[j];
+        mk("circle", { class: "bar-grain", cx: cx - 4, cy: top - 7, r: 5 }, grainG);
+        mk("circle", { class: "bar-grain", cx: cx + 7, cy: top - 4, r: 3.4 }, grainG);
+      });
+    }
+
+    // ---------- 챔버 사이클 (GSAP 타임라인) ----------
+    const dotsG = $("[data-dots]");
+    const precDots = [], reactDots = [];
+    for (let m = 0; m < 9; m++) {
+      precDots.push(mk("circle", { class: "ch-dot k-prec", r: 6, cx: 0, cy: 0, opacity: 0 }, dotsG));
+      reactDots.push(mk("circle", { class: "ch-dot k-react", r: 4.5, cx: 0, cy: 0, opacity: 0 }, dotsG));
+    }
+    const grainDots = [0, 1, 2].map(() => mk("circle", { class: "ch-dot k-grain", r: 6, cx: 0, cy: 0, opacity: 0 }, dotsG));
+    const dotX = (m) => 250 + m * 20;
+    const cloud = $("[data-cloud]");
+    const heat = $("[data-heat]");
+
+    function setStep(i, c) {
+      const on = [["prec"], ["purge", "exh"], ["react"], ["purge", "exh"]][i];
+      $$("[data-flow]").forEach((p) => p.classList.toggle("is-on", i >= 0 && on.includes(p.dataset.flow)));
+      $$("[data-valve]").forEach((v) => v.classList.toggle("is-on", i >= 0 && on.includes(v.dataset.valve)));
+      $$("[data-chs]").forEach((li) => li.classList.toggle("is-on", +li.dataset.chs === i));
+      cloud.setAttribute("class", "ch-cloud " + (i >= 0 ? "k-" + on[0] : ""));
+      if (c != null) $("[data-ch-cycle]").textContent = String(c);
+    }
+    function setHeat(t) {   // 히터 무늬: 온도가 높을수록 진하게 (색은 그대로, 진하기만)
+      gsap.to(heat, { opacity: [0.15, 0.3, 0.45, 0.6, 0.95][t], duration: 0.3 });
+    }
+    $('[data-k="temp"]').addEventListener("input", () => setHeat(knob("temp")));
+
+    function buildTimeline(s, o) {
+      const pulseD = [0.38, 0.62, 0.95][s.pulse], purgeD = [0.22, 0.5, 0.85][s.purge];
+      const cycles = [3, 5, 8][s.cyc];
+      const shortPurge = s.purge === 0;
+      const tl = gsap.timeline({ paused: true, defaults: { ease: "power2.out" } });
+      for (let c = 0; c < cycles; c++) {
+        const L = "c" + c;
+        tl.addLabel(L);
+        // ① 전구체: 샤워헤드에서 내려와 웨이퍼에 붙음 (펄스가 짧으면 바깥쪽 몇 개는 못 닿음)
+        tl.call(setStep, [0, c + 1], L);
+        tl.fromTo(cloud, { opacity: 0 }, { opacity: 0.16, duration: pulseD * 0.5 }, L);
+        precDots.forEach((d, m) => {
+          const reach = !(s.pulse === 0 && (m < 2 || m > 6));
+          tl.fromTo(d, { x: dotX(m), y: 176, opacity: 1 }, { y: reach ? 254 : 214, duration: pulseD * 0.8, ease: "power1.in" }, L + "+=" + (m % 3) * 0.04);
+        });
+        // ② 퍼지: 떠 있던 것을 배기로 (짧으면 일부 남음)
+        const P1 = L + "+=" + pulseD;
+        tl.call(setStep, [1, c + 1], P1);
+        tl.to(cloud, { opacity: 0.1, duration: purgeD * 0.4 }, P1);
+        precDots.forEach((d, m) => {
+          const stays = shortPurge && m % 3 === 1;
+          tl.to(d, stays ? { x: dotX(m) + 30, y: 214, duration: purgeD } : { opacity: 0, duration: purgeD * 0.6 }, P1);
+        });
+        // ③ 반응 기체: 내려와 막이 됨 (퍼지 부족이면 남은 전구체와 공중에서 만나 알갱이)
+        const R = P1 + "+=" + purgeD;
+        tl.call(setStep, [2, c + 1], R);
+        tl.fromTo(cloud, { opacity: 0 }, { opacity: 0.16, duration: pulseD * 0.5 }, R);
+        reactDots.forEach((d, m) => tl.fromTo(d, { x: dotX(m) + 6, y: 176, opacity: 1 }, { y: 254, opacity: 0, duration: pulseD * 0.85, ease: "power1.in" }, R + "+=" + (m % 3) * 0.04));
+        if (shortPurge) {
+          grainDots.forEach((g, n) => {
+            const m = 1 + n * 3;
+            tl.fromTo(g, { x: dotX(m) + 30, y: 214, opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.15 }, R + "+=0.1");
+            tl.to(g, { y: 252, duration: pulseD * 0.6, ease: "power1.in" }, ">");
+          });
+          precDots.forEach((d, m) => { if (m % 3 === 1) tl.to(d, { opacity: 0, duration: 0.1 }, R + "+=0.1"); });
+        }
+        // ④ 퍼지 → 한 사이클 끝: 막대가 한 칸 자람
+        const P2 = R + "+=" + pulseD;
+        tl.call(setStep, [3, c + 1], P2);
+        tl.to(cloud, { opacity: 0.1, duration: purgeD * 0.4 }, P2);
+        if (shortPurge) tl.to(grainDots, { opacity: 0, duration: purgeD * 0.6 }, P2 + "+=" + purgeD * 0.3);
+        tl.call(() => drawBars(o, (c + 1) / cycles), [], P2 + "+=" + purgeD * 0.5);
+        tl.to({}, { duration: purgeD }, P2);
+      }
+      tl.call(() => { setStep(-1); gsap.to(cloud, { opacity: 0, duration: 0.3 }); });
+      return tl;
+    }
+
+    // ---------- 확대 창 ----------
+    const zoomRoot = $("[data-ald-surface]");
+    const surf = window.AldSurf(zoomRoot);
+    const tempBox = $("[data-ald-temp]"), tempIn = $("input", tempBox);
+    function zoomFor(s) {
+      const out = s.temp === 0 || s.temp === 4;
+      zoomRoot.hidden = out; tempBox.hidden = !out;
+      $("[data-zoom-mode]").textContent = out ? "온도 창 밖 개념도" : (s.purge === 0 ? "퍼지가 부족한 사이클" : s.pulse === 0 ? "포화 전에 끝난 펄스" : "단면 개념도");
+      if (out) { tempIn.value = s.temp === 0 ? 15 : 85; tempIn.dispatchEvent(new Event("input")); return null; }
+      surf.setBad(s.purge === 0);
+      if (s.pulse === 0) return surf.playPartial(7);       // 빈자리가 남은 채 멈춤
+      surf.loop();
+      return null;
+    }
+
+    // ---------- 실행 ----------
+    let running = null;
+    const runBtn = $("[data-run]");
+    const done = new Set();
+    function check(s, o) {
+      if (o.kind === "ok" && s.pulse === 1 && s.purge === 1 && s.temp >= 1 && s.temp <= 3) done.add("base");
+      if (s.purge === 0) done.add("purge");
+      if (s.temp === 0) done.add("cold");
+      if (o.kind === "ok" && s.pulse === 2 && s.purge === 1) done.add("sat");
+      $$("[data-m]").forEach((li) => li.classList.toggle("is-done", done.has(li.dataset.m)));
+      $("[data-done]").textContent = String(done.size);
+    }
+    function showResult(s, o) {
+      $("[data-chips]").innerHTML = o.tags.map((t) => `<li class="${o.kind === "ok" ? "" : "is-bad"}">${t}</li>`).join("") +
+        o.bad.map((t) => `<li class="is-bad">원인: ${t}</li>`).join("");
+      const v = $("[data-verdict]");
+      v.classList.remove("verdict-idle");
+      v.innerHTML = TEXT[o.kind](s) + (o.kind !== "ok" ? ' <span class="verify-tag">검증 필요</span>' : "");
+      $("[data-why]").hidden = false;
+      check(s, o);
+      openDrawer(o.kind);
+    }
+    function run() {
+      if (running) { running.kill(); running = null; }
+      const s = { pulse: knob("pulse"), purge: knob("purge"), temp: knob("temp"), cyc: knob("cyc") };
+      const o = outcome(s);
+      closeDrawer();
+      drawBars(o, 0, true);
+      $("[data-chips]").innerHTML = "";
+      $("[data-verdict]").innerHTML = "사이클이 도는 중입니다…";
+      $("[data-why]").hidden = true;
+      zoomFor(s);
+      if (window.aldStill()) {                     // 정지 화면: 애니메이션 없이 결과만
+        setStep(-1); $("[data-ch-cycle]").textContent = "끝";
+        drawBars(o, 1, true); showResult(s, o); return;
+      }
+      runBtn.disabled = true;
+      running = buildTimeline(s, o);
+      running.eventCallback("onComplete", () => {
+        runBtn.disabled = false; running = null;
+        if (!(s.pulse === 0 && s.temp > 0 && s.temp < 4)) surf.stop();
+        showResult(s, o);
+      });
+      running.play();
+    }
+    runBtn.addEventListener("click", run);
+    $("[data-reset]").addEventListener("click", () => {
+      Object.keys(DEFAULT).forEach((k) => { $(`[data-k="${k}"]`).value = DEFAULT[k]; });
+      syncKnobs(); setHeat(DEFAULT.temp);
+    });
+
+    // ---------- 서랍 ----------
+    const drawer = $("[data-drawer]");
+    let lastKind = "ok", lastFocus = null;
+    function openDrawer(kind) {
+      lastKind = kind || lastKind;
+      $("[data-dr-title]").textContent = DRAWER[lastKind].t;
+      $("[data-dr-body]").innerHTML = DRAWER[lastKind].b;
+      drawer.classList.add("is-open"); drawer.setAttribute("aria-hidden", "false");
+    }
+    function closeDrawer() { drawer.classList.remove("is-open"); drawer.setAttribute("aria-hidden", "true"); }
+    $("[data-why]").addEventListener("click", () => { lastFocus = document.activeElement; openDrawer(); $("[data-close]").focus(); });
+    $("[data-close]").addEventListener("click", () => { closeDrawer(); (lastFocus || $("[data-why]")).focus(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && drawer.classList.contains("is-open")) closeDrawer(); });
+
+    // ---------- 점검 게임 (예시) ----------
+    const TG = {
+      particle: {
+        name: "파티클이 늘었다",
+        cands: [
+          { id: "purge", t: "퍼지 부족", d: "퍼지 유량·시간이 모자라 공중 반응", where: "one", when: "sudden" },
+          { id: "valve", t: "ALD 밸브 이상", d: "닫혀야 할 때 새거나 늦게 닫힘", where: "one", when: "sudden" },
+          { id: "wall", t: "챔버 벽·샤워헤드 막 떨어짐", d: "쌓인 막이 두꺼워져 벗겨짐", where: "one", when: "slow" },
+          { id: "line", t: "공급 배관 응축", d: "공용 가열 배관에 차가운 곳 → 맺힌 원료가 떨어짐", where: "all", when: "sudden" },
+          { id: "exh", t: "공용 배기 막힘", d: "배기 배관에 부산물이 쌓여 퍼지가 덜 빠짐", where: "all", when: "slow" }
+        ],
+        act: {
+          "one-sudden": "그 챔버의 퍼지 유량 기록과 ALD 밸브 동작(열림·닫힘 신호)을 먼저 봅니다. 최근 레시피·부품 교체 이력을 확인하고, 조치 뒤 시험 웨이퍼로 파티클을 다시 잽니다.",
+          "one-slow": "마지막 챔버 세정 뒤로 얼마나 돌았는지 봅니다. 세정 주기를 넘겼으면 세정 후 시험 웨이퍼로 확인합니다.",
+          "all-sudden": "모든 챔버에 공통인 것부터: 전구체 용기 교체·가열 배관 온도 기록·공용 설비 변경 이력을 확인합니다.",
+          "all-slow": "공용 배기 배관 압력 추이와 스크러버 상태를 봅니다. 서서히 나빠졌다면 배관에 쌓인 부산물을 의심합니다."
+        }
+      },
+      thin: {
+        name: "막이 얇아졌다",
+        cands: [
+          { id: "heater", t: "히터 온도 이상", d: "그 챔버만 온도 창을 벗어남", where: "one", when: "sudden" },
+          { id: "pvalve", t: "전구체 밸브 열림 부족", d: "펄스가 짧아진 것처럼 포화 전", where: "one", when: "sudden" },
+          { id: "sensor", t: "온도 센서·밸브 마모", d: "조금씩 어긋나는 값", where: "one", when: "slow" },
+          { id: "can", t: "전구체 용기 교체·가열 이상", d: "공급량이 한꺼번에 줄어듦", where: "all", when: "sudden" },
+          { id: "level", t: "전구체 잔량 감소", d: "용기가 비어 갈수록 공급량이 줄어듦", where: "all", when: "slow" }
+        ],
+        act: {
+          "one-sudden": "그 챔버의 히터 온도 기록과 전구체 밸브 동작을 먼저 봅니다. 다른 챔버와 같은 레시피인지 확인하고, 조치 뒤 시험 웨이퍼로 두께를 다시 잽니다.",
+          "one-slow": "온도 센서 보정 이력과 밸브 사용 횟수를 봅니다. 교체 주기에 가까우면 교체 후 확인합니다.",
+          "all-sudden": "전구체 용기를 최근에 바꿨는지, 용기 가열 온도가 맞는지부터 확인합니다.",
+          "all-slow": "전구체 잔량과 교체 시점을 확인합니다. 잔량에 따라 공급량이 변하는지 기록을 봅니다."
+        }
+      }
+    };
+    const tgSt = { sym: null, where: null, when: null };
+    function tgRender() {
+      const S = TG[tgSt.sym];
+      $$("[data-tg-sym] .btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === tgSt.sym)));
+      $$("[data-tg-where] .btn").forEach((b) => { b.disabled = !tgSt.sym; b.setAttribute("aria-pressed", String(b.dataset.v === tgSt.where)); });
+      $$("[data-tg-when] .btn").forEach((b) => { b.disabled = !tgSt.where; b.setAttribute("aria-pressed", String(b.dataset.v === tgSt.when)); });
+      const path = $("[data-tg-path]"), cands = $("[data-tg-cands]"), act = $("[data-tg-act]");
+      if (!S) { path.innerHTML = "<li>증상을 고르면 원인 후보가 나옵니다</li>"; cands.innerHTML = ""; act.hidden = true; return; }
+      path.innerHTML = [S.name, tgSt.where && (tgSt.where === "one" ? "한 챔버만" : "모든 챔버"), tgSt.when && (tgSt.when === "sudden" ? "갑자기" : "서서히")]
+        .filter(Boolean).map((t) => `<li>${t}</li>`).join("");
+      cands.innerHTML = S.cands.map((c) => {
+        const out = (tgSt.where && c.where !== tgSt.where) || (tgSt.when && c.when !== tgSt.when);
+        return `<li class="tg-cand${out ? " is-out" : ""}"><b>${c.t}</b>${c.d}</li>`;
+      }).join("");
+      if (tgSt.where && tgSt.when) { act.hidden = false; act.innerHTML = "<strong>조치:</strong> " + S.act[tgSt.where + "-" + tgSt.when] + ' <span class="verify-tag">검증 필요</span>'; }
+      else act.hidden = true;
+    }
+    $("[data-tg-sym]").addEventListener("click", (e) => { const b = e.target.closest(".btn"); if (!b) return; tgSt.sym = b.dataset.v; tgSt.where = tgSt.when = null; tgRender(); });
+    $("[data-tg-where]").addEventListener("click", (e) => { const b = e.target.closest(".btn"); if (!b || b.disabled) return; tgSt.where = b.dataset.v; tgSt.when = null; tgRender(); });
+    $("[data-tg-when]").addEventListener("click", (e) => { const b = e.target.closest(".btn"); if (!b || b.disabled) return; tgSt.when = b.dataset.v; tgRender(); });
+    $("[data-tg-reset]").addEventListener("click", () => { tgSt.sym = tgSt.where = tgSt.when = null; tgRender(); });
+
+    // ---------- 시작 ----------
+    document.addEventListener("DOMContentLoaded", () => {
+      syncKnobs(); setHeat(knob("temp")); setStep(-1, 0);
+      surf.show(0);                                 // 확대 창은 실행 전까지 멈춘 그림
+      tgRender();
+    });
+  })();
+  </script>
+</body>
+</html>
