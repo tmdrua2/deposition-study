@@ -4062,3 +4062,70 @@ body[data-equip="ald"] .wr-plasma-b { stop-color: var(--ald-film); }
 @media (prefers-reduced-motion: reduce) {
   .hx-svg [data-sys], .atc-cloud, .atc-cell { transition: none; }
 }
+
+/* =============================================================
+   PECVD 공정변수 페이지 (2026-11-26) — ALD 공정변수와 같은 형식(.sx · .bn-pl · .ps-gauge · .ps-chain 재사용)
+   고정 그림 .pp: 왼쪽 챔버 단면 + 오른쪽 막 단면(확대) + 두께 분포 곡선, 아래 막대 3개 (js/sim/pecvd-param-sx.js)
+   플라즈마 빛만 코랄(배경 분위기), 강조 선·점은 공정 색 청록
+   ============================================================= */
+.pp-box svg { max-height: calc(100svh - var(--header-h, 72px) - 300px); min-height: 0; margin: 4px 0 0; }
+.pp-fig[hidden] { display: none; }
+.pp-svg { display: block; width: 100%; height: auto; }
+.pp-svg text { font-family: Pretendard, -apple-system, sans-serif; }
+.pp-t { fill: var(--on-navy-muted); font-size: 13px; font-weight: 600; }
+.pp-t-strong { fill: var(--on-navy); font-size: 14px; font-weight: 800; }
+.pp-t-tiny { fill: var(--on-navy-faint); font-size: 11px; }
+.pp-t-in { fill: var(--navy-deep); font-weight: 700; }
+.pp-t-plasma { fill: var(--on-navy); font-size: 14px; font-weight: 700; paint-order: stroke; stroke: rgba(12, 21, 41, 0.55); stroke-width: 3px; }
+.pp-wall { fill: rgba(12, 21, 41, 0.35); stroke: var(--on-navy-muted); stroke-width: 1.6; }
+.pp-pipe { fill: none; stroke: rgba(244, 237, 224, 0.32); stroke-width: 3; stroke-linecap: round; }
+.pp-pipe.is-rf { stroke-width: 2; stroke-dasharray: 4 3; }
+.pp-rfbox { fill: rgba(12, 21, 41, 0.7); stroke: var(--on-navy-muted); stroke-width: 1.4; }
+.pp-shower { fill: rgba(244, 237, 224, 0.22); stroke: var(--on-navy-muted); stroke-width: 1.2; }
+.pp-hole { fill: var(--navy-deep); }
+.pp-glow-s0 { stop-color: var(--coral); stop-opacity: 0.9; }
+.pp-glow-s1 { stop-color: var(--coral); stop-opacity: 0.08; }
+.pp-plasma { will-change: opacity; }
+.pp-sheath { fill: rgba(5, 10, 22, 0.55); }
+.pp-m { fill: var(--sim-gas); }
+.pp-m.is-n { fill: var(--sim-purge); }
+.pp-grain { fill: var(--sim-clean); stroke: var(--navy-deep); stroke-width: 1; }
+.pp-stem { fill: rgba(124, 135, 148, 0.55); }
+.pp-heater { fill: var(--sim-wafer); }
+.pp-heat { fill: var(--sim-clean); }
+.pp-wafer { fill: #C9CED4; }
+.pp-valve { fill: rgba(12, 21, 41, 0.7); stroke: var(--on-navy-muted); stroke-width: 1.4; }
+.pp-blade { stroke: var(--on-navy); stroke-width: 2.4; stroke-linecap: round; }
+.pp-dim { fill: none; stroke: var(--c-cvd-bright); stroke-width: 1.6; }
+/* 지금 단계의 부품: 청록 테두리 */
+.pp-hotable.is-hot .pp-rfbox, .pp-hotable.is-hot .pp-shower, .pp-hotable.is-hot .pp-heater, .pp-hotable.is-hot .pp-valve { stroke: var(--c-cvd-bright); stroke-width: 2.4; }
+.pp-hotable.is-hot .pp-pipe { stroke: var(--c-cvd-bright); }
+.pp-hotable.is-hot > text { fill: var(--on-navy); }
+.pp-hotable.is-hot .pp-t-in { fill: var(--navy-deep); }
+/* 막 단면 확대 */
+.pp-zlink { fill: none; stroke: rgba(244, 237, 224, 0.3); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.pp-zoom { fill: rgba(12, 21, 41, 0.5); stroke: rgba(244, 237, 224, 0.22); stroke-width: 1.2; }
+.pp-sub { fill: var(--sim-wafer); }
+.pp-film { fill: rgba(92, 194, 184, 0.12); }
+.pp-at { fill: var(--sim-gas); stroke: var(--navy-deep); stroke-width: 0.8; }
+.pp-at.is-n { fill: var(--c-cvd-bright); }
+.pp-hd { fill: #FFFFFF; stroke: var(--navy-deep); stroke-width: 0.8; }
+.pp-ion { fill: none; stroke: var(--on-navy); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pp-flash { fill: none; stroke: var(--on-navy); stroke-width: 1.6; }
+.pp-ref { stroke: rgba(244, 237, 224, 0.2); stroke-width: 1; stroke-dasharray: 2 5; }
+.pp-prof { fill: none; stroke: var(--c-cvd-bright); stroke-width: 2.6; stroke-linejoin: round; }
+/* 막대 3개 */
+.pp-meters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 14px; margin-top: 8px; }
+.pp-meter { display: grid; gap: 4px; min-width: 0; }
+.pp-meter-n { color: var(--on-navy-muted); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 정지 화면: 낮게 / 높게 두 장 */
+.pp-still-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 6px; }
+.pp-still-k { margin: 0 0 2px; color: var(--on-navy); font-size: var(--fs-sm); font-weight: 800; }
+.pp-still-pair .pp-meters { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+@media (max-width: 760px) {
+  .pp-box svg { max-height: 30svh; }
+  .pp-t-minor, .pp-t-tiny, .pp-legend { display: none; }
+  .pp-meters { display: none; }
+  .sx.is-still .pp-meters { display: grid; }
+  .pp-still-pair { grid-template-columns: minmax(0, 1fr); }
+}
