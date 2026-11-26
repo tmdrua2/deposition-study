@@ -486,6 +486,10 @@
     show();
   }
 
+  // 다른 파일(js/sim/ald-scrolly.js: 원리 페이지 스크롤 체험·실험대)이 같은 그림 계산을 다시 쓰도록 내보냄
+  //   pose(단계, 진행, 사이클, 퍼지부족) → 상태 / buildSvg(상자) → 그림 뼈대 / apply(뼈대, 상태) → 그리기
+  window.AldSurface = { W, H, N, MAXC, STEPS, pose, buildSvg, apply, tempSvg, ZONES };
+
   document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("[data-ald-surface]").forEach(setup);
     document.querySelectorAll("[data-ald-temp]").forEach(setupTemp);
